@@ -54,16 +54,7 @@ Then point your reverse proxy at `127.0.0.1:8137` and open your address. The ful
 
 ## How it fits together
 
-```
- Browser / iPhone / Android / Kodi / Jellyfin plugin
-                     │
-           your reverse proxy (TLS)
-                     │
-          Movie Night (FastAPI, :8137)
-          ├─ Postgres     everyone's data
-          ├─ Meilisearch  library and catalog search
-          └─ outside:  TMDB (titles) · Jellyfin · Seerr · MDBList · an AI endpoint · SMTP  (all but TMDB optional)
-```
+<p align="center"><img src="docs/images/architecture.svg" width="100%" alt="Your people's devices reach Movie Night through your reverse proxy; Movie Night uses Postgres and Meilisearch, TMDB, and optionally Jellyfin, Seerr, MDBList, an AI endpoint and SMTP."></p>
 
 | Folder | What's in it |
 |---|---|

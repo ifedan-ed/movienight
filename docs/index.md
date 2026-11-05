@@ -62,6 +62,8 @@ Watch history, ratings, lists, requests and "what's next", on the web, iPhone, A
 
 ## How it works
 
+![How Movie Night fits together](images/architecture.svg)
+
 Movie Night is one Docker Compose stack — the app, Postgres and Meilisearch — behind your own reverse proxy. Titles and artwork come from [TMDB](https://www.themoviedb.org/) (a free API key). Jellyfin, Seerr, MDBList, an OpenAI-compatible AI endpoint and SMTP are all optional.
 
 People sign in with a username and password you give them, with your OIDC provider (Authentik, Keycloak, Pocket ID, …), or either. The phone app, Kodi add-on and Jellyfin plugin use their own device tokens.
