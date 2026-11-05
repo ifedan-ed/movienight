@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0d0f14">
+  <title>Sign in to Movie Night</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <main class="page-center signin">
+    <img class="fin-poster signin-logo" src="/static/icon-192.png" alt="">
+    <h1>Movie Night</h1>
+    <p class="soft">Sign in to see what's on.</p>
+    {% if error %}<div class="err-box signin-err" role="alert">{{ error }}</div>{% endif %}
+    {% if password %}
+      <form method="post" action="/signin" class="signin-form">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <input type="hidden" name="next" value="{{ next }}">
+        <div class="field">
+          <label for="username">Username</label>
+          <input class="input" id="username" name="username" value="{{ username }}" autocomplete="username"
+                 autocapitalize="none" autocorrect="off" spellcheck="false" required maxlength="200" {% if not username %}autofocus{% endif %}>
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input class="input" id="password" name="password" type="password" autocomplete="current-password" required maxlength="200" {% if username %}autofocus{% endif %}>
+        </div>
+        <button class="btn btn-request" type="submit">Sign in</button>
+      </form>
+    {% endif %}
+    {% if oidc %}
+      {% if password %}<p class="signin-or"><span>or</span></p>{% endif %}
+      <a class="btn {{ 'btn-quiet' if password else 'btn-request' }}" href="{{ oidc }}">{{ oidc_label }}</a>
+    {% endif %}
+    {% if password %}<p class="soft signin-help">No account yet, or forgot your password? Ask the person who runs this Movie Night.</p>{% endif %}
+  </main>
+</body>
+</html>

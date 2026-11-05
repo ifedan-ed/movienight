@@ -1,0 +1,16 @@
+/* Movie Night's own colours: near-black and amber (web/static/css/app.css). */
+:root, [data-md-color-scheme="default"], [data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #0d0f14;
+  --md-primary-fg-color--light: #1a1d26;
+  --md-primary-fg-color--dark: #050608;
+  --md-accent-fg-color: #f5b73b;
+  --md-accent-fg-color--transparent: rgba(245, 183, 59, .12);
+}
+[data-md-color-scheme="slate"] {
+  --md-default-bg-color: #0d0f14;
+  --md-typeset-a-color: #f5b73b;
+}
+.md-typeset .md-button--primary, .md-typeset .md-button--primary:focus { background: #f5b73b; border-color: #f5b73b; color: #1a1300 !important; }
+.md-typeset .md-button { border-color: #f5b73b; color: inherit; }
+.md-typeset .md-button:hover { background: #ffc85a; border-color: #ffc85a; color: #1a1300 !important; }
+.md-typeset img { border-radius: 14px; }

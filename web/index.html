@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en" data-v="{{ v }}" data-jf="{{ jf }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0d0f14">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Movie Night">
+  <title>Movie Night</title>
+  <link rel="manifest" href="/static/manifest.webmanifest?v={{ v }}">
+  <link rel="icon" href="/static/icon-192.png?v={{ v }}">
+  <link rel="apple-touch-icon" href="/static/icon-180.png?v={{ v }}">
+  <link rel="preconnect" href="https://image.tmdb.org">
+  <link rel="stylesheet" href="/static/css/app.css?v={{ v }}">
+</head>
+<body>
+  <div id="app">
+    <main id="view" tabindex="-1"></main>
+    <div id="rate-bar" hidden></div>
+    <nav id="tabbar" aria-label="Main menu"></nav>
+  </div>
+  <div id="sheet-root"></div>
+  <div id="toasts" aria-live="polite"></div>
+  <script type="module" src="/static/js/app.js?v={{ v }}"></script>
+</body>
+</html>

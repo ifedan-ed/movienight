@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0d0f14">
+  <title>Sign in the Movie Night app</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <main class="page-center finished">
+    <img class="fin-poster" src="/static/icon-192.png" alt="">
+    {% if error %}
+      <h1>Can't sign in</h1>
+      <p class="soft">{{ error }}</p>
+    {% else %}
+      <h1>Sign in the app?</h1>
+      <p class="soft">“{{ device }}” will sign in as <b>{{ name }}</b>.</p>
+      <form method="post" action="/app/connect">
+        <input type="hidden" name="challenge" value="{{ challenge }}">
+        <input type="hidden" name="redirect" value="{{ redirect }}">
+        <input type="hidden" name="device" value="{{ device }}">
+        <input type="hidden" name="ts" value="{{ ts }}">
+        <input type="hidden" name="sig" value="{{ sig }}">
+        <button class="btn btn-request" type="submit">Sign in the app</button>
+      </form>
+      <div style="height:8px"></div>
+      <a class="btn btn-quiet" href="{{ redirect }}?error=cancelled">Cancel</a>
+    {% endif %}
+  </main>
+</body>
+</html>

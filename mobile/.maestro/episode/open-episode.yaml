@@ -1,0 +1,96 @@
+# An episode shown on its own opens that episode (2026-10-12), as the
+# screenshot user: Recently watched (Profile) and Up next (a show's page)
+# open the episode's season page with its own tick, heart and stars, never
+# the show's page. Ticks episode 1 of a show's first season so it is in
+# Recently watched, and unticks it at the end, so the run leaves nothing
+# behind. Works on a server without the episode ratings too (the stars are
+# then empty). Started by
+# scripts/e2e.sh <token-file> .eas/workflows/episode-open-rerun.yml -F build_id=<id>.
+appId: com.example.movienight
+---
+- runFlow: ../shared/signin.yaml
+- runFlow:
+    file: ../shared/open.yaml
+    env:
+      LINK: "movienight://season/1399/1"
+- extendedWaitUntil:
+    visible:
+      id: "episode-tick-1"
+    timeout: 30000
+- runFlow:
+    when:
+      visible: "Mark episode 1 watched"
+    commands:
+      - tapOn:
+          id: "episode-tick-1"
+- extendedWaitUntil:
+    visible: "Mark episode 1 unwatched"
+    timeout: 10000
+# The season page: tick, heart and stars on each episode.
+- assertVisible:
+    id: "episode-like-1"
+- assertVisible:
+    id: "episode-rate-1"
+- takeScreenshot: 01-season-tick-heart-stars
+# Recently watched: the episode's card opens the episode, not the show.
+# The season page sits over the tabs, so Profile is opened by its link.
+- runFlow:
+    file: ../shared/open.yaml
+    env:
+      LINK: "movienight://profile"
+- extendedWaitUntil:
+    visible:
+      id: "recent-episode-1399-1-1"
+    timeout: 30000
+- takeScreenshot: 02-recently-watched
+- tapOn:
+    id: "recent-episode-1399-1-1"
+- extendedWaitUntil:
+    visible:
+      id: "episode-rate-1"
+    timeout: 30000
+- assertVisible:
+    id: "season-show-link"
+- assertNotVisible:
+    id: "title-favorite"
+- takeScreenshot: 03-recently-watched-opened-the-episode
+# Up next on the show's page (the episode after the last one ticked), with
+# its own heart and stars; its name opens it on its season page. The show's
+# own tiles say they are the show's.
+- tapOn:
+    id: "season-show-link"
+- extendedWaitUntil:
+    visible:
+      id: "upnext-open"
+    timeout: 30000
+- assertVisible:
+    id: "upnext-like-.*"
+- assertVisible:
+    id: "upnext-rate-.*"
+- assertVisible: "Favorite show|Favorited show"
+- assertVisible: "Rate show|Show \\d+/10"
+- takeScreenshot: 04-show-up-next
+- tapOn:
+    id: "upnext-open"
+- extendedWaitUntil:
+    visible:
+      id: "season-show-link"
+    timeout: 30000
+- assertVisible:
+    id: "episode-rate-.*"
+- assertNotVisible:
+    id: "upnext-open"
+- takeScreenshot: 05-up-next-opened-the-episode
+# Clean up: untick episode 1 again.
+- runFlow:
+    file: ../shared/open.yaml
+    env:
+      LINK: "movienight://season/1399/1"
+- extendedWaitUntil:
+    visible: "Mark episode 1 unwatched"
+    timeout: 30000
+- tapOn:
+    id: "episode-tick-1"
+- extendedWaitUntil:
+    visible: "Mark episode 1 watched"
+    timeout: 10000

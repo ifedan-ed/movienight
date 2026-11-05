@@ -1,0 +1,10 @@
+# iOS App Store build, signed on EAS with the team's credentials.
+name: iOS store build
+
+jobs:
+  build_ios:
+    name: Build iOS
+    type: build
+    params:
+      platform: ios
+      profile: production

@@ -1,0 +1,96 @@
+# Rating one episode on a season page (2026-10-12): the stars next to each
+# episode's heart, as the screenshot user. Rates episode 1 of a show's first
+# season 8/10 (the right half of the 4th star), checks the rating is still
+# there after the page is opened again (so it came from the server), checks
+# the show's own tile still says "Rate show" (or the show's own rating, never
+# the episode's), then removes it, so the run leaves nothing behind.
+# Needs a server with the episode ratings (migration 0014). Started by
+# scripts/e2e.sh <token-file> .eas/workflows/season-rate-rerun.yml -F build_id=<id>.
+appId: com.example.movienight
+---
+- runFlow: ../shared/signin.yaml
+- runFlow:
+    file: ../shared/open.yaml
+    env:
+      LINK: "movienight://season/1399/1"
+- extendedWaitUntil:
+    visible:
+      id: "episode-rate-1"
+    timeout: 30000
+# A run that stopped midway may have left it rated: start from not rated.
+- runFlow:
+    when:
+      visible:
+        id: "episode-rate-1"
+        selected: true
+    commands:
+      - tapOn:
+          id: "episode-rate-1"
+      - tapOn:
+          id: "episode-rate-remove"
+      - extendedWaitUntil:
+          visible:
+            id: "episode-rate-1"
+            selected: false
+          timeout: 10000
+# The tick and the heart are still there, the stars under them.
+- assertVisible:
+    id: "episode-tick-1"
+- assertVisible:
+    id: "episode-like-1"
+- takeScreenshot: 01-season-heart-and-stars
+- tapOn:
+    id: "episode-rate-1"
+- extendedWaitUntil:
+    visible: "Rate episode 1"
+    timeout: 10000
+# The 4th star's right half is 8/10.
+- tapOn:
+    text: "4 stars"
+    point: "75%,50%"
+- extendedWaitUntil:
+    visible: "8/10 · Great"
+    timeout: 5000
+- takeScreenshot: 02-rate-sheet
+- tapOn:
+    id: "episode-rate-save"
+- extendedWaitUntil:
+    visible:
+      id: "episode-rate-1"
+      selected: true
+    timeout: 10000
+- assertVisible: "Episode 1 rated 8 out of 10; change the rating"
+- takeScreenshot: 03-rated
+# Away and back: the rating came from the server, not only from the screen.
+- runFlow:
+    file: ../shared/open.yaml
+    env:
+      LINK: "movienight://title/tv/1399"
+- extendedWaitUntil:
+    visible:
+      id: "title-rate"
+    timeout: 30000
+# The show's own tile: the whole show's rating, never the episode's 8.
+- assertNotVisible: "Show 8/10"
+- takeScreenshot: 04-show-page
+- runFlow:
+    file: ../shared/open.yaml
+    env:
+      LINK: "movienight://season/1399/1"
+- extendedWaitUntil:
+    visible:
+      id: "episode-rate-1"
+      selected: true
+    timeout: 30000
+- assertVisible: "Episode 1 rated 8 out of 10; change the rating"
+- takeScreenshot: 05-still-rated
+- tapOn:
+    id: "episode-rate-1"
+- tapOn:
+    id: "episode-rate-remove"
+- extendedWaitUntil:
+    visible:
+      id: "episode-rate-1"
+      selected: false
+    timeout: 10000
+- takeScreenshot: 06-removed

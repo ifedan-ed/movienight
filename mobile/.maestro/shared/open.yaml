@@ -1,0 +1,11 @@
+# Open one of the app's own links; on an iPhone, say yes to "Open in Movie Night?".
+appId: com.example.movienight
+---
+- openLink: ${LINK}
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          text: "Open"
+          optional: true

@@ -1,0 +1,64 @@
+# Liking one episode on a season page (2026-10-12): the heart under each
+# episode's tick, as the screenshot user. Likes episode 1 of a show's first
+# season, checks the heart stays on after the page is opened again, then
+# unlikes it, so the run leaves nothing behind. Started by
+# scripts/e2e.sh <token-file> .eas/workflows/season-like-rerun.yml -F build_id=<id>.
+appId: com.example.movienight
+---
+- runFlow: ../shared/signin.yaml
+- runFlow:
+    file: ../shared/open.yaml
+    env:
+      LINK: "movienight://season/1399/1"
+- extendedWaitUntil:
+    visible:
+      id: "episode-like-1"
+    timeout: 30000
+# A run that stopped midway may have left it liked: start from not liked.
+- runFlow:
+    when:
+      visible:
+        id: "episode-like-1"
+        selected: true
+    commands:
+      - tapOn:
+          id: "episode-like-1"
+      - extendedWaitUntil:
+          visible:
+            id: "episode-like-1"
+            selected: false
+          timeout: 10000
+- takeScreenshot: 01-season
+- tapOn:
+    id: "episode-like-1"
+- extendedWaitUntil:
+    visible:
+      id: "episode-like-1"
+      selected: true
+    timeout: 10000
+- takeScreenshot: 02-liked
+# Away and back: the like came from the server, not only from the screen.
+- runFlow:
+    file: ../shared/open.yaml
+    env:
+      LINK: "movienight://title/tv/1399"
+- waitForAnimationToEnd:
+    timeout: 8000
+- runFlow:
+    file: ../shared/open.yaml
+    env:
+      LINK: "movienight://season/1399/1"
+- extendedWaitUntil:
+    visible:
+      id: "episode-like-1"
+      selected: true
+    timeout: 30000
+- takeScreenshot: 03-still-liked
+- tapOn:
+    id: "episode-like-1"
+- extendedWaitUntil:
+    visible:
+      id: "episode-like-1"
+      selected: false
+    timeout: 10000
+- takeScreenshot: 04-unliked

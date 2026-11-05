@@ -1,0 +1,51 @@
+site_name: Movie Night
+site_description: A self-hosted movie and TV tracker for you and the people on your Jellyfin server.
+site_url: https://ifedan-ed.github.io/movienight/
+repo_url: https://github.com/ifedan-ed/movienight
+repo_name: ifedan-ed/movienight
+edit_uri: edit/main/docs/
+docs_dir: docs
+exclude_docs: |
+  openapi.json
+theme:
+  name: material
+  logo: images/icon.png
+  favicon: images/icon.png
+  palette:
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      accent: amber
+      toggle: { icon: material/weather-sunny, name: Light mode }
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: black
+      accent: amber
+      toggle: { icon: material/weather-night, name: Dark mode }
+  features:
+    - navigation.instant
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - search.highlight
+extra_css:
+  - stylesheets/extra.css
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc: { permalink: true }
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.details
+nav:
+  - Home: index.md
+  - Self-hosting: self-hosting.md
+  - Sign-in: sign-in.md
+  - Jellyfin and players: jellyfin.md
+  - Phone app and Kodi: devices.md
+  - Backups and upgrades: operations.md
+  - Reference:
+      - Configuration: configuration.md
+      - Limits and schedules: limits.md

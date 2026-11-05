@@ -1,0 +1,21 @@
+# Signed in as the screenshot user with the run's device token, once the app is
+# up (a link sent before it starts is lost). iOS keeps the Keychain when the
+# app is reset, so it may open signed in already.
+appId: com.example.movienight
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "Sign in|Discover(, tab.*)?"
+    timeout: 60000
+- runFlow:
+    when:
+      visible: "Sign in"
+    commands:
+      - runFlow:
+          file: open.yaml
+          env:
+            LINK: "movienight://e2e-signin?token=${MAESTRO_E2E_ACCESS}"
+- extendedWaitUntil:
+    visible: "Discover(, tab.*)?"
+    timeout: 60000

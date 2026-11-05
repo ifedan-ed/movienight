@@ -1,0 +1,32 @@
+# The App Store screenshots again on an iPhone-simulator e2e build made
+# earlier, without building (builds cost money once the plan's credit is
+# spent). Started by scripts/e2e.sh <token-file> with -F build_id=<id>, or:
+#   eas workflow:run .eas/workflows/store-screenshots-rerun.yml -F build_id=<id>
+name: store-screenshots-rerun
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_id:
+        type: string
+        required: true
+        description: An iPhone-simulator e2e build of the app
+
+jobs:
+  iphone:
+    name: Screenshots (iPhone 6.9")
+    type: maestro
+    environment: development
+    params:
+      build_id: ${{ inputs.build_id }}
+      flow_path: ['.maestro/store/screenshots.yaml']
+      device_identifier: 'iPhone 16 Pro Max'
+
+  ipad:
+    name: Screenshots (iPad 13")
+    type: maestro
+    environment: development
+    params:
+      build_id: ${{ inputs.build_id }}
+      flow_path: ['.maestro/store/screenshots.yaml']
+      device_identifier: 'iPad Pro 13-inch (M4)'

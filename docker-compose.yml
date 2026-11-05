@@ -1,0 +1,91 @@
+# Every container's log is rotated by size: at most LOG_MAX_FILES files of
+# LOG_MAX_SIZE each (default 5 x 10 MB), the oldest dropped first, and all of
+# it goes when the container is replaced (each deploy). Set either in .env.
+# What the app writes there (no search text, titles, names, usernames or
+# email addresses; people by numeric id): README, "Logs and backups", and
+# docs/limits.md, "Data kept, and data deleted". Logs are not backed up.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "${LOG_MAX_SIZE:-10m}"
+    max-file: "${LOG_MAX_FILES:-5}"
+
+services:
+  web:
+    build: .
+    image: movienight-web:latest
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://movienight:${POSTGRES_PASSWORD}@postgres:5432/movienight
+    volumes:
+      - movienight-data:/data
+    ports:
+      - "127.0.0.1:8137:8000"
+    # The optional AI network is shared with an external LiteLLM/OpenAI
+    # compatible container. Containers on it can reach port 8000 directly;
+    # they cannot sign anyone in (the app believes no identity headers).
+    # Set AI_NETWORK_NAME if your AI container uses a different network.
+    networks:
+      - default
+      - ai
+    depends_on:
+      postgres:
+        condition: service_healthy
+      meilisearch:
+        condition: service_started
+    logging: *logging
+
+  postgres:
+    # pgvector build of Postgres, so vector search is available later
+    # without moving the data again.
+    image: pgvector/pgvector:pg17
+    restart: unless-stopped
+    # Its log keeps errors but not their DETAIL lines (which quote the values
+    # of a clashing row, a username say) nor the statement that failed.
+    command: ["postgres", "-c", "log_error_verbosity=terse", "-c", "log_min_error_statement=panic"]
+    logging: *logging
+    environment:
+      POSTGRES_DB: movienight
+      POSTGRES_USER: movienight
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - movienight-pg:/var/lib/postgresql/data
+    networks:
+      - default
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U movienight -d movienight"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  meilisearch:
+    # 1.54 matches the 2026-10-02 embedder benchmark (same settings, same
+    # bge-base model). The index is rebuilt from Jellyfin by the library job,
+    # so a fresh volume is all an upgrade needs.
+    image: getmeili/meilisearch:v1.54.3
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
+      MEILI_NO_ANALYTICS: "true"
+    volumes:
+      - meilisearch-v154:/meili_data
+    networks:
+      - default
+
+volumes:
+  movienight-data:
+  # Everyone's data. Back this up with your own Postgres or volume policy.
+  movienight-pg:
+  meilisearch-v154:
+
+networks:
+  default:
+  # The optional AI endpoint's network (LITELLM_BASE_URL is reached through
+  # it). It must exist before `docker compose up`; create an empty one:
+  # docker network create movienight-ai
+  ai:
+    external: true
+    name: ${AI_NETWORK_NAME:-movienight-ai}

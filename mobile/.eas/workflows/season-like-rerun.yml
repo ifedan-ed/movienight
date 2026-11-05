@@ -1,0 +1,20 @@
+# Liking an episode on the iPhone simulator, on an e2e build made earlier,
+# without building (builds cost money once the plan's credit is spent).
+# Started by scripts/e2e.sh <token-file> .eas/workflows/season-like-rerun.yml -F build_id=<id>
+name: season-like-rerun
+on:
+  workflow_dispatch:
+    inputs:
+      build_id:
+        type: string
+        required: true
+        description: An iPhone-simulator e2e build of the app
+jobs:
+  iphone:
+    name: Like an episode (iPhone simulator)
+    type: maestro
+    environment: development
+    params:
+      build_id: ${{ inputs.build_id }}
+      flow_path: ['.maestro/season/like-episode.yaml']
+      device_identifier: 'iPhone 16 Pro'

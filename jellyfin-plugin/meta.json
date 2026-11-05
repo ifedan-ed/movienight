@@ -1,0 +1,15 @@
+{
+  "category": "General",
+  "changelog": "1.0.2: an event dropped because Movie Night wasn't taking them is logged, never silent; how many are kept is a setting (any number from 1).",
+  "description": "Sends plays, progress and played marks to Movie Night.",
+  "guid": "5bf59830-f994-4e33-8e31-0b4570f490b2",
+  "name": "Movie Night",
+  "overview": "Plays and progress from Jellyfin to Movie Night.",
+  "owner": "movienight",
+  "targetAbi": "12.1.0.0",
+  "timestamp": "2026-10-05T00:00:00.0000000Z",
+  "version": "1.0.2.0",
+  "status": "Active",
+  "autoUpdate": true,
+  "assemblies": []
+}

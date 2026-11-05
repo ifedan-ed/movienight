@@ -1,0 +1,71 @@
+{
+  "expo": {
+    "name": "Movie Night",
+    "slug": "movienight",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.example.movienight",
+      "infoPlist": {
+        "LSApplicationQueriesSchemes": [
+          "vlc-x-callback",
+          "infuse",
+          "outplayer",
+          "nplayer-https",
+          "open-vidhub",
+          "SenPlayer",
+          "vlc-x-callback",
+          "infuse",
+          "outplayer",
+          "nplayer-https",
+          "open-vidhub",
+          "SenPlayer"
+        ],
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0d0f14",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "com.example.movienight"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-web-browser",
+      "expo-image",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0d0f14",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200
+        }
+      ]
+    ],
+    "scheme": "movienight",
+    "backgroundColor": "#0d0f14",
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {}
+    },
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    }
+  }
+}

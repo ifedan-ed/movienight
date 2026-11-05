@@ -1,0 +1,10 @@
+# The Android app to install by hand (APK), on the preview update channel.
+name: Android preview APK
+
+jobs:
+  build_android:
+    name: Build Android APK
+    type: build
+    params:
+      platform: android
+      profile: preview

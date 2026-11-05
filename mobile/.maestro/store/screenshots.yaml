@@ -1,0 +1,55 @@
+# App Store screenshots, on an iPhone 6.9" and an iPad 13" simulator, as the
+# screenshot user (store-screenshots) sees Movie Night.
+appId: com.example.movienight
+---
+- runFlow: ../shared/signin.yaml
+- extendedWaitUntil:
+    visible: "Movie Night"
+    timeout: 30000
+# The posters and the banner picture come over the network: give them time
+# (a wait for something that never shows, as Maestro has no pause).
+- extendedWaitUntil:
+    visible: "never-on-screen"
+    timeout: 10000
+    optional: true
+- takeScreenshot: 01-home
+- tapOn: "Discover(, tab.*)?"
+- waitForAnimationToEnd:
+    timeout: 8000
+- takeScreenshot: 02-discover
+- runFlow:
+    file: ../shared/open.yaml
+    env:
+      LINK: "movienight://title/movie/603"
+- waitForAnimationToEnd:
+    timeout: 8000
+- takeScreenshot: 03-title
+# A title page covers the tab bar, so go to Search by its link.
+- runFlow:
+    file: ../shared/open.yaml
+    env:
+      LINK: "movienight://search"
+- extendedWaitUntil:
+    visible:
+      id: "search-box"
+    timeout: 15000
+- tapOn:
+    id: "search-box"
+- inputText: "space"
+# Search's own key sends it and closes the keyboard, so the results show.
+- pressKey: Enter
+- extendedWaitUntil:
+    visible: "never-on-screen"
+    timeout: 6000
+    optional: true
+- takeScreenshot: 04-search
+# The keyboard can cover the tab bar, so Lists opens by its link.
+- runFlow:
+    file: ../shared/open.yaml
+    env:
+      LINK: "movienight://lists"
+- extendedWaitUntil:
+    visible: "never-on-screen"
+    timeout: 8000
+    optional: true
+- takeScreenshot: 05-lists

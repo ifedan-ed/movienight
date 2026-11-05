@@ -1,0 +1,36 @@
+# App Store screenshots: the e2e app for the iPhone simulator, then
+# .maestro/store/screenshots.yaml on an iPhone 16 Pro Max (6.9", 1320 x 2868)
+# and an iPad Pro 13-inch (2064 x 2752). Started by
+# scripts/e2e.sh <token-file> .eas/workflows/store-screenshots.yml (see RELEASING.md)
+name: store-screenshots
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    name: Build the e2e app (iPhone simulator)
+    type: build
+    params:
+      platform: ios
+      profile: e2e
+
+  iphone:
+    name: Screenshots (iPhone 6.9")
+    needs: [build]
+    type: maestro
+    environment: development
+    params:
+      build_id: ${{ needs.build.outputs.build_id }}
+      flow_path: ['.maestro/store/screenshots.yaml']
+      device_identifier: 'iPhone 16 Pro Max'
+
+  ipad:
+    name: Screenshots (iPad 13")
+    needs: [build]
+    type: maestro
+    environment: development
+    params:
+      build_id: ${{ needs.build.outputs.build_id }}
+      flow_path: ['.maestro/store/screenshots.yaml']
+      device_identifier: 'iPad Pro 13-inch (M4)'

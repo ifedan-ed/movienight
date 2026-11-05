@@ -1,0 +1,20 @@
+# Recently watched and Up next open the episode, on the iPhone simulator, on
+# an e2e build made earlier, without building.
+# Started by scripts/e2e.sh <token-file> .eas/workflows/episode-open-rerun.yml -F build_id=<id>
+name: episode-open-rerun
+on:
+  workflow_dispatch:
+    inputs:
+      build_id:
+        type: string
+        required: true
+        description: An iPhone-simulator e2e build of the app
+jobs:
+  iphone:
+    name: Open an episode from Recently watched and Up next (iPhone simulator)
+    type: maestro
+    environment: development
+    params:
+      build_id: ${{ inputs.build_id }}
+      flow_path: ['.maestro/episode/open-episode.yaml']
+      device_identifier: 'iPhone 16 Pro'

@@ -1,0 +1,7 @@
+# Not part of the image (the Dockerfile copies what it needs).
+.git
+mobile
+jellyfin-plugin/**/bin
+jellyfin-plugin/**/obj
+jellyfin-plugin/out
+**/__pycache__
