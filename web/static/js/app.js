@@ -1,6 +1,6 @@
 // Boot: router, the "Rate what you watched" bar, "Finished it?" after a
 // Play in another player, and the service worker (installable app).
-import { get, post } from "./api.js";
+import { get, post, reportTimeZone } from "./api.js";
 import { saveRating } from "./actions.js";
 import { currentName, onNavigate, start } from "./nav.js";
 import { checkOpenPlay } from "./play.js";
@@ -43,6 +43,7 @@ async function refreshRateBar(name) {
 
 onNavigate(refreshRateBar);
 start();
+reportTimeZone(); // after start: the first page never waits for it
 
 // Coming back from VLC / Infuse: ask whether it was watched to the end
 // (checked 1.5 s after the page loads and each time the tab comes back).

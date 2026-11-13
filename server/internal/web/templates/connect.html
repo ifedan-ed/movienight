@@ -1,0 +1,33 @@
+{{- /* Go copy of web/connect.html (same markup). Fields: Error, Device, Name, Challenge, Redirect, TS, Sig, CancelURL (a template.URL, checked by devices.RedirectOK first: html/template would otherwise refuse the app's movienight:// scheme). */ -}}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0d0f14">
+  <title>Sign in the Movie Night app</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <main class="page-center finished">
+    <img class="fin-poster" src="/static/icon-192.png" alt="">
+    {{if .Error}}
+      <h1>Can't sign in</h1>
+      <p class="soft">{{.Error}}</p>
+    {{else}}
+      <h1>Sign in the app?</h1>
+      <p class="soft">“{{.Device}}” will sign in as <b>{{.Name}}</b>.</p>
+      <form method="post" action="/app/connect">
+        <input type="hidden" name="challenge" value="{{.Challenge}}">
+        <input type="hidden" name="redirect" value="{{.Redirect}}">
+        <input type="hidden" name="device" value="{{.Device}}">
+        <input type="hidden" name="ts" value="{{.TS}}">
+        <input type="hidden" name="sig" value="{{.Sig}}">
+        <button class="btn btn-request" type="submit">Sign in the app</button>
+      </form>
+      <div style="height:8px"></div>
+      <a class="btn btn-quiet" href="{{.CancelURL}}">Cancel</a>
+    {{end}}
+  </main>
+</body>
+</html>

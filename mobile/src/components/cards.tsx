@@ -8,6 +8,7 @@ import { Image } from "expo-image";
 import { router } from "expo-router";
 
 import { authHeaders, serverUrl } from "../lib/api";
+import { usePullRefresh } from "../lib/pullRefresh";
 import { colors, gutter, img, radius } from "../lib/theme";
 import { remember, useTitleState } from "../lib/titleState";
 import type { Card, PageOut, PosterRow, UpNextItem } from "../lib/types";
@@ -149,6 +150,8 @@ export function InfiniteGrid<P extends Pick<PageOut, "items" | "more"> & { note?
     for (const page of q.data?.pages || []) for (const c of page.items) if (!seen.has(c.key)) { seen.add(c.key); out.push(c); }
     return out;
   }, [q.data]);
+  // Loading the next page is not a refresh: the wheel is for a pull only.
+  const wheel = usePullRefresh(() => q.refetch(), q.isRefetching && !q.isFetchingNextPage);
   const busy = q.isLoading || q.isFetchingNextPage;
   const error = q.error ? (q.error as Error).message : null;
   // Where the grid ends short of the list (TMDB serves only 500 pages), it says why.
@@ -167,8 +170,7 @@ export function InfiniteGrid<P extends Pick<PageOut, "items" | "more"> & { note?
       renderItem={({ item }) => <PosterCard c={item} width={cardW} />}
       onEndReachedThreshold={1.5}
       onEndReached={() => { if (q.hasNextPage && !q.isFetching && !q.isError) q.fetchNextPage(); }}
-      refreshing={q.isRefetching && !q.isFetchingNextPage}
-      onRefresh={() => q.refetch()}
+      {...wheel}
       ListFooterComponent={busy ? <Loading /> : error ? <Text style={{ color: colors.danger, padding: gutter }}>{error}</Text>
         : endNote ? <Text style={{ color: colors.text3, padding: gutter }}>{endNote}</Text> : null}
       ListEmptyComponent={!busy && !error ? <Text style={{ color: colors.text3, textAlign: "center", padding: 40 }}>{empty || "Nothing here yet."}</Text> : null}

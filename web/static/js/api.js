@@ -53,11 +53,31 @@ export function postRead(url, body = {}) { return call("POST", url, body); }
 export function put(url, body = {}) { cache.clear(); return call("PUT", url, body); }
 export function patch(url, body = {}) { cache.clear(); return call("PATCH", url, body); }
 export function del(url) { cache.clear(); return call("DELETE", url); }
+// /api/v1/me, read once per page load for what the shell needs from it (the
+// request limits, the stored time zone); {} when it can't be read.
+let meAsked = null;
+function me() {
+  meAsked ||= call("GET", "/api/v1/me").catch(() => { meAsked = null; return {}; });
+  return meAsked;
+}
+
 // The install's request shapes (/api/v1/me `limits`: BATCH_MAX_ITEMS, ...),
-// read once per page load, so calls are split to fit them.
-let limitsAsked = null;
+// so calls are split to fit them.
 export function limits() {
-  limitsAsked ||= call("GET", "/api/v1/me").then((me) => me.limits || {}).catch(() => { limitsAsked = null; return {}; });
-  return limitsAsked;
+  return me().then((m) => m.limits || {});
+}
+
+// The zone this browser runs in (an IANA name, from the system's setting,
+// never guessed from the address), sent once per page load when it differs
+// from the one the server has, so this person's days (history, "this
+// year", the daily rows, the digest weeks) are the browser's days. A failure
+// is left for the next page load.
+export async function reportTimeZone() {
+  let zone = null;
+  try { zone = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { /* no Intl: nothing to report */ }
+  if (!zone) return;
+  const m = await me();
+  if (!m.user || m.time_zone === zone) return;
+  try { await put("/api/v1/me/time-zone", { time_zone: zone }); } catch { /* tried again next load */ }
 }
 export function forget(prefix = "") { for (const k of [...cache.keys()]) if (k.startsWith(prefix)) cache.delete(k); }

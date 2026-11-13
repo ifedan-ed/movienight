@@ -9,6 +9,9 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.example.movienight",
+      "associatedDomains": [
+        "webcredentials:movienight.example.com"
+      ],
       "infoPlist": {
         "LSApplicationQueriesSchemes": [
           "vlc-x-callback",

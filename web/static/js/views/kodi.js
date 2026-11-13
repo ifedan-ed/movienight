@@ -23,15 +23,30 @@ export default async function render(root) {
     type: "text", placeholder: "ABCD-2345", maxlength: 12, autocapitalize: "characters", autocomplete: "off", spellcheck: "false",
     "aria-label": "Code shown on the TV", style: { letterSpacing: "0.12em", fontSize: "20px", textTransform: "uppercase" },
   });
+  // A confirmed code is not a signed-in TV yet: the TV gets its sign-in
+  // when it next asks (every few seconds), and only then is it listed. So
+  // the page shows it as waiting and looks again until it is there, instead
+  // of a list that stays empty after "Connect" until a reload.
+  let waiting = null; // the device name just confirmed, until the TV collects its sign-in
+  async function watchForTv(known) {
+    const until = Date.now() + 10 * 60 * 1000; // a code's lifetime
+    while (waiting && root.isConnected && Date.now() < until) {
+      await new Promise((r) => setTimeout(r, 3000)); // the TV's own polling interval
+      try { devices = await get("/api/v1/me/devices", { fresh: true }); } catch { continue; }
+      if (devices.some((d) => d.kind === "scrobble" && !known.has(d.id))) { waiting = null; paint(); return; }
+    }
+    if (waiting) { waiting = null; if (root.isConnected) paint(); }
+  }
   async function connect() {
     const code = codeInput.value.trim();
     if (!code) { codeInput.focus(); return; }
     try {
       const r = await post("/api/v1/me/devices/pair", { code });
       codeInput.value = "";
-      toast(`Connected ${r.device}`);
-      devices = await get("/api/v1/me/devices", { fresh: true });
+      toast(`Confirmed ${r.device}`);
+      waiting = r.device;
       paint();
+      watchForTv(new Set(devices.map((d) => d.id)));
     } catch (e) { toast(e.message, { error: true }); }
   }
   codeInput.addEventListener("keydown", (e) => { if (e.key === "Enter") connect(); });
@@ -45,8 +60,9 @@ export default async function render(root) {
         h("p.soft", "Open the Movie Night add-on in Kodi (Add-ons, Program add-ons). It shows a code; type it here."),
         h("div.two", { style: { alignItems: "center", gridTemplateColumns: "1fr auto" } }, codeInput,
           h("button.btn.btn-request", { onclick: connect }, icon("plug"), "Connect"))),
-      kodis.length ? h("div.panel",
+      kodis.length || waiting ? h("div.panel",
         h("h2", "Connected"),
+        waiting ? h("div.sres.waiting", h("div.tx", h("b", waiting), h("span", "Finishing on the TV…"))) : null,
         kodis.map((d) => h("div.sres",
           h("div.tx", h("b", d.name), h("span", d.last_used_at ? `Last report ${new Date(d.last_used_at).toLocaleDateString()}` : `Connected ${new Date(d.created_at).toLocaleDateString()}`),
             // Its sign-in runs out by itself: after a stretch unused, or a year after it connected.

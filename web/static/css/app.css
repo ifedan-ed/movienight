@@ -479,7 +479,8 @@ a.opt { text-decoration: none; }
 .soft { color: var(--text-3); font-size: 14.5px; margin: 4px 0 0; }
 .soft.guess-note { padding: 0 var(--gutter); margin: 0 0 12px; }
 .soft.row-note { padding: 0 var(--gutter); margin: 0; max-width: 70ch; }
-.btn.search-more { margin: 10px var(--gutter) 4px; }
+/* .btn is width 100%: less the side margins, or it sticks out past the page. */
+.btn.search-more { margin: 10px var(--gutter) 4px; width: calc(100% - 2 * var(--gutter)); }
 .intro { color: var(--text-2); font-size: 15.5px; padding: 0 var(--gutter); margin: 6px 0 4px; max-width: 70ch; }
 
 /* title page */

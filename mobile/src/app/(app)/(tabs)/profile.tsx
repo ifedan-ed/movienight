@@ -11,6 +11,7 @@ import { Icon, type IconName } from "@/components/Icon";
 import { Button, ErrorBox, Loading, SectionTitle } from "@/components/ui";
 import { api } from "@/lib/api";
 import { flush, waiting } from "@/lib/outbox";
+import { usePullRefresh } from "@/lib/pullRefresh";
 import { useSession } from "@/lib/session";
 import { colors, gutter } from "@/lib/theme";
 import type { HistoryOut, MeOut } from "@/lib/types";
@@ -42,6 +43,7 @@ export default function Profile() {
   };
   const me = useQuery({ queryKey: ["me"], queryFn: () => api.get<MeOut>("/api/v1/me") });
   const hist = useQuery({ queryKey: ["history", 1], queryFn: () => api.get<HistoryOut>("/api/v1/history?page=1") });
+  const wheel = usePullRefresh(() => Promise.all([me.refetch(), hist.refetch()]), me.isRefetching || hist.isRefetching);
   const w = usePosterWidth();
   const m = me.data;
   const s = m?.stats;
@@ -50,7 +52,7 @@ export default function Profile() {
   );
   return (
     <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: colors.bg }}>
-      <ScrollView refreshControl={<RefreshControl refreshing={me.isRefetching} onRefresh={() => { me.refetch(); hist.refetch(); }} tintColor={colors.accent} />} contentContainerStyle={{ paddingBottom: 60 }}>
+      <ScrollView refreshControl={<RefreshControl {...wheel} tintColor={colors.accent} />} contentContainerStyle={{ paddingBottom: 60 }}>
         {me.isLoading ? <Loading /> : me.error ? <ErrorBox message={(me.error as Error).message} onRetry={() => me.refetch()} /> : m && s ? (
           <>
             <View style={st.head}>

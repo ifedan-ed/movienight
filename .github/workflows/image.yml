@@ -1,6 +1,7 @@
 name: Docker image
 
-# A version tag (v1.2.3) publishes ghcr.io/<owner>/movienight:1.2.3 and :latest.
+# A version tag (v1.2.3) publishes ghcr.io/<owner>/movienight:1.2.3 and :latest:
+# the Go server's one image (api, worker, migrate, admin).
 on:
   push:
     tags: ["v*"]
@@ -31,6 +32,7 @@ jobs:
       - uses: docker/build-push-action@v6
         with:
           context: .
+          file: server/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

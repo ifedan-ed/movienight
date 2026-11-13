@@ -11,6 +11,7 @@ import { openTitle, RowView } from "@/components/cards";
 import { PrimaryButton } from "@/components/TitleActions";
 import { Chip, ErrorBox, Loading, SectionTitle, tap } from "@/components/ui";
 import { api } from "@/lib/api";
+import { usePullRefresh } from "@/lib/pullRefresh";
 import { colors, gutter, img } from "@/lib/theme";
 import { remember } from "@/lib/titleState";
 import type { Card, CardsOut, HomeOut, PosterRow, RowsOut } from "@/lib/types";
@@ -93,15 +94,12 @@ export default function Home() {
   const qc = useQueryClient();
   const spec = useQuery({ queryKey: ["home", tab], queryFn: () => api.get<HomeOut>(`/api/v1/home?tab=${tab}`) });
   const hero = useQuery({ queryKey: ["hero", tab], queryFn: () => api.get<CardsOut>(`/api/v1/hero?tab=${tab}`) });
-  const [refreshing, setRefreshing] = useState(false);
-  const refresh = async () => {
-    setRefreshing(true);
-    await qc.invalidateQueries();
-    setRefreshing(false);
-  };
+  // A pull reloads every query on the page (the rows are queries of their
+  // own); the wheel runs until they have all come back.
+  const wheel = usePullRefresh(() => qc.invalidateQueries());
   return (
     <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: colors.bg }}>
-      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.accent} />} contentContainerStyle={{ paddingBottom: 40 }}>
+      <ScrollView refreshControl={<RefreshControl {...wheel} tintColor={colors.accent} />} contentContainerStyle={{ paddingBottom: 40 }}>
         <Text style={st.h1}>Movie Night</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: gutter, gap: 8, paddingVertical: 8 }}>
           {TABS.map(([id, label, icon]) => <Chip key={id} label={label} icon={icon} on={tab === id} onPress={() => { tap(); setTab(id); }} />)}

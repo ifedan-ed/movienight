@@ -26,13 +26,32 @@ Every limit and timer the app has (cache, outbox, timeouts, updates) is in
 ## Signing in
 
 The app opens `/app/connect` on your server in a sign-in sheet. That page
-needs a signed-in person, so if you are signed out it sends the sheet to your
-OIDC provider (the app's own sign-in, since 2026-10-16), and comes back to the
-page when you are in. You confirm (the page is valid for 10 minutes). The page
+needs a signed-in person, so if you are signed out it sends the sheet to the
+server's sign-in page (`/signin`, with password sign-in on) or straight to
+your OIDC provider, and comes back to the page when you are in. You confirm (the page is valid for 10 minutes). The page
 hands the app a one-time code (valid 5 minutes, usable once), and the app
 swaps it for its own token (PKCE: only the app that asked can swap the code).
 The token is kept in the iOS Keychain / Android Keystore and sent as
 `Authorization: Bearer mn_app_...`.
+
+**Username and password** (where the server has `PASSWORD_SIGNIN=true`): the
+sign-in screen asks `GET /api/v1/auth/methods` for the address typed (after a
+400 ms pause) and, when `password` is true, shows username and password
+fields above the browser button (labelled with the server's
+`OIDC_BUTTON_LABEL`; left out when OIDC isn't set up). They post to
+`POST /api/v1/auth/password` and get the same kind of token. The server's
+sentence is shown under the fields: wrong pair, locked for 15 minutes after
+five wrong passwords, or password sign-in turned off. No answer, or a server
+from before this, shows the browser sign-in only. The fields carry
+`textContentType`/`autoComplete` username and password, and `app.json` has
+`ios.associatedDomains: ["webcredentials:movienight.example.com"]`, so iOS
+offers the password saved for the site: the server answers
+`/.well-known/apple-app-site-association` with the app id in its
+`APPLE_APP_ID` setting (your Apple team id and this `bundleIdentifier`, e.g.
+`ABCDE12345.com.example.movienight`; unset, no autofill). A build for
+another server names that server's host in `associatedDomains`. The
+entitlement is native: it reaches phones only with a new build, not an
+over-the-air update.
 
 **The sheet is private on iPhone** (`preferEphemeralSession`, since
 2026-10-08): it shares no cookies with Safari, so every sign-in asks for the
@@ -50,7 +69,7 @@ it starts clean. A device token (the phone's, or Kodi's) runs out after 90
 days unused and a year after sign-in. A device that ran out is deleted when
 it is next used and whenever Signed-in devices is opened, so the list only
 shows devices that still work. An admin signs out every device of one person
-with `docker compose exec web python -m scripts.sign_out_devices <username>`.
+with `docker compose exec api admin devices signout <username>`.
 
 Nothing has to be let through a proxy gate any more: sign-in is the app's own
 OIDC, and the phone's token calls (`/api/v1/app/token`, and `/api/v1/*` with

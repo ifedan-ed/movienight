@@ -10,6 +10,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Icon, type IconName } from "@/components/Icon";
 import { Chip, ErrorBox, Loading, SectionTitle, tap, useToast } from "@/components/ui";
 import { api } from "@/lib/api";
+import { usePullRefresh } from "@/lib/pullRefresh";
 import { colors, gutter, img } from "@/lib/theme";
 import type { ListSummary, ListsOut } from "@/lib/types";
 
@@ -65,6 +66,7 @@ export default function Lists() {
   const qc = useQueryClient();
   const toast = useToast();
   const q = useQuery({ queryKey: ["lists"], queryFn: () => api.get<ListsOut>("/api/v1/lists") });
+  const wheel = usePullRefresh(() => q.refetch(), q.isRefetching);
 
   const flag = async (l: ListSummary, field: "starred" | "pinned") => {
     const next = !l[field];
@@ -85,7 +87,7 @@ export default function Lists() {
 
   return (
     <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: colors.bg }}>
-      <ScrollView refreshControl={<RefreshControl refreshing={q.isRefetching} onRefresh={() => q.refetch()} tintColor={colors.accent} />} contentContainerStyle={{ paddingBottom: 60 }}>
+      <ScrollView refreshControl={<RefreshControl {...wheel} tintColor={colors.accent} />} contentContainerStyle={{ paddingBottom: 60 }}>
         <View style={st.head}>
           <Text style={st.h1}>Lists</Text>
           <Pressable onPress={() => router.push("/mdblist")} style={st.iconbtn} accessibilityLabel="Find lists on MDBList"><Icon name="search" /></Pressable>

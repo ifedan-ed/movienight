@@ -1,0 +1,57 @@
+{
+  "secret_key": "fixture-secret-key",
+  "scrypt": [
+    {
+      "password": "correct horse battery",
+      "hash": "scrypt$32768$8$1$u6Y/QhGdV3aIFiq2foAJ3Q==$PrO3UOU/kMNSB3zLoKJ1gjyGRMRqUXgnxnq9Pjq72gI="
+    },
+    {
+      "password": "ünïcødé pässwörd ✓",
+      "hash": "scrypt$32768$8$1$AhwrKUJCt2wBeHFmZ7rTTA==$KsOOw5XelZfDUAGJhrcEByVGtZLwxkc0RF7o7ekYh0c="
+    },
+    {
+      "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "hash": "scrypt$32768$8$1$ckT4o9Pq7F2zfUa8qkRXTg==$fCJ4y3xvYizqjmoaQBsPkMFvO47W/GXispapMfIFPK8="
+    }
+  ],
+  "fernet": [
+    {
+      "plain": "jellyfin-access-token-0123456789abcdef",
+      "token": "gAAAAABq9hO9OmsDvOgna7I66mqsVPyZRKz5GejqwzfBtyAxSVP5dn2AaEOFZUZUyHS9rXMVZDTv5qR-t8YR7a4PbVRHJiHioiTKxlNn4_YlADMnmPPxQ1grD2DBCCb7ckigQeDppDXH"
+    },
+    {
+      "plain": "",
+      "token": "gAAAAABq9hO9xSWIe4fTrIYtX3FCNoPY572Y4Q1l4hr7zTLcjDtrUS7RCtCp5FLGtuH_dAR9kdcBwRe2dXbI2CcZKnPUlh_Axg=="
+    },
+    {
+      "plain": "ünïcødé",
+      "token": "gAAAAABq9hO9tvCPcdklM6x4PS2TQJhT0kXTcjMZDeged0ej_qljxHMN5uhFqlOjbmqgJxEW4sGQp5hwPtCcbiULDgwthqrFeA=="
+    }
+  ],
+  "token_hash": [
+    {
+      "token": "mn_app_abc",
+      "hash": "aa665368ec8154d5cde2dd13b9ee0d43ddd57d0720ca75a2fcdd83b1902ee70e"
+    },
+    {
+      "token": "mn_kodi_xyz",
+      "hash": "ea13005674e2dbe08fd37785a2a75970c4fb5e3021805f3d54e3941d7ffdd46d"
+    },
+    {
+      "token": "",
+      "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "pkce": {
+    "verifier": "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk-and-more-chars",
+    "challenge": "lsR8AWufFMPq-c666-mPPFEeG7c1ZVdFxJ2zZ_QUmw0"
+  },
+  "form_sig": {
+    "username": "alice",
+    "challenge": "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM",
+    "redirect": "movienight://auth",
+    "device": "Pixel 9",
+    "ts": 1762900000,
+    "sig": "011993054d390eab29685554d4dc6cac1103b4526de4e50ee71635d6f47f11d3"
+  }
+}

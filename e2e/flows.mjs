@@ -1,5 +1,6 @@
-// Browser flows on a phone (WebKit as iPhone, Chromium as Android) against
-// the e2e server (tests/e2e_server.py, fake upstreams). Run with e2e/run.sh.
+// Browser flows on a phone (WebKit as iPhone, Chromium as Android) and a
+// desktop against the Go server with fake upstreams
+// (server/internal/server/e2e_serve_test.go). Run with e2e/run.sh.
 import { createRequire } from "module";
 
 const require = createRequire(import.meta.url);
@@ -26,10 +27,11 @@ function expect(cond, message) {
   if (!cond) throw new Error(message);
 }
 
-async function run(name, browserType, device) {
+// zone: the time zone the browser runs in (each person's days follow it).
+async function run(name, browserType, device, zone) {
   console.log(`${name}:`);
   const browser = await browserType.launch();
-  const ctx = await browser.newContext({ ...device, extraHTTPHeaders: { "X-Authentik-Username": `e2e-${name}` } });
+  const ctx = await browser.newContext({ ...device, timezoneId: zone, extraHTTPHeaders: { "X-Dev-User": `e2e-${name}` } });
   const page = await ctx.newPage();
   current = page;
   const errors = [];
@@ -42,6 +44,22 @@ async function run(name, browserType, device) {
     await go("/");
     await page.waitForSelector("section.row .card", { timeout: 15000 });
     expect(await page.locator(".err-box").count() === 0, "an error box is showing");
+  });
+
+  await step("the browser's time zone is reported once", async () => {
+    let stored = null;
+    for (let i = 0; i < 25 && stored !== zone; i++) {
+      stored = (await (await ctx.request.get(`${BASE}/api/v1/me`)).json()).time_zone;
+      if (stored !== zone) await page.waitForTimeout(200);
+    }
+    expect(stored === zone, `the server has ${stored}, the browser runs in ${zone}`);
+    // Stored now: the next page load asks /me and sends nothing.
+    const puts = [];
+    const watch = (r) => { if (r.url().endsWith("/api/v1/me/time-zone")) puts.push(r); };
+    page.on("request", watch);
+    await go("/");
+    page.off("request", watch);
+    expect(puts.length === 0, "sent again though the server has it");
   });
 
   await step("rate with a comment; it shows under Ratings on Movie Night", async () => {
@@ -267,9 +285,12 @@ async function run(name, browserType, device) {
     await go("/settings/kodi");
     await page.locator("input[aria-label='Code shown on the TV']").fill(tv.code.toLowerCase());
     await page.locator("button", { hasText: "Connect" }).first().click();
-    await page.waitForSelector(`.sres b:has-text('Kodi (${name})')`, { timeout: 5000 });
+    // Confirmed, the TV is shown as finishing until it collects its sign-in.
+    await page.waitForSelector(`.sres.waiting b:has-text('Kodi (${name})')`, { timeout: 5000 });
     const got = await post("/api/v1/scrobble/pair/poll", { poll: tv.poll });
     expect(got.status === "ok" && got.token.startsWith("mn_kodi_"), "the TV didn't get its token");
+    // Then the page lists it as signed in, by itself.
+    await page.waitForSelector(`.sres:not(.waiting) b:has-text('Kodi (${name})')`, { timeout: 10000 });
   });
 
   await step("no script errors on any page", async () => { expect(errors.length === 0, errors.join(" | ")); });
@@ -279,7 +300,7 @@ async function run(name, browserType, device) {
 async function wide() {
   console.log("desktop:");
   const browser = await chromium.launch();
-  const ctx = await browser.newContext({ viewport: { width: 1600, height: 900 }, extraHTTPHeaders: { "X-Authentik-Username": "e2e-desktop" } });
+  const ctx = await browser.newContext({ viewport: { width: 1600, height: 900 }, extraHTTPHeaders: { "X-Dev-User": "e2e-desktop" } });
   const page = await ctx.newPage();
   await step("See all keeps loading on a wide screen", async () => {
     await page.goto(`${BASE}/browse?key=popular&tab=movies&title=Popular`, { waitUntil: "networkidle" });
@@ -291,8 +312,8 @@ async function wide() {
   await browser.close();
 }
 
-await run("webkit", webkit, devices["iPhone 13"]);
-await run("chromium", chromium, devices["Pixel 7"]);
+await run("webkit", webkit, devices["iPhone 13"], "Pacific/Auckland");
+await run("chromium", chromium, devices["Pixel 7"], "Europe/Berlin");
 await wide();
 console.log(failures ? `${failures} FAILED` : "all passed");
 process.exit(failures ? 1 : 0);

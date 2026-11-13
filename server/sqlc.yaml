@@ -1,0 +1,31 @@
+# sqlc turns the SQL in db/queries into typed Go (internal/store). Regenerate
+# after changing a query or adding a migration: server/scripts/sqlc.sh.
+version: "2"
+sql:
+  - engine: postgresql
+    schema:
+      - db/schema.sql
+      - db/migrations
+    queries: db/queries
+    gen:
+      go:
+        package: store
+        out: internal/store
+        sql_package: pgx/v5
+        emit_pointers_for_null_types: true
+        emit_json_tags: false
+        overrides:
+          - db_type: timestamptz
+            go_type: time.Time
+          - db_type: timestamptz
+            nullable: true
+            go_type:
+              type: time.Time
+              pointer: true
+          - db_type: pg_catalog.timestamptz
+            go_type: time.Time
+          - db_type: pg_catalog.timestamptz
+            nullable: true
+            go_type:
+              type: time.Time
+              pointer: true

@@ -7,7 +7,7 @@ hide: [navigation, toc]
 
 # Movie Night
 
-**A self-hosted movie and TV tracker for you and the people on your Jellyfin server.**
+A self-hosted movie and TV tracker for you and the people on your Jellyfin server.
 Watch history, ratings, lists, requests and "what's next", on the web, iPhone, Android, Kodi and Jellyfin.
 
 [Self-host it](self-hosting.md){ .md-button .md-button--primary } [View on GitHub](https://github.com/ifedan-ed/movienight){ .md-button }
@@ -24,35 +24,35 @@ Watch history, ratings, lists, requests and "what's next", on the web, iPhone, A
 
 <div class="grid cards" markdown>
 
--   **Your own watch diary**
+-   Your own watch diary
 
     Films and episodes you've watched, ratings from 1 to 10 with a short comment, a watchlist, favourites and lists of your own.
 
--   **Shows, season by season**
+-   Shows, season by season
 
     Tick off episodes, heart and rate single episodes, and see what's up next in everything you follow.
 
--   **Home that knows your server**
+-   Home that knows your server
 
     Recently added, up next, trending, coming soon, "because you watched" and AI-picked themes (optional).
 
--   **Search by plot**
+-   Search by plot
 
     Describe the film you half remember; with an AI endpoint set up, Movie Night names its best guess.
 
--   **Jellyfin built in**
+-   Jellyfin built in
 
     Library sync, Jellyfin plays added to your history, ticks sent back, and a plugin for progress from any Jellyfin app.
 
--   **Play anywhere**
+-   Play anywhere
 
     VLC, Infuse, Outplayer, nPlayer, VidHub, SenPlayer, Swiftfin, Streamyfin or your own player link, with subtitles.
 
--   **Requests**
+-   Requests
 
     Ask for a film or show through Seerr (optional) and follow it from waiting to available.
 
--   **Private**
+-   Private
 
     No ads, no analytics, no tracking. Everything stays on your server, and everyone can download their own data.
 
@@ -64,9 +64,9 @@ Watch history, ratings, lists, requests and "what's next", on the web, iPhone, A
 
 ![How Movie Night fits together](images/architecture.svg)
 
-Movie Night is one Docker Compose stack — the app, Postgres and Meilisearch — behind your own reverse proxy. Titles and artwork come from [TMDB](https://www.themoviedb.org/) (a free API key). Jellyfin, Seerr, MDBList, an OpenAI-compatible AI endpoint and SMTP are all optional.
+Movie Night is one Docker Compose stack behind your own reverse proxy: a small Go server (an `api` that serves and a `worker` that runs the background jobs, from one image), Postgres for everyone's data, Meilisearch for search and Valkey for shared caches and queues. Titles and artwork come from [TMDB](https://www.themoviedb.org/) (a free API key), and your library and plays from your Jellyfin server. Seerr, MDBList, an OpenAI-compatible AI endpoint and SMTP are optional.
 
-People sign in with a username and password you give them, with your OIDC provider (Authentik, Keycloak, Pocket ID, …), or either. The phone app, Kodi add-on and Jellyfin plugin use their own device tokens.
+People sign in with a username and password you give them, with your OIDC provider (Authentik, Keycloak, Pocket ID, ...), or either, on the website and in the phone app. The Kodi add-on and Jellyfin plugin use their own device tokens. Each person's days and digest weeks follow the time zone their browser or phone reports.
 
 !!! note "A watch diary, not a media source"
     Movie Night does not host, provide, stream, download or index films or television. It keeps what you and your people enter, and can read play state from a Jellyfin server you control.

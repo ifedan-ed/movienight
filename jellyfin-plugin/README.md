@@ -52,23 +52,14 @@ From Movie Night's own catalog, like any other plugin:
 3. Dashboard → Plugins → Movie Night: the Movie Night address (for example
    `https://movienight.example.com`), the token, and how often to send progress.
 
-The catalog (`app/web/jellyfin_catalog.py`) serves the plugin built from this
+The catalog (`server/internal/addons`) serves the plugin built from this
 folder in Movie Night's image, its picture (`movie-night.png`) and the details in
 `meta.json`. A new version: raise the version in `meta.json` and in the `.csproj`
 (Jellyfin offers the update), then rebuild Movie Night's image.
 
-## Test
-
-`jellyfin-plugin/e2e/run.sh` (after building) starts a throwaway Jellyfin 12.1
-with the plugin and two one-minute test videos, and a throwaway Movie Night with
-its own Postgres, plays through Jellyfin's own API and checks Movie Night's
-database after each step: progress kept, pause, a finished film recorded once
-and its progress cleared, an episode stopped halfway kept as progress and not a
-watch, played and unplayed marks. Everything listens on this host only and is
-removed at the end.
+## Notes
 
 Two things Jellyfin decides, not the plugin: it estimates the position between
 a player's reports, and it never resumes anything shorter than its
 *MinResumeDurationSeconds* (5 minutes by default) — stopping one counts as
-played. The test lowers that setting on its own Jellyfin so a stop halfway can
-be tested with one-minute videos.
+played.

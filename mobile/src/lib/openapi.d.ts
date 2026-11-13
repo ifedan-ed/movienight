@@ -24,6 +24,90 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/methods": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Sign In Methods
+         * @description How this Movie Night lets people sign in (no sign-in needed): the phone app shows its
+         *     username and password fields only when `password` is true.
+         */
+        get: operations["sign_in_methods_api_v1_auth_methods_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/oidc/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Oidc Callback
+         * @description Finish the sign-in: exchange the code, read the ID token, sign in.
+         */
+        get: operations["oidc_callback_api_v1_auth_oidc_callback_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/oidc/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Oidc Login
+         * @description Send the person to the provider (a redirect). Where to come back to, the `next` query
+         *     parameter, is kept with the sign-in's state on the server.
+         */
+        get: operations["oidc_login_api_v1_auth_oidc_login_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Password Sign In
+         * @description The phone app's username and password sign-in (PASSWORD_SIGNIN): the same device token
+         *     as /app/token. 404 when password sign-in is off, 401 for a wrong pair, 429 after five wrong
+         *     passwords for one username from one address (for 15 minutes; the sign-in page counts too).
+         */
+        post: operations["password_sign_in_api_v1_auth_password_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/browse": {
         parameters: {
             query?: never;
@@ -149,27 +233,6 @@ export interface paths {
         get: operations["get_history_api_v1_history_get"];
         put?: never;
         post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/history/remove": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Remove History
-         * @description Delete watches from the History page (any title, including ones with
-         *     no TMDB match).
-         */
-        post: operations["remove_history_api_v1_history_remove_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -405,9 +468,8 @@ export interface paths {
         };
         /**
          * Mdblist Explore
-         * @description No query: MDBList's top lists. A link or list id: that list. Any
-         *     other text: list search. Answered from Movie Night's own copy while
-         *     MDBList can't (services/mdblist_copy.py).
+         * @description No query: MDBList's top lists. A link or list id: that list. Any other text: list search. Answered from
+         *     Movie Night's own copy while MDBList can't.
          */
         get: operations["mdblist_explore_api_v1_mdblist_lists_get"];
         put?: never;
@@ -427,8 +489,7 @@ export interface paths {
         };
         /**
          * Mdblist Preview
-         * @description A list before following it: details and its titles as cards (from
-         *     Movie Night's own copy while MDBList can't answer).
+         * @description A list before following it: details and its titles as cards.
          */
         get: operations["mdblist_preview_api_v1_mdblist_lists__mdblist_id__get"];
         put?: never;
@@ -506,23 +567,6 @@ export interface paths {
         post?: never;
         /** Sign Out Device */
         delete: operations["sign_out_device_api_v1_me_devices__device_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/me/digests": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Digests */
-        get: operations["list_digests_api_v1_me_digests_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -717,6 +761,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/me/time-zone": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Put Time Zone
+         * @description Store the time zone this browser or phone runs in (an IANA name such as
+         *     Europe/Berlin). History's days, "this year", the daily rows and the
+         *     digest periods follow it. An unknown name is refused (422).
+         */
+        put: operations["put_time_zone_api_v1_me_time_zone_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/person/{person_id}": {
         parameters: {
             query?: never;
@@ -859,23 +925,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/ratings": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Ratings */
-        get: operations["get_ratings_api_v1_ratings_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/requests": {
         parameters: {
             query?: never;
@@ -961,8 +1010,8 @@ export interface paths {
         /**
          * Jellyfin Plugin Event
          * @description Events from the Movie Night plugin for Jellyfin, for every app that
-         *     plays through Jellyfin: playback start, progress, pause and stop keep
-         *     watch progress; played and unplayed marks keep history. Same shared
+         *     plays through Jellyfin: playback start, progress, pause and stop keep watch
+         *     progress; played and unplayed marks keep history. Same shared
          *     secret as the webhook (X-MovieNight-Token).
          */
         post: operations["jellyfin_plugin_event_api_v1_scrobble_jellyfin_events_post"];
@@ -1015,11 +1064,10 @@ export interface paths {
         };
         /**
          * Search
-         * @description Your library, every rated title on TMDB (the catalog index: by meaning
-         *     and keywords, so a described plot works) and TMDB's live title search
-         *     (new releases, exact names), ranked on one scale. `first` says which
-         *     section holds the best match. `page` 2, 3, ... answers with more of each
-         *     section (the matches before included); `more` says which have more.
+         * @description Your library, every rated title on TMDB (the catalog index: by meaning and keywords, so a described plot
+         *     works) and TMDB's live title search (new releases, exact names), ranked on one scale. `first` says which
+         *     section holds the best match. `page` 2, 3, ... answers with more of each section (the matches before
+         *     included); `more` says which have more.
          */
         get: operations["search_api_v1_search_get"];
         put?: never;
@@ -1039,8 +1087,8 @@ export interface paths {
         };
         /**
          * Search Ai
-         * @description The AI's best guess for a described plot (only when SEARCH_AI_MODEL is
-         *     set): the films it names, as cards, each with a few words on why.
+         * @description The AI's best guess for a described plot (only when SEARCH_AI_MODEL is set): the films it names, as
+         *     cards, each with a few words on why.
          */
         get: operations["search_ai_api_v1_search_ai_get"];
         put?: never;
@@ -1145,19 +1193,12 @@ export interface paths {
         /**
          * Rate Episode
          * @description Rate one episode, 1 to 10 like a title (the stars next to its heart on
-         *     the season page); rating it again replaces the rating. PUT or POST. It
-         *     doesn't rate the show, and it isn't counted in Ratings, Your ratings, the
-         *     community average, the AI picks or digests.
+         *     the season page); rating it again replaces the rating. It doesn't rate
+         *     the show, and it isn't counted in Ratings, Your ratings, the community
+         *     average, the AI picks or digests.
          */
         put: operations["rate_episode_api_v1_title__media___tmdb_id__episode__season___episode__rating_put"];
-        /**
-         * Rate Episode
-         * @description Rate one episode, 1 to 10 like a title (the stars next to its heart on
-         *     the season page); rating it again replaces the rating. PUT or POST. It
-         *     doesn't rate the show, and it isn't counted in Ratings, Your ratings, the
-         *     community average, the AI picks or digests.
-         */
-        post: operations["rate_episode_api_v1_title__media___tmdb_id__episode__season___episode__rating_post"];
+        post?: never;
         /**
          * Unrate Episode
          * @description Remove one episode's rating: its row is deleted. An episode that
@@ -1180,7 +1221,7 @@ export interface paths {
         put?: never;
         /**
          * Mark Episodes
-         * @description Tick or untick episodes (a whole season is a list of them).
+         * @description Tick or untick episodes (a whole season is a list of them), all at once.
          */
         post: operations["mark_episodes_api_v1_title__media___tmdb_id__episodes_post"];
         delete?: never;
@@ -1365,7 +1406,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Status */
+        /**
+         * Get Status
+         * @description Fresh request and download state, for the polling request button. Seerr's record is shared
+         *     by every poller for a few seconds (one call per title per window).
+         */
         get: operations["get_status_api_v1_title__media___tmdb_id__status_get"];
         put?: never;
         post?: never;
@@ -1451,2041 +1496,1343 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** AddedOut */
         AddedOut: {
-            /** Added */
             added: boolean;
-            /**
-             * Ok
-             * @default true
-             */
+            /** @default true */
             ok: boolean;
         };
-        /** AiGuess */
         AiGuess: {
             card: components["schemas"]["Card"];
-            /** Why */
             why?: string | null;
         };
-        /** AiGuessOut */
         AiGuessOut: {
-            /** Enabled */
             enabled: boolean;
-            /** Matches */
             matches: components["schemas"]["AiGuess"][];
-            /** Note */
             note?: string | null;
         };
-        /** AppTokenIn */
         AppTokenIn: {
-            /** Code */
             code: string;
-            /** Verifier */
             verifier: string;
+        } & {
+            [key: string]: unknown;
         };
-        /** AppTokenOut */
         AppTokenOut: {
-            /** Device Id */
+            /** Format: int32 */
             device_id: number;
-            /**
-             * Ok
-             * @default true
-             */
+            /** @default true */
             ok: boolean;
-            /** Token */
             token: string;
-            /** User */
             user: string;
         };
-        /** BackOut */
         BackOut: {
-            /** Ask */
             ask: boolean;
             session: components["schemas"]["PlaySessionOut"];
         };
-        /**
-         * Card
-         * @description A title as every grid and row shows it.
-         */
         Card: {
-            /** Backdrop */
             backdrop?: string | null;
-            /**
-             * Favorite
-             * @default false
-             */
+            /** @default false */
             favorite: boolean;
-            /** Genres */
             genres?: string[] | null;
-            /** Hero Label */
             hero_label?: string | null;
-            /**
-             * In Library
-             * @default false
-             */
+            /** @default false */
             in_library: boolean;
-            /** Jellyfin Id */
             jellyfin_id?: string | null;
-            /** Jellyfin Url */
             jellyfin_url?: string | null;
-            /**
-             * Key
-             * @example movie:603
-             */
+            /** @example movie:603 */
             key: string;
-            /** Media Status */
             media_status?: string | null;
-            media_type: components["schemas"]["MediaType"];
-            /** Overview */
+            /** @enum {string} */
+            media_type: "movie" | "tv";
             overview?: string | null;
-            /** Poster */
             poster?: string | null;
-            progress?: components["schemas"]["Progress"] | null;
-            /** Rating */
+            progress?: components["schemas"]["Progress"];
+            /** Format: int64 */
             rating?: number | null;
-            /** Request */
-            request?: ("pending" | "processing" | "partial" | "available" | "dry_run") | null;
-            /** Request Status */
+            /** @enum {string|null} */
+            request?: "pending" | "processing" | "partial" | "available" | "dry_run" | null;
             request_status?: string | null;
-            /** Requested At */
             requested_at?: string | null;
-            /** Requested By */
             requested_by?: string | null;
-            /** Title */
             title: string;
-            /** Tmdb Id */
+            /** Format: int64 */
             tmdb_id: number;
-            /** Vote */
+            /** Format: double */
             vote?: number | null;
             /**
-             * Watched
+             * Format: int64
              * @default 0
              */
             watched: number;
-            /**
-             * Watchlist
-             * @default false
-             */
+            /** @default false */
             watchlist: boolean;
-            /** Year */
+            /** Format: int64 */
             year?: number | null;
         };
-        /** CardsOut */
         CardsOut: {
-            /** Items */
             items: components["schemas"]["Card"][];
         };
-        /** CastMember */
         CastMember: {
-            /** Character */
             character?: string | null;
-            /** Id */
+            /** Format: int64 */
             id?: number | null;
-            /** Name */
             name?: string | null;
-            /** Photo */
             photo?: string | null;
         };
-        /** ChangedOut */
         ChangedOut: {
-            /** Changed */
+            /** Format: int64 */
             changed: number;
-            /**
-             * Ok
-             * @default true
-             */
+            /** @default true */
             ok: boolean;
         };
-        /** Collection */
         Collection: {
-            /** Backdrop */
             backdrop?: string | null;
-            /** Id */
+            /** Format: int64 */
             id?: number | null;
-            /** Name */
             name?: string | null;
-            /** Poster */
             poster?: string | null;
         };
-        /** CollectionOut */
         CollectionOut: {
-            /** Count */
+            /** Format: int64 */
             count: number;
-            /** Items */
             items: components["schemas"]["Card"][];
-            /** More */
             more: boolean;
-            /** Name */
             name: string;
-            /** Page */
+            /** Format: int64 */
             page: number;
         };
-        /**
-         * Community
-         * @description Ratings from the people on this install (this install).
-         */
         Community: {
-            /** Average */
+            /** Format: double */
             average?: number | null;
             /**
-             * Count
+             * Format: int64
              * @default 0
              */
             count: number;
-            mine?: components["schemas"]["RatingEntry"] | null;
-            /**
-             * Others
-             * @default []
-             */
+            mine?: components["schemas"]["RatingEntry"];
+            /** @default [] */
             others: components["schemas"]["RatingEntry"][];
         };
-        /** CountOut */
         CountOut: {
-            /** Count */
+            /** Format: int64 */
             count: number;
-            /**
-             * Ok
-             * @default true
-             */
+            /** @default true */
             ok: boolean;
         };
-        /** CreatedOut */
         CreatedOut: {
-            /** Id */
+            /** Format: int32 */
             id: number;
-            /**
-             * Ok
-             * @default true
-             */
+            /** @default true */
             ok: boolean;
         };
-        /** CustomPlayerIn */
         CustomPlayerIn: {
-            /** Name */
             name: string;
-            /** Template */
             template: string;
+        } & {
+            [key: string]: unknown;
         };
-        /** DeviceOut */
         DeviceOut: {
-            /** Created At */
             created_at: string;
-            /** Expires At */
             expires_at: string;
-            /**
-             * Expires Because
-             * @enum {string}
-             */
+            /** @enum {string} */
             expires_because: "unused" | "age";
-            /** Id */
+            /** Format: int32 */
             id: number;
             /**
-             * Kind
              * @default app
              * @enum {string}
              */
             kind: "app" | "scrobble";
-            /** Last Used At */
             last_used_at?: string | null;
-            /** Name */
             name: string;
         };
-        /** DigestOut */
         DigestOut: {
-            /** Id */
+            /** Format: int32 */
             id: number;
-            /**
-             * Kind
-             * @enum {string}
-             */
+            /** @enum {string} */
             kind: "week" | "month" | "year";
-            /** Model */
             model?: string | null;
-            /** Period End */
             period_end: string;
-            /** Period Start */
             period_start: string;
-            /** Sent At */
             sent_at?: string | null;
-            /** Sent To */
             sent_to?: string | null;
-            /** Subject */
             subject: string;
         };
-        /** EmailSettings */
         EmailSettings: {
-            /** Address */
             address?: string | null;
-            /** Monthly */
             monthly: boolean;
-            /** Weekly */
             weekly: boolean;
-            /** Yearly */
             yearly: boolean;
         };
-        /** EmailSettingsIn */
         EmailSettingsIn: {
-            /** Address */
             address?: string | null;
-            /** Monthly */
             monthly?: boolean | null;
-            /** Weekly */
             weekly?: boolean | null;
-            /** Yearly */
             yearly?: boolean | null;
+        } & {
+            [key: string]: unknown;
         };
-        /** Episode */
         Episode: {
-            /** Air Date */
             air_date?: string | null;
-            /** Aired */
             aired: boolean;
-            /**
-             * Favorite
-             * @default false
-             */
+            /** @default false */
             favorite: boolean;
-            /**
-             * In Library
-             * @default false
-             */
+            /** @default false */
             in_library: boolean;
-            /** Jellyfin Id */
             jellyfin_id?: string | null;
-            /** Last Watched At */
             last_watched_at?: string | null;
-            /** Name */
             name: string;
-            /** Number */
+            /** Format: int64 */
             number: number;
-            /** Overview */
             overview?: string | null;
-            /** Rating */
+            /** Format: int64 */
             rating?: number | null;
-            /** Runtime */
+            /** Format: int64 */
             runtime?: number | null;
-            /** Still */
             still?: string | null;
-            /** Vote */
+            /** Format: double */
             vote?: number | null;
-            /**
-             * Watch Ids
-             * @default []
-             */
+            /** @default [] */
             watch_ids: number[];
             /**
-             * Watched
+             * Format: int64
              * @default 0
              */
             watched: number;
         };
-        /** EpisodeMark */
         EpisodeMark: {
-            /** Episode */
+            /** Format: int64 */
             episode: number;
-            /** Season */
+            /** Format: int64 */
             season: number;
+        } & {
+            [key: string]: unknown;
         };
-        /**
-         * EpisodeRatingIn
-         * @description An episode's rating: the same scale as a title's (1 to 10, two points a
-         *     star), stars only (an episode has no comment).
-         */
         EpisodeRatingIn: {
-            /** Rating */
+            /** Format: int64 */
             rating: number;
+        } & {
+            [key: string]: unknown;
         };
-        /** EpisodeRatingOut */
         EpisodeRatingOut: {
-            /**
-             * Ok
-             * @default true
-             */
+            /** @default true */
             ok: boolean;
-            /** Rating */
+            /** Format: int64 */
             rating: number | null;
         };
-        /** EpisodeRef */
         EpisodeRef: {
-            /** Air Date */
             air_date?: string | null;
-            /** Episode */
+            /** Format: int64 */
             episode?: number | null;
-            /** Name */
             name?: string | null;
-            /** Season */
+            /** Format: int64 */
             season?: number | null;
         };
-        /** EpisodesIn */
         EpisodesIn: {
-            /** Episodes */
             episodes: components["schemas"]["EpisodeMark"][];
-            /**
-             * Watched
-             * @default true
-             */
+            /** @default true */
             watched: boolean;
-            /** Watched At */
             watched_at?: string | null;
+        } & {
+            [key: string]: unknown;
         };
-        /** FavoriteOut */
+        Error: {
+            detail: string;
+            errors?: components["schemas"]["ValidationError"][];
+        };
         FavoriteOut: {
-            /** Favorite */
             favorite: boolean;
-            /**
-             * Ok
-             * @default true
-             */
+            /** @default true */
             ok: boolean;
         };
-        /** Features */
         Features: {
-            /** Ai */
             ai: boolean;
-            /** Dry Run */
             dry_run: boolean;
-            /** Email */
             email: boolean;
-            /** Mdblist */
             mdblist: boolean;
-            /** Requests */
             requests: boolean;
         };
-        /** FillOut */
         FillOut: {
-            /** Titles */
             titles: {
                 [key: string]: components["schemas"]["FilledTitle"];
             };
         };
-        /** FilledTitle */
         FilledTitle: {
-            /** Backdrop */
             backdrop?: string | null;
-            /** Poster */
             poster?: string | null;
-            /** Title */
             title?: string | null;
-            /** Vote */
+            /** Format: double */
             vote?: number | null;
-            /** Year */
+            /** Format: int64 */
             year?: number | null;
         };
-        /** FinishIn */
         FinishIn: {
-            /**
-             * Outcome
-             * @enum {string}
-             */
+            /** @enum {string} */
             outcome: "watched" | "not_finished" | "dismissed";
+        } & {
+            [key: string]: unknown;
         };
-        /** FollowIn */
         FollowIn: {
-            /**
-             * Ref
-             * @description MDBList list id or mdblist.com/lists/<user>/<slug> link
-             */
+            /** @description MDBList list id or mdblist.com/lists/<user>/<slug> link */
             ref: string;
+        } & {
+            [key: string]: unknown;
         };
-        /** FollowOut */
         FollowOut: {
-            /** Count */
+            /** Format: int64 */
             count: number;
-            /** Id */
+            /** Format: int32 */
             id: number;
-            /**
-             * Ok
-             * @default true
-             */
+            /** @default true */
             ok: boolean;
         };
-        /** Genre */
         Genre: {
-            /** Id */
+            /** Format: int64 */
             id: number;
-            /** Name */
             name: string;
         };
-        /** GenresOut */
         GenresOut: {
-            /** Genres */
             genres: components["schemas"]["Genre"][];
         };
-        /** HTTPValidationError */
-        HTTPValidationError: {
-            /** Detail */
-            detail?: components["schemas"]["ValidationError"][];
-        };
-        /** HistoryItem */
         HistoryItem: {
-            card?: components["schemas"]["Card"] | null;
-            /** Episode */
+            card?: components["schemas"]["Card"];
+            /** Format: int64 */
             episode?: number | null;
-            /**
-             * Episode Favorite
-             * @default false
-             */
+            /** @default false */
             episode_favorite: boolean;
-            /** Episode Rating */
+            /** Format: int64 */
             episode_rating?: number | null;
-            /** Episode Title */
             episode_title?: string | null;
-            /** Ids */
             ids: number[];
-            /** Key */
             key?: string | null;
-            /** Media Type */
             media_type: string;
-            /** Season */
+            /** Format: int64 */
             season?: number | null;
-            /** Sources */
             sources: string[];
-            /** Title */
             title: string;
-            /** Watched At */
             watched_at: string;
         };
-        /** HistoryOut */
         HistoryOut: {
-            /** Items */
             items: components["schemas"]["HistoryItem"][];
-            /** More */
             more: boolean;
-            /** Page */
+            /** Format: int64 */
             page: number;
-            /** Total */
+            /** Format: int64 */
             total: number;
         };
-        /** HomeConfigIn */
         HomeConfigIn: {
-            /** Rows */
             rows: components["schemas"]["HomeConfigRow"][];
+        } & {
+            [key: string]: unknown;
         };
-        /** HomeConfigOut */
         HomeConfigOut: {
-            /** Rows */
             rows: components["schemas"]["HomeConfigRow"][];
-            /** Tab */
             tab: string;
         };
-        /** HomeConfigRow */
         HomeConfigRow: {
-            /** Group */
-            group?: ("mine" | "shared" | "mdblist") | null;
-            /** Key */
+            /** @enum {string|null} */
+            group?: "mine" | "shared" | "mdblist" | null;
             key: string;
-            /** List */
             list?: boolean | null;
-            /** On */
             on: boolean;
-            /** Subtitle */
             subtitle?: string | null;
-            /** Title */
             title?: string | null;
         };
-        /** HomeOut */
         HomeOut: {
-            /** Rows */
             rows: components["schemas"]["HomeRowSpec"][];
-            /** Tab */
             tab: string;
         };
-        /** HomeRowSpec */
         HomeRowSpec: {
-            /** Key */
             key: string;
-            /** Multi */
             multi: boolean;
-            /**
-             * Style
-             * @enum {string}
-             */
+            /** @enum {string} */
             style: "poster" | "landscape";
-            /** Title */
             title: string;
         };
-        /** IdsIn */
         IdsIn: {
-            /** Ids */
             ids: number[];
+        } & {
+            [key: string]: unknown;
         };
-        /** JellyfinLink */
         JellyfinLink: {
-            /**
-             * Can Play
-             * @default false
-             */
+            /** @default false */
             can_play: boolean;
-            /** Linked */
             linked: boolean;
-            /** Linked At */
             linked_at?: string | null;
-            /** Plays Notice */
             plays_notice?: string | null;
-            /** Quick Connect */
             quick_connect?: boolean | null;
-            /** Server */
             server: string;
-            /** User Name */
             user_name?: string | null;
         };
-        /** JellyfinPluginEvent */
         JellyfinPluginEvent: {
-            /**
-             * Client
-             * @description the app, e.g. Kodi or Jellyfin Web
-             */
+            /** @description the app, e.g. Kodi or Jellyfin Web */
             client?: string | null;
-            /** Device */
             device?: string | null;
-            /**
-             * Event
-             * @enum {string}
-             */
+            /** @enum {string} */
             event: "start" | "progress" | "pause" | "stop" | "played" | "unplayed";
             item: components["schemas"]["JellyfinPluginItem"];
-            /** Last Played */
             last_played?: string | null;
-            /**
-             * Played To Completion
-             * @default false
-             */
+            /** @default false */
             played_to_completion: boolean;
-            /** Position S */
+            /** Format: int64 */
             position_s?: number | null;
-            /**
-             * User Id
-             * @description the Jellyfin user
-             */
+            /** @description the Jellyfin user */
             user_id: string;
+        } & {
+            [key: string]: unknown;
         };
-        /**
-         * JellyfinPluginItem
-         * @description A film or episode as the Movie Night plugin for Jellyfin sends it.
-         */
         JellyfinPluginItem: {
-            /** Episode */
+            /** Format: int64 */
             episode?: number | null;
-            /** Id */
             id: string;
-            /** Imdb */
             imdb?: string | null;
-            /**
-             * Name
-             * @default
-             */
-            name: string;
-            /** Runtime S */
+            name?: string;
+            /** Format: int64 */
             runtime_s?: number | null;
-            /** Season */
+            /** Format: int64 */
             season?: number | null;
-            /** Series Id */
             series_id?: string | null;
-            /** Series Imdb */
             series_imdb?: string | null;
-            /** Series Name */
             series_name?: string | null;
-            /** Series Tmdb */
             series_tmdb?: string | null;
-            /** Series Tvdb */
             series_tvdb?: string | null;
-            /** Tmdb */
             tmdb?: string | null;
-            /** Tvdb */
             tvdb?: string | null;
-            /**
-             * Type
-             * @enum {string}
-             */
+            /** @enum {string} */
             type: "Movie" | "Episode";
-            /** Year */
+            /** Format: int64 */
             year?: number | null;
+        } & {
+            [key: string]: unknown;
         };
-        /** KeyIn */
         KeyIn: {
-            /** Key */
             key: string;
+        } & {
+            [key: string]: unknown;
         };
-        /** KeysIn */
         KeysIn: {
-            /** Keys */
             keys: string[];
+        } & {
+            [key: string]: unknown;
         };
-        /** LandscapeRow */
         LandscapeRow: {
-            /** Id */
             id: string;
-            /** Items */
             items: components["schemas"]["UpNextItem"][];
-            /** Kicker */
             kicker?: string | null;
             /**
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
             style: "landscape";
-            /** Subtitle */
             subtitle?: string | null;
-            /** Title */
             title: string;
         };
-        /** ListFlagsOut */
         ListFlagsOut: {
-            /**
-             * Ok
-             * @default true
-             */
+            /** @default true */
             ok: boolean;
-            /** Pinned */
             pinned: boolean;
-            /** Starred */
             starred: boolean;
         };
-        /** ListIn */
         ListIn: {
-            /** Description */
             description?: string | null;
-            /** Name */
             name: string;
+        } & {
+            [key: string]: unknown;
         };
-        /** ListItemIn */
         ListItemIn: {
-            media_type: components["schemas"]["MediaType"];
-            /** Tmdb Id */
+            /** @enum {string} */
+            media_type: "movie" | "tv";
+            /** Format: int64 */
             tmdb_id: number;
+        } & {
+            [key: string]: unknown;
         };
-        /** ListMembership */
         ListMembership: {
-            /** Id */
+            /** Format: int32 */
             id: number;
-            /** In List */
             in_list: boolean;
-            /** Name */
             name: string;
-            /** Source */
             source: string;
         };
-        /** ListOut */
         ListOut: {
-            /** By */
             by: string;
-            /** Count */
+            /** Format: int64 */
             count?: number | null;
-            /** Deletable */
             deletable: boolean;
-            /**
-             * Description
-             * @default
-             */
-            description: string;
-            /** Editable */
+            description?: string;
             editable: boolean;
-            /** Filters */
             filters?: {
                 [key: string]: unknown;
             } | null;
-            /**
-             * Group
-             * @enum {string}
-             */
+            /** @enum {string} */
             group: "mine" | "shared" | "mdblist";
-            /** Id */
+            /** Format: int32 */
             id: number;
-            /** Items */
             items: components["schemas"]["Card"][];
-            /** Kind */
             kind: string;
-            /** Likes */
+            /** Format: int32 */
             likes?: number | null;
-            media?: components["schemas"]["MediaType"] | null;
-            /** More */
+            /** @enum {string|null} */
+            media?: "movie" | "tv" | null;
             more: boolean;
             /**
-             * Movies
+             * Format: int64
              * @default 0
              */
             movies: number;
-            /** Name */
             name: string;
             /**
-             * Not Shown
+             * Format: int64
              * @default 0
              */
             not_shown: number;
-            /** Note */
             note?: string | null;
-            /** Origin */
             origin?: string | null;
-            /** Origin Url */
             origin_url?: string | null;
-            /** Page */
+            /** Format: int64 */
             page: number;
-            /** Pinned */
             pinned: boolean;
             /**
-             * Shows
+             * Format: int64
              * @default 0
              */
             shows: number;
-            /** Sort */
             sort: string;
-            /** Source */
             source: string;
-            /** Starred */
             starred: boolean;
-            /** Synced At */
             synced_at?: string | null;
         };
-        /** ListPatch */
         ListPatch: {
-            /** Description */
             description?: string | null;
-            /** Name */
             name?: string | null;
-            /** Pinned */
             pinned?: boolean | null;
-            /** Starred */
             starred?: boolean | null;
+        } & {
+            [key: string]: unknown;
         };
-        /** ListSummary */
         ListSummary: {
-            /** By */
             by: string;
-            /** Count */
+            /** Format: int64 */
             count?: number | null;
-            /**
-             * Deletable
-             * @default false
-             */
+            /** @default false */
             deletable: boolean;
-            /**
-             * Description
-             * @default
-             */
-            description: string;
-            /**
-             * Editable
-             * @default false
-             */
+            description?: string;
+            /** @default false */
             editable: boolean;
-            /**
-             * Group
-             * @enum {string}
-             */
+            /** @enum {string} */
             group: "mine" | "shared" | "mdblist";
-            /** Id */
+            /** Format: int32 */
             id: number;
-            /** Kind */
             kind: string;
-            /** Likes */
+            /** Format: int32 */
             likes?: number | null;
             /**
-             * Movies
+             * Format: int64
              * @default 0
              */
             movies: number;
-            /** Name */
             name: string;
-            /** Origin */
             origin?: string | null;
-            /**
-             * Pinned
-             * @default false
-             */
+            /** @default false */
             pinned: boolean;
-            /**
-             * Posters
-             * @default []
-             */
+            /** @default [] */
             posters: string[];
             /**
-             * Shows
+             * Format: int64
              * @default 0
              */
             shows: number;
-            /** Source */
             source: string;
-            /**
-             * Starred
-             * @default false
-             */
+            /** @default false */
             starred: boolean;
         };
-        /** ListsForTitleOut */
         ListsForTitleOut: {
-            /** Lists */
             lists: components["schemas"]["ListMembership"][];
         };
-        /** ListsOut */
         ListsOut: {
             favorites: components["schemas"]["PersonalCollection"];
-            /** Lists */
             lists: components["schemas"]["ListSummary"][];
             ratings: components["schemas"]["PersonalCollection"];
             watchlist: components["schemas"]["PersonalCollection"];
         };
-        /** MDBListExploreOut */
         MDBListExploreOut: {
-            /**
-             * Enabled
-             * @default true
-             */
+            /** @default true */
             enabled: boolean;
-            /** Error */
             error?: string | null;
-            /**
-             * Mode
-             * @enum {string}
-             */
+            /** @enum {string} */
             mode: "browse" | "search" | "link";
-            /**
-             * Results
-             * @default []
-             */
+            /** @default [] */
             results: components["schemas"]["MDBListSummary"][];
         };
-        /** MDBListPreviewOut */
         MDBListPreviewOut: {
-            /** Count */
+            /** Format: int64 */
             count: number;
-            /** Items */
             items: components["schemas"]["Card"][];
             list: components["schemas"]["MDBListSummary"];
             /**
-             * Not Shown
+             * Format: int64
              * @default 0
              */
             not_shown: number;
         };
-        /** MDBListSummary */
         MDBListSummary: {
-            /**
-             * Description
-             * @default
-             */
-            description: string;
-            /**
-             * Dynamic
-             * @default false
-             */
+            description?: string;
+            /** @default false */
             dynamic: boolean;
-            /** Followed Id */
+            /** Format: int32 */
             followed_id?: number | null;
-            /** Item Count */
+            /** Format: int64 */
             item_count?: number | null;
-            /** Likes */
+            /** Format: int64 */
             likes?: number | null;
-            /** Mdblist Id */
+            /** Format: int64 */
             mdblist_id?: number | null;
-            media?: components["schemas"]["MediaType"] | null;
-            /** Name */
+            /** @enum {string|null} */
+            media?: "movie" | "tv" | null;
             name: string;
-            /** Slug */
             slug?: string | null;
-            /**
-             * User
-             * @default
-             */
-            user: string;
+            user?: string;
         };
-        /** MeOut */
         MeOut: {
-            /**
-             * Admin Notices
-             * @default []
-             */
+            /** @default [] */
             admin_notices: string[];
-            /** Display Name */
             display_name?: string | null;
-            /** Email */
             email?: string | null;
             features: components["schemas"]["Features"];
-            /** Is Admin */
             is_admin: boolean;
             jellyfin: components["schemas"]["JellyfinLink"];
-            /**
-             * @default {
-             *       "batch_max_items": 1000,
-             *       "name_max_chars": 300,
-             *       "reported_max_chars": 500,
-             *       "search_max_chars": 200,
-             *       "text_max_chars": 5000
-             *     }
-             */
-            limits: components["schemas"]["TextLimits"];
-            /** Scrobble Token Set */
+            limits?: components["schemas"]["TextLimits"];
             scrobble_token_set: boolean;
             stats: components["schemas"]["Stats"];
-            /** User */
+            time_zone?: string | null;
             user: string;
         };
-        /**
-         * MediaType
-         * @enum {string}
-         */
-        MediaType: "movie" | "tv";
-        /** NextEpisode */
         NextEpisode: {
-            /** Episode */
+            /** Format: int64 */
             episode: number;
-            /**
-             * Favorite
-             * @default false
-             */
+            /** @default false */
             favorite: boolean;
-            /** Label */
             label: string;
-            /** Rating */
+            /** Format: int64 */
             rating?: number | null;
-            /** Season */
+            /** Format: int64 */
             season: number;
         };
-        /** NextEpisodeOut */
         NextEpisodeOut: {
-            next?: components["schemas"]["NextEpisode"] | null;
+            next?: components["schemas"]["NextEpisode"];
         };
-        /** Ok */
         Ok: {
-            /**
-             * Ok
-             * @default true
-             */
+            /** @default true */
             ok: boolean;
         };
         /** OpenSessionOut */
         OpenSessionOut: {
             session?: components["schemas"]["PlaySessionOut"] | null;
         };
-        /** PageOut */
         PageOut: {
-            /** Items */
             items: components["schemas"]["Card"][];
-            /** More */
             more: boolean;
-            /** Note */
             note?: string | null;
-            /** Page */
+            /** Format: int64 */
             page: number;
-            /** Title */
             title?: string | null;
         };
-        /** PairConfirmIn */
         PairConfirmIn: {
-            /** Code */
             code: string;
+        } & {
+            [key: string]: unknown;
         };
-        /** PairConfirmOut */
         PairConfirmOut: {
-            /** Device */
             device: string;
-            /**
-             * Ok
-             * @default true
-             */
+            /** @default true */
             ok: boolean;
         };
-        /** PairPollIn */
         PairPollIn: {
-            /** Poll */
             poll: string;
+        } & {
+            [key: string]: unknown;
         };
-        /** PairPollOut */
         PairPollOut: {
-            /** Account */
             account?: string | null;
-            /**
-             * Status
-             * @enum {string}
-             */
+            /** @enum {string} */
             status: "waiting" | "ok";
-            /** Token */
             token?: string | null;
-            /** User */
             user?: string | null;
         };
-        /** PairStartIn */
         PairStartIn: {
-            /**
-             * Device
-             * @default Kodi
-             */
+            /** @default Kodi */
             device: string;
+        } & {
+            [key: string]: unknown;
         };
-        /** PairStartOut */
         PairStartOut: {
-            /** Code */
             code: string;
-            /** Expires In */
+            /** Format: int64 */
             expires_in: number;
-            /** Interval */
+            /** Format: int64 */
             interval: number;
-            /** Poll */
             poll: string;
         };
-        /** PasswordLinkIn */
         PasswordLinkIn: {
-            /** Password */
             password: string;
-            /** Username */
             username: string;
+        } & {
+            [key: string]: unknown;
         };
-        /** PersonHit */
+        PasswordSignInIn: {
+            /**
+             * @description Shown in Profile, Signed-in devices
+             * @default Movie Night app
+             */
+            device: string;
+            password: string;
+            username: string;
+        } & {
+            [key: string]: unknown;
+        };
         PersonHit: {
-            /** Id */
+            /** Format: int64 */
             id?: number | null;
-            /** Known For */
             known_for?: string | null;
-            /** Name */
             name?: string | null;
-            /** Photo */
             photo?: string | null;
         };
-        /** PersonOut */
         PersonOut: {
-            /** Biography */
             biography?: string | null;
-            /** Birthday */
             birthday?: string | null;
-            /** Id */
+            /** Format: int64 */
             id?: number | null;
-            /** Items */
             items: components["schemas"]["Card"][];
-            /** Known For */
             known_for?: string | null;
-            /** Name */
             name?: string | null;
-            /** Photo */
             photo?: string | null;
-            /** Place Of Birth */
             place_of_birth?: string | null;
         };
-        /** PersonalCollection */
         PersonalCollection: {
-            /** Count */
+            /** Format: int64 */
             count: number;
-            /** Posters */
             posters: string[];
         };
-        /** PlayIn */
         PlayIn: {
-            /** Episode */
+            /** Format: int64 */
             episode?: number | null;
-            /** Player */
             player: string;
             /**
-             * Return To
              * @default web
              * @enum {string}
              */
             return_to: "web" | "app";
-            /** Season */
+            /** Format: int64 */
             season?: number | null;
-            /** Subtitle */
+            /** Format: int64 */
             subtitle?: number | null;
+        } & {
+            [key: string]: unknown;
         };
-        /** PlayInfo */
         PlayInfo: {
-            /** Available */
             available: boolean;
-            /** Chosen Subtitle */
+            /** Format: int64 */
             chosen_subtitle?: number | null;
-            /** Default Player */
             default_player: string;
-            /** Episode */
+            /** Format: int64 */
             episode?: number | null;
-            /** Jellyfin Item Id */
             jellyfin_item_id?: string | null;
-            /** Linked */
             linked: boolean;
-            /** Players */
             players: components["schemas"]["Player"][];
             /**
-             * Resume Seconds
+             * Format: int64
              * @default 0
              */
             resume_seconds: number;
-            /** Season */
+            /** Format: int64 */
             season?: number | null;
-            /** Subtitle Language */
             subtitle_language?: string | null;
-            /**
-             * Subtitles
-             * @default []
-             */
+            /** @default [] */
             subtitles: components["schemas"]["SubtitleTrack"][];
-            /** Title */
             title?: string | null;
-            /** Web Url */
             web_url?: string | null;
         };
-        /** PlayOut */
         PlayOut: {
-            /** Session Id */
             session_id: string;
-            /** Url */
             url: string;
-            /** Web Url */
             web_url?: string | null;
         };
-        /** PlaySessionOut */
         PlaySessionOut: {
-            /** Episode */
+            /** Format: int32 */
             episode?: number | null;
-            /** Id */
             id: string;
-            /** Key */
             key?: string | null;
-            /** Media Type */
             media_type: string;
-            /** Player */
             player: string;
-            /** Poster */
             poster?: string | null;
-            /** Season */
+            /** Format: int32 */
             season?: number | null;
-            /** Started At */
             started_at: string;
-            /** Title */
             title: string;
-            /** Tmdb Id */
+            /** Format: int32 */
             tmdb_id?: number | null;
         };
-        /** Player */
         Player: {
-            /** Builtin */
             builtin: boolean;
-            /**
-             * Enabled
-             * @default true
-             */
+            /** @default true */
             enabled: boolean;
-            /** Id */
             id: string;
-            /** Name */
             name: string;
-            /** Template */
             template?: string | null;
         };
-        /** PlayerSettingsIn */
         PlayerSettingsIn: {
-            /** Ask Finished */
             ask_finished?: boolean | null;
-            /**
-             * Custom
-             * @default []
-             */
+            /** @default [] */
             custom: components["schemas"]["CustomPlayerIn"][];
-            /** Default Player */
             default_player?: string | null;
-            /** Enabled */
             enabled?: string[] | null;
-            /** Subtitle Language */
             subtitle_language?: string | null;
+        } & {
+            [key: string]: unknown;
         };
-        /** PlayerSettingsOut */
         PlayerSettingsOut: {
-            /**
-             * Ask Finished
-             * @default true
-             */
+            /** @default true */
             ask_finished: boolean;
-            /** Default Player */
             default_player: string;
-            /** Players */
             players: components["schemas"]["Player"][];
-            /** Subtitle Language */
             subtitle_language?: string | null;
         };
-        /** PosterRow */
         PosterRow: {
-            /** Group */
-            group?: ("mine" | "shared" | "mdblist") | null;
-            /** Id */
+            /** @enum {string|null} */
+            group?: "mine" | "shared" | "mdblist" | null;
             id: string;
-            /** Items */
             items: components["schemas"]["Card"][];
-            /** Kicker */
             kicker?: string | null;
-            /** List Id */
+            /** Format: int32 */
             list_id?: number | null;
-            more?: components["schemas"]["RowMore"] | null;
+            more?: components["schemas"]["RowMore"];
             /**
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
             style: "poster";
-            /** Subtitle */
             subtitle?: string | null;
-            /** Title */
             title: string;
         };
-        /** Progress */
         Progress: {
-            /** Eta */
             eta?: string | null;
-            /** Percent */
+            /** Format: int64 */
             percent: number;
-            /** Status */
             status?: string | null;
         };
-        /** Provider */
         Provider: {
-            /** Id */
+            /** Format: int64 */
             id: number;
-            /** Name */
             name: string;
         };
-        /** Providers */
         Providers: {
-            /**
-             * Buy
-             * @default []
-             */
+            /** @default [] */
             buy: components["schemas"]["StreamProvider"][];
-            /** Link */
             link?: string | null;
-            /**
-             * Rent
-             * @default []
-             */
+            /** @default [] */
             rent: components["schemas"]["StreamProvider"][];
-            /**
-             * Stream
-             * @default []
-             */
+            /** @default [] */
             stream: components["schemas"]["StreamProvider"][];
         };
-        /** ProvidersOut */
         ProvidersOut: {
-            /** Providers */
             providers: components["schemas"]["Provider"][];
         };
-        /** QuickConnectIn */
         QuickConnectIn: {
-            /** Secret */
             secret: string;
+        } & {
+            [key: string]: unknown;
         };
-        /** QuickConnectOut */
         QuickConnectOut: {
-            /** Code */
             code: string;
-            /** Secret */
             secret: string;
         };
-        /** QuickConnectStateOut */
         QuickConnectStateOut: {
-            /** Linked */
             linked: boolean;
-            /**
-             * Ok
-             * @default true
-             */
+            /** @default true */
             ok: boolean;
-            /** User Name */
             user_name?: string | null;
         };
-        /** RatePromptItem */
         RatePromptItem: {
-            /** Key */
             key: string;
-            media_type: components["schemas"]["MediaType"];
-            /** Poster */
+            /** @enum {string} */
+            media_type: "movie" | "tv";
             poster?: string | null;
-            /** Title */
             title: string;
-            /** Tmdb Id */
+            /** Format: int64 */
             tmdb_id: number;
         };
-        /** RatePromptOut */
         RatePromptOut: {
-            item?: components["schemas"]["RatePromptItem"] | null;
+            item?: components["schemas"]["RatePromptItem"];
         };
-        /** RatingEntry */
         RatingEntry: {
-            /**
-             * Mine
-             * @default false
-             */
+            /** @default false */
             mine: boolean;
-            /** Name */
             name: string;
-            /** Rated At */
             rated_at: string;
-            /** Rating */
+            /** Format: int64 */
             rating: number;
-            /** Review */
             review?: string | null;
         };
-        /** RatingIn */
         RatingIn: {
-            /** Rating */
+            /** Format: int64 */
             rating: number;
-            /** Review */
             review?: string | null;
+        } & {
+            [key: string]: unknown;
         };
-        /** RatingOut */
         RatingOut: {
-            /**
-             * Ok
-             * @default true
-             */
+            /** @default true */
             ok: boolean;
-            /** Rating */
+            /** Format: int64 */
             rating: number | null;
-            /** Review */
             review?: string | null;
         };
-        /** RatingsOut */
-        RatingsOut: {
-            /** Items */
-            items: components["schemas"]["Card"][];
-            /** More */
-            more: boolean;
-            /** Page */
-            page: number;
-            /** Total */
-            total: number;
-        };
-        /** RelatedCollection */
         RelatedCollection: {
-            /** Items */
             items: components["schemas"]["Card"][];
-            /** Name */
             name?: string | null;
         };
-        /** RelatedOut */
         RelatedOut: {
-            collection?: components["schemas"]["RelatedCollection"] | null;
-            /** Recommendations */
+            collection?: components["schemas"]["RelatedCollection"];
             recommendations: components["schemas"]["Card"][];
         };
-        /** RequestIn */
         RequestIn: {
-            /** Seasons */
             seasons?: number[] | null;
+        } & {
+            [key: string]: unknown;
         };
-        /** RequestOut */
         RequestOut: {
-            /** Already */
             already: boolean;
-            /**
-             * Ok
-             * @default true
-             */
+            /** @default true */
             ok: boolean;
             state: components["schemas"]["TitleState"];
         };
-        /** RequestsOut */
         RequestsOut: {
-            /** Items */
             items: components["schemas"]["Card"][];
-            /**
-             * More
-             * @default false
-             */
+            /** @default false */
             more: boolean;
             /**
-             * Not Shown
+             * Format: int64
              * @default 0
              */
             not_shown: number;
             /**
-             * Page
+             * Format: int64
              * @default 1
              */
             page: number;
             /**
-             * Total
+             * Format: int64
              * @default 0
              */
             total: number;
         };
-        /**
-         * Resume
-         * @description Where this person is in the film, or in the show's latest started
-         *     episode (from the Movie Night plugin for Jellyfin).
-         */
         Resume: {
-            /** Client */
             client?: string | null;
-            /** Device */
             device?: string | null;
-            /** Duration S */
+            /** Format: int64 */
             duration_s?: number | null;
-            /** Episode */
+            /** Format: int64 */
             episode?: number | null;
-            /** Episode Title */
             episode_title?: string | null;
-            /** Percent */
+            /** Format: int64 */
             percent?: number | null;
-            /** Position S */
+            /** Format: int64 */
             position_s: number;
-            /** Season */
+            /** Format: int64 */
             season?: number | null;
-            /** State */
             state: string;
-            /** Updated At */
             updated_at: string;
         };
-        /** RowMore */
         RowMore: {
-            /** Key */
             key: string;
-            /** Title */
             title: string;
         };
-        /** RowsOut */
         RowsOut: {
-            /** Note */
             note?: string | null;
-            /** Rows */
             rows: (components["schemas"]["PosterRow"] | components["schemas"]["LandscapeRow"])[];
         };
-        /** Scores */
         Scores: {
-            /** Imdb Rating */
+            /** Format: double */
             imdb_rating?: number | null;
-            /** Imdb Votes */
+            /** Format: int64 */
             imdb_votes?: number | null;
-            /** Letterboxd */
+            /** Format: double */
             letterboxd?: number | null;
-            /** Mdblist Score */
+            /** Format: int64 */
             mdblist_score?: number | null;
-            /** Metacritic */
+            /** Format: int64 */
             metacritic?: number | null;
-            /** Rt Audience */
+            /** Format: int64 */
             rt_audience?: number | null;
-            /** Rt Critics */
+            /** Format: int64 */
             rt_critics?: number | null;
-            /** Rt Url */
             rt_url?: string | null;
-            /** Trakt Rating */
+            /** Format: double */
             trakt_rating?: number | null;
-            /** Trakt Votes */
+            /** Format: int64 */
             trakt_votes?: number | null;
         };
-        /** ScoresOut */
         ScoresOut: {
-            /** Note */
             note?: string | null;
-            scores?: components["schemas"]["Scores"] | null;
+            scores?: components["schemas"]["Scores"];
         };
-        /**
-         * ScrobbleIn
-         * @description A finished watch reported by another app (the Kodi add-on, etc.).
-         */
         ScrobbleIn: {
-            /** Episode */
+            /** Format: int64 */
             episode?: number | null;
-            /** Imdb Id */
             imdb_id?: string | null;
-            /**
-             * Media Type
-             * @enum {string}
-             */
+            /** @enum {string} */
             media_type: "movie" | "episode";
-            /**
-             * Ref
-             * @description the sender's own id for this play, to avoid duplicates
-             */
+            /** @description the sender's own id for this play, to avoid duplicates */
             ref?: string | null;
-            /** Season */
+            /** Format: int64 */
             season?: number | null;
-            /**
-             * Source
-             * @default api
-             */
+            /** @default api */
             source: string;
-            /** Title */
             title?: string | null;
             /**
-             * Tmdb Id
+             * Format: int64
              * @description movie id, or the show's id for an episode
              */
             tmdb_id?: number | null;
             /**
-             * Tvdb Id
+             * Format: int64
              * @description the show's TheTVDB id, for libraries scraped from TheTVDB
              */
             tvdb_id?: number | null;
-            /** Watched At */
             watched_at?: string | null;
+        } & {
+            [key: string]: unknown;
         };
-        /** ScrobbleOut */
         ScrobbleOut: {
-            /** Detail */
             detail?: string | null;
-            /**
-             * Ok
-             * @default true
-             */
+            /** @default true */
             ok: boolean;
-            /** Recorded */
             recorded: boolean;
         };
-        /** SearchMore */
         SearchMore: {
-            /**
-             * Library
-             * @default false
-             */
+            /** @default false */
             library: boolean;
-            /**
-             * People
-             * @default false
-             */
+            /** @default false */
             people: boolean;
-            /**
-             * Tmdb
-             * @default false
-             */
+            /** @default false */
             tmdb: boolean;
         };
-        /** SearchOut */
         SearchOut: {
-            /**
-             * Ai
-             * @default false
-             */
+            /** @default false */
             ai: boolean;
-            /** Corrected */
             corrected?: string | null;
             /**
-             * First
              * @default library
              * @enum {string}
              */
             first: "library" | "tmdb";
-            /** Library */
             library: components["schemas"]["Card"][];
             more?: components["schemas"]["SearchMore"];
-            /** Note */
             note?: string | null;
             /**
-             * Page
+             * Format: int64
              * @default 1
              */
             page: number;
-            /** People */
             people: components["schemas"]["PersonHit"][];
-            /** Tmdb */
             tmdb: components["schemas"]["Card"][];
         };
-        /** Season */
         Season: {
-            /** Air Date */
             air_date?: string | null;
-            /** Episodes */
+            /** Format: int64 */
             episodes?: number | null;
-            /** Name */
             name?: string | null;
-            /** Number */
+            /** Format: int64 */
             number: number;
-            /** Poster */
             poster?: string | null;
-            /** Status */
             status?: string | null;
             /**
-             * Watched
+             * Format: int64
              * @default 0
              */
             watched: number;
         };
-        /** SeasonOut */
         SeasonOut: {
-            /** Air Date */
             air_date?: string | null;
-            /** Episodes */
             episodes: components["schemas"]["Episode"][];
-            /** Name */
             name?: string | null;
-            /** Number */
+            /** Format: int64 */
             number: number;
-            /** Overview */
             overview?: string | null;
-            /** Poster */
             poster?: string | null;
-            /** Show Id */
+            /** Format: int64 */
             show_id: number;
         };
-        /** SentOut */
         SentOut: {
-            /**
-             * Ok
-             * @default true
-             */
+            /** @default true */
             ok: boolean;
-            /** Sent To */
             sent_to: string;
         };
-        /** SmartFilters */
-        SmartFilters: {
-            /** Genre */
-            genre?: string | null;
-            /** Language */
-            language?: string | null;
-            /** @default movie */
-            media: components["schemas"]["MediaType"];
-            /** Min Rating */
-            min_rating?: number | null;
-            /** Provider */
-            provider?: string | null;
-            /** Runtime Max */
-            runtime_max?: number | null;
-            /** Runtime Min */
-            runtime_min?: number | null;
-            /** Sort */
-            sort?: string | null;
-            /** Year From */
-            year_from?: number | null;
-            /** Year To */
-            year_to?: number | null;
+        SignInMethodsOut: {
+            /** @description OIDC is set up: the sign-in page (and /app/connect) offers it */
+            oidc: boolean;
+            /** @description OIDC_BUTTON_LABEL, the OIDC button's words */
+            oidc_label: string;
+            /** @description PASSWORD_SIGNIN: POST /api/v1/auth/password works */
+            password: boolean;
         };
-        /** SmartIn */
+        SmartFilters: {
+            genre?: string | null;
+            language?: string | null;
+            /**
+             * @default movie
+             * @enum {string}
+             */
+            media: "movie" | "tv";
+            /** Format: double */
+            min_rating?: number | null;
+            provider?: string | null;
+            /** Format: int64 */
+            runtime_max?: number | null;
+            /** Format: int64 */
+            runtime_min?: number | null;
+            sort?: string | null;
+            /** Format: int64 */
+            year_from?: number | null;
+            /** Format: int64 */
+            year_to?: number | null;
+        } & {
+            [key: string]: unknown;
+        };
         SmartIn: {
             filters: components["schemas"]["SmartFilters"];
-            /** Name */
             name: string;
+        } & {
+            [key: string]: unknown;
         };
-        /** Stats */
         Stats: {
-            /** Episodes */
+            /** Format: int64 */
             episodes: number;
-            /** Hours */
+            /** Format: int64 */
             hours: number;
-            /** Movie Plays */
+            /** Format: int64 */
             movie_plays: number;
-            /** Movies */
+            /** Format: int64 */
             movies: number;
-            /** Ratings */
+            /** Format: int64 */
             ratings: number;
-            /** Shows */
+            /** Format: int64 */
             shows: number;
-            /** This Year */
+            /** Format: int64 */
             this_year: number;
-            /** Watchlist */
+            /** Format: int64 */
             watchlist: number;
         };
-        /** StreamProvider */
         StreamProvider: {
-            /** Id */
+            /** Format: int64 */
             id?: number | null;
-            /** Logo */
             logo?: string | null;
-            /** Name */
             name?: string | null;
         };
-        /** SubtitleTrack */
         SubtitleTrack: {
-            /** Default */
             default: boolean;
-            /** External */
             external: boolean;
-            /** Index */
+            /** Format: int64 */
             index: number;
-            /** Label */
             label: string;
-            /** Language */
             language?: string | null;
-            /** Text */
             text: boolean;
         };
-        /** SyncOut */
         SyncOut: {
-            /** Counts */
             counts: {
                 [key: string]: number;
             };
-            /** Note */
             note?: string | null;
-            /**
-             * Ok
-             * @default true
-             */
+            /** @default true */
             ok: boolean;
         };
-        /** TextLimits */
         TextLimits: {
             /**
-             * Batch Max Items
+             * Format: int64
              * @default 1000
              */
             batch_max_items: number;
             /**
-             * Name Max Chars
+             * Format: int64
              * @default 300
              */
             name_max_chars: number;
             /**
-             * Reported Max Chars
+             * Format: int64
              * @default 500
              */
             reported_max_chars: number;
             /**
-             * Search Max Chars
+             * Format: int64
              * @default 200
              */
             search_max_chars: number;
             /**
-             * Text Max Chars
+             * Format: int64
              * @default 5000
              */
             text_max_chars: number;
         };
-        /** TitleDetail */
+        TimeZoneIn: {
+            time_zone: string;
+        } & {
+            [key: string]: unknown;
+        };
+        TimeZoneOut: {
+            time_zone: string;
+        };
         TitleDetail: {
-            /** Backdrop */
             backdrop?: string | null;
-            /**
-             * Cast
-             * @default []
-             */
+            /** @default [] */
             cast: components["schemas"]["CastMember"][];
-            /** Certification */
             certification?: string | null;
-            collection?: components["schemas"]["Collection"] | null;
-            community?: components["schemas"]["Community"] | null;
-            /** Director Label */
+            collection?: components["schemas"]["Collection"];
+            community?: components["schemas"]["Community"];
             director_label: string;
-            /**
-             * Directors
-             * @default []
-             */
+            /** @default [] */
             directors: string[];
-            /**
-             * Genres
-             * @default []
-             */
+            /** @default [] */
             genres: string[];
-            /** Imdb Id */
             imdb_id?: string | null;
-            /** Imdb Url */
             imdb_url?: string | null;
-            /** Jellyfin Url */
             jellyfin_url?: string | null;
-            /** Key */
             key: string;
-            /**
-             * Languages
-             * @default []
-             */
+            /** @default [] */
             languages: string[];
-            last_episode?: components["schemas"]["EpisodeRef"] | null;
-            /**
-             * Lists
-             * @default []
-             */
+            last_episode?: components["schemas"]["EpisodeRef"];
+            /** @default [] */
             lists: components["schemas"]["ListMembership"][];
-            media_type: components["schemas"]["MediaType"];
-            /**
-             * Networks
-             * @default []
-             */
+            /** @enum {string} */
+            media_type: "movie" | "tv";
+            /** @default [] */
             networks: string[];
-            next_episode?: components["schemas"]["EpisodeRef"] | null;
-            /** Number Of Episodes */
+            next_episode?: components["schemas"]["EpisodeRef"];
+            /** Format: int64 */
             number_of_episodes?: number | null;
-            /** Number Of Seasons */
+            /** Format: int64 */
             number_of_seasons?: number | null;
-            /**
-             * Ongoing
-             * @default false
-             */
+            /** @default false */
             ongoing: boolean;
-            /** Original Title */
             original_title?: string | null;
-            /** Overview */
             overview?: string | null;
-            /** Poster */
             poster?: string | null;
             providers: components["schemas"]["Providers"];
-            /** Release Date */
             release_date?: string | null;
-            resume?: components["schemas"]["Resume"] | null;
-            /** Runtime */
+            resume?: components["schemas"]["Resume"];
+            /** Format: int64 */
             runtime?: number | null;
-            scores?: components["schemas"]["Scores"] | null;
-            /**
-             * Seasons
-             * @default []
-             */
+            scores?: components["schemas"]["Scores"];
+            /** @default [] */
             seasons: components["schemas"]["Season"][];
             state: components["schemas"]["TitleState"];
-            /** Status Text */
             status_text?: string | null;
-            /**
-             * Studios
-             * @default []
-             */
+            /** @default [] */
             studios: string[];
-            /** Tagline */
             tagline?: string | null;
-            /** Title */
             title: string;
-            /** Tmdb Id */
+            /** Format: int64 */
             tmdb_id: number;
-            /** Tmdb Url */
             tmdb_url: string;
-            /** Trailer */
             trailer?: string | null;
-            /** Vote */
+            /** Format: double */
             vote?: number | null;
-            /** Vote Count */
+            /** Format: int64 */
             vote_count?: number | null;
-            /**
-             * Watches
-             * @default []
-             */
+            /** @default [] */
             watches: components["schemas"]["Watch"][];
-            /**
-             * Writers
-             * @default []
-             */
+            /** @default [] */
             writers: string[];
-            /** Year */
+            /** Format: int64 */
             year?: number | null;
         };
-        /** TitleState */
         TitleState: {
-            /**
-             * Favorite
-             * @default false
-             */
+            /** @default false */
             favorite: boolean;
-            /**
-             * In Library
-             * @default false
-             */
+            /** @default false */
             in_library: boolean;
-            /** Jellyfin Id */
             jellyfin_id?: string | null;
-            /** Jellyfin Url */
             jellyfin_url?: string | null;
-            progress?: components["schemas"]["Progress"] | null;
-            /** Rating */
+            progress?: components["schemas"]["Progress"];
+            /** Format: int64 */
             rating?: number | null;
-            /** Request */
-            request?: ("pending" | "processing" | "partial" | "available" | "dry_run") | null;
-            /** Requested At */
+            /** @enum {string|null} */
+            request?: "pending" | "processing" | "partial" | "available" | "dry_run" | null;
             requested_at?: string | null;
             /**
-             * Watched
+             * Format: int64
              * @default 0
              */
             watched: number;
-            /**
-             * Watchlist
-             * @default false
-             */
+            /** @default false */
             watchlist: boolean;
         };
-        /** TokenOut */
         TokenOut: {
-            /**
-             * Ok
-             * @default true
-             */
+            /** @default true */
             ok: boolean;
-            /** Token */
             token: string;
         };
-        /**
-         * UpNextItem
-         * @description Jellyfin "continue watching" / "next up" entry.
-         */
         UpNextItem: {
-            /** Backdrop */
             backdrop?: string | null;
-            /** Episode */
+            /** Format: int64 */
             episode?: number | null;
-            /** Image Item */
             image_item?: string | null;
-            /** Jellyfin Id */
             jellyfin_id?: string | null;
-            /** Key */
             key?: string | null;
-            media_type?: components["schemas"]["MediaType"] | null;
-            /** Poster */
+            /** @enum {string|null} */
+            media_type?: "movie" | "tv" | null;
             poster?: string | null;
             /**
-             * Progress
+             * Format: int64
              * @default 0
              */
             progress: number;
-            /** Runtime Min */
+            /** Format: int64 */
             runtime_min?: number | null;
-            /** Season */
+            /** Format: int64 */
             season?: number | null;
-            /** Series Item */
             series_item?: string | null;
-            /** Subtitle */
             subtitle?: string | null;
-            /**
-             * Title
-             * @default
-             */
-            title: string;
-            /** Tmdb Id */
+            title?: string;
+            /** Format: int64 */
             tmdb_id?: number | null;
         };
-        /** ValidationError */
         ValidationError: {
-            /** Location */
-            loc: (string | number)[];
-            /** Message */
+            ctx?: {
+                [key: string]: unknown;
+            };
+            input?: unknown;
+            loc: unknown[];
             msg: string;
-            /** Error Type */
             type: string;
         };
-        /** Watch */
         Watch: {
-            /** Episode */
+            /** Format: int64 */
             episode?: number | null;
-            /** Episode Title */
             episode_title?: string | null;
-            /** Ids */
             ids: number[];
-            /** Key */
             key?: string | null;
-            /** Media Type */
             media_type: string;
-            /** Season */
+            /** Format: int64 */
             season?: number | null;
-            /** Sources */
             sources: string[];
-            /** Title */
             title: string;
-            /** Watched At */
             watched_at: string;
         };
-        /** WatchedIn */
         WatchedIn: {
-            /**
-             * Watched At
-             * @description ISO date or datetime; default now
-             */
+            /** @description ISO date or datetime; default now */
             watched_at?: string | null;
+        } & {
+            [key: string]: unknown;
         };
-        /** WatchesOut */
         WatchesOut: {
-            /** Id */
+            /** Format: int64 */
             id?: number | null;
-            /**
-             * Ok
-             * @default true
-             */
+            /** @default true */
             ok: boolean;
-            /** Watches */
             watches: components["schemas"]["Watch"][];
         };
-        /** WatchlistOut */
         WatchlistOut: {
-            /**
-             * Ok
-             * @default true
-             */
+            /** @default true */
             ok: boolean;
-            /** Watchlist */
             watchlist: boolean;
         };
     };
@@ -3510,7 +2857,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -3519,13 +2866,129 @@ export interface operations {
                     "application/json": components["schemas"]["AppTokenOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    sign_in_methods_api_v1_auth_methods_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SignInMethodsOut"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    oidc_callback_api_v1_auth_oidc_callback_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    oidc_login_api_v1_auth_oidc_login_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    password_sign_in_api_v1_auth_password_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordSignInIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppTokenOut"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -3543,7 +3006,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -3552,13 +3015,13 @@ export interface operations {
                     "application/json": components["schemas"]["PageOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -3567,7 +3030,7 @@ export interface operations {
         parameters: {
             query?: {
                 page?: number;
-                media?: components["schemas"]["MediaType"] | null;
+                media?: "movie" | "tv";
             };
             header?: never;
             path: {
@@ -3577,7 +3040,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -3586,13 +3049,13 @@ export interface operations {
                     "application/json": components["schemas"]["CollectionOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -3600,14 +3063,14 @@ export interface operations {
     discover_api_v1_discover_get: {
         parameters: {
             query?: {
-                media?: components["schemas"]["MediaType"];
-                genre?: string | null;
-                provider?: string | null;
-                year_from?: number | null;
-                year_to?: number | null;
-                min_rating?: number | null;
-                language?: string | null;
-                sort?: string | null;
+                media?: "movie" | "tv";
+                genre?: string;
+                provider?: string;
+                year_from?: number;
+                year_to?: number;
+                min_rating?: number;
+                language?: string;
+                sort?: string;
                 page?: number;
             };
             header?: never;
@@ -3616,7 +3079,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -3625,13 +3088,13 @@ export interface operations {
                     "application/json": components["schemas"]["PageOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -3645,13 +3108,25 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
+                headers: {
+                    "Content-Disposition"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -3659,7 +3134,7 @@ export interface operations {
     genres_api_v1_genres_get: {
         parameters: {
             query?: {
-                media?: components["schemas"]["MediaType"];
+                media?: "movie" | "tv";
             };
             header?: never;
             path?: never;
@@ -3667,7 +3142,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -3676,13 +3151,13 @@ export interface operations {
                     "application/json": components["schemas"]["GenresOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -3698,7 +3173,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -3707,13 +3182,13 @@ export interface operations {
                     "application/json": components["schemas"]["CardsOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -3722,7 +3197,7 @@ export interface operations {
         parameters: {
             query?: {
                 page?: number;
-                media?: components["schemas"]["MediaType"] | null;
+                media?: "movie" | "tv";
             };
             header?: never;
             path?: never;
@@ -3730,7 +3205,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -3739,46 +3214,13 @@ export interface operations {
                     "application/json": components["schemas"]["HistoryOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    remove_history_api_v1_history_remove_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["IdsIn"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Ok"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -3794,7 +3236,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -3803,13 +3245,13 @@ export interface operations {
                     "application/json": components["schemas"]["HomeOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -3825,7 +3267,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -3834,13 +3276,13 @@ export interface operations {
                     "application/json": components["schemas"]["HomeConfigOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -3860,7 +3302,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -3869,13 +3311,13 @@ export interface operations {
                     "application/json": components["schemas"]["HomeConfigOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -3891,7 +3333,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -3900,13 +3342,13 @@ export interface operations {
                     "application/json": components["schemas"]["HomeConfigOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -3925,20 +3367,24 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
+                    "Cache-Control"?: string;
+                    "Content-Type"?: string;
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": string;
+                };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -3952,13 +3398,22 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["ListsOut"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -3976,7 +3431,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -3985,13 +3440,13 @@ export interface operations {
                     "application/json": components["schemas"]["CreatedOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -4009,7 +3464,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -4018,13 +3473,13 @@ export interface operations {
                     "application/json": components["schemas"]["CreatedOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -4033,7 +3488,7 @@ export interface operations {
         parameters: {
             query?: {
                 page?: number;
-                media?: components["schemas"]["MediaType"] | null;
+                media?: "movie" | "tv";
                 sort?: "list" | "added" | "title" | "year" | "rating";
             };
             header?: never;
@@ -4044,7 +3499,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -4053,13 +3508,13 @@ export interface operations {
                     "application/json": components["schemas"]["ListOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -4075,7 +3530,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -4084,13 +3539,13 @@ export interface operations {
                     "application/json": components["schemas"]["Ok"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -4110,7 +3565,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -4119,13 +3574,13 @@ export interface operations {
                     "application/json": components["schemas"]["ListFlagsOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -4141,7 +3596,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -4150,13 +3605,13 @@ export interface operations {
                     "application/json": components["schemas"]["CreatedOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -4176,7 +3631,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -4185,13 +3640,13 @@ export interface operations {
                     "application/json": components["schemas"]["AddedOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -4201,15 +3656,15 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                media: components["schemas"]["MediaType"];
                 list_id: number;
+                media: "movie" | "tv";
                 tmdb_id: number;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -4218,13 +3673,13 @@ export interface operations {
                     "application/json": components["schemas"]["Ok"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -4240,7 +3695,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -4249,13 +3704,13 @@ export interface operations {
                     "application/json": components["schemas"]["CountOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -4273,7 +3728,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -4282,13 +3737,13 @@ export interface operations {
                     "application/json": components["schemas"]["FollowOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -4304,7 +3759,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -4313,13 +3768,13 @@ export interface operations {
                     "application/json": components["schemas"]["MDBListExploreOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -4335,7 +3790,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -4344,13 +3799,13 @@ export interface operations {
                     "application/json": components["schemas"]["MDBListPreviewOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -4364,13 +3819,22 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["MeOut"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -4384,13 +3848,22 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["DeviceOut"][];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -4408,7 +3881,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -4417,13 +3890,13 @@ export interface operations {
                     "application/json": components["schemas"]["PairConfirmOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -4439,7 +3912,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -4448,33 +3921,13 @@ export interface operations {
                     "application/json": components["schemas"]["Ok"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_digests_api_v1_me_digests_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DigestOut"][];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -4490,22 +3943,20 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/html": string;
-                };
+                content?: never;
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -4521,7 +3972,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -4530,13 +3981,13 @@ export interface operations {
                     "application/json": components["schemas"]["SentOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -4552,7 +4003,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -4561,13 +4012,13 @@ export interface operations {
                     "application/json": components["schemas"]["DigestOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -4581,13 +4032,22 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["EmailSettings"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -4605,7 +4065,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -4614,13 +4074,13 @@ export interface operations {
                     "application/json": components["schemas"]["EmailSettings"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -4634,13 +4094,22 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["JellyfinLink"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -4654,13 +4123,22 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["Ok"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -4678,7 +4156,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -4687,13 +4165,13 @@ export interface operations {
                     "application/json": components["schemas"]["QuickConnectStateOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -4707,13 +4185,22 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["QuickConnectOut"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -4731,7 +4218,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -4740,13 +4227,13 @@ export interface operations {
                     "application/json": components["schemas"]["QuickConnectStateOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -4760,13 +4247,22 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["PlayerSettingsOut"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -4784,7 +4280,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -4793,13 +4289,13 @@ export interface operations {
                     "application/json": components["schemas"]["PlayerSettingsOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -4813,13 +4309,22 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["TokenOut"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -4833,13 +4338,55 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["Ok"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    put_time_zone_api_v1_me_time_zone_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TimeZoneIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimeZoneOut"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -4855,7 +4402,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -4864,13 +4411,13 @@ export interface operations {
                     "application/json": components["schemas"]["PersonOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -4884,13 +4431,22 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["OpenSessionOut"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -4906,7 +4462,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -4915,13 +4471,13 @@ export interface operations {
                     "application/json": components["schemas"]["PlaySessionOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -4937,7 +4493,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -4946,13 +4502,13 @@ export interface operations {
                     "application/json": components["schemas"]["BackOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -4972,7 +4528,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -4981,13 +4537,13 @@ export interface operations {
                     "application/json": components["schemas"]["Ok"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -5001,13 +4557,22 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["ProvidersOut"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -5021,13 +4586,22 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["RatePromptOut"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -5045,7 +4619,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -5054,44 +4628,13 @@ export interface operations {
                     "application/json": components["schemas"]["Ok"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_ratings_api_v1_ratings_get: {
-        parameters: {
-            query?: {
-                page?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RatingsOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -5108,7 +4651,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -5117,13 +4660,13 @@ export interface operations {
                     "application/json": components["schemas"]["RequestsOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -5141,7 +4684,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -5150,13 +4693,13 @@ export interface operations {
                     "application/json": components["schemas"]["RowsOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -5174,7 +4717,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -5183,13 +4726,13 @@ export interface operations {
                     "application/json": components["schemas"]["ScrobbleOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -5201,15 +4744,28 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/octet-stream": string;
+            };
+        };
         responses: {
-            /** @description Successful Response */
+            /** @description Accepted */
             202: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["Ok"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -5227,7 +4783,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Successful Response */
+            /** @description Accepted */
             202: {
                 headers: {
                     [name: string]: unknown;
@@ -5236,13 +4792,13 @@ export interface operations {
                     "application/json": components["schemas"]["Ok"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -5260,7 +4816,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -5269,13 +4825,13 @@ export interface operations {
                     "application/json": components["schemas"]["PairStartOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -5293,7 +4849,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -5302,13 +4858,13 @@ export interface operations {
                     "application/json": components["schemas"]["PairPollOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -5317,7 +4873,7 @@ export interface operations {
         parameters: {
             query: {
                 q: string;
-                media?: components["schemas"]["MediaType"] | null;
+                media?: "movie" | "tv";
                 page?: number;
             };
             header?: never;
@@ -5326,7 +4882,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -5335,13 +4891,13 @@ export interface operations {
                     "application/json": components["schemas"]["SearchOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -5350,7 +4906,7 @@ export interface operations {
         parameters: {
             query: {
                 q: string;
-                media?: components["schemas"]["MediaType"] | null;
+                media?: "movie" | "tv";
             };
             header?: never;
             path?: never;
@@ -5358,7 +4914,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -5367,13 +4923,13 @@ export interface operations {
                     "application/json": components["schemas"]["AiGuessOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -5387,13 +4943,22 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["SyncOut"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -5409,7 +4974,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -5418,13 +4983,13 @@ export interface operations {
                     "application/json": components["schemas"]["SyncOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -5434,14 +4999,14 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                media: components["schemas"]["MediaType"];
+                media: "movie" | "tv";
                 tmdb_id: number;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -5450,13 +5015,13 @@ export interface operations {
                     "application/json": components["schemas"]["TitleDetail"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -5466,16 +5031,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                media: components["schemas"]["MediaType"];
+                media: "movie" | "tv";
+                tmdb_id: number;
                 season: number;
                 episode: number;
-                tmdb_id: number;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -5484,13 +5049,13 @@ export interface operations {
                     "application/json": components["schemas"]["FavoriteOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -5500,16 +5065,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                media: components["schemas"]["MediaType"];
+                media: "movie" | "tv";
+                tmdb_id: number;
                 season: number;
                 episode: number;
-                tmdb_id: number;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -5518,13 +5083,13 @@ export interface operations {
                     "application/json": components["schemas"]["FavoriteOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -5534,10 +5099,10 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                media: components["schemas"]["MediaType"];
+                media: "movie" | "tv";
+                tmdb_id: number;
                 season: number;
                 episode: number;
-                tmdb_id: number;
             };
             cookie?: never;
         };
@@ -5547,7 +5112,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -5556,51 +5121,13 @@ export interface operations {
                     "application/json": components["schemas"]["EpisodeRatingOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    rate_episode_api_v1_title__media___tmdb_id__episode__season___episode__rating_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                media: components["schemas"]["MediaType"];
-                season: number;
-                episode: number;
-                tmdb_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["EpisodeRatingIn"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EpisodeRatingOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -5610,16 +5137,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                media: components["schemas"]["MediaType"];
+                media: "movie" | "tv";
+                tmdb_id: number;
                 season: number;
                 episode: number;
-                tmdb_id: number;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -5628,13 +5155,13 @@ export interface operations {
                     "application/json": components["schemas"]["EpisodeRatingOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -5644,7 +5171,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                media: components["schemas"]["MediaType"];
+                media: "movie" | "tv";
                 tmdb_id: number;
             };
             cookie?: never;
@@ -5655,7 +5182,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -5664,13 +5191,13 @@ export interface operations {
                     "application/json": components["schemas"]["ChangedOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -5680,14 +5207,14 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                media: components["schemas"]["MediaType"];
+                media: "movie" | "tv";
                 tmdb_id: number;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -5696,13 +5223,13 @@ export interface operations {
                     "application/json": components["schemas"]["FavoriteOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -5712,14 +5239,14 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                media: components["schemas"]["MediaType"];
+                media: "movie" | "tv";
                 tmdb_id: number;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -5728,13 +5255,13 @@ export interface operations {
                     "application/json": components["schemas"]["FavoriteOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -5744,14 +5271,14 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                media: components["schemas"]["MediaType"];
+                media: "movie" | "tv";
                 tmdb_id: number;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -5760,13 +5287,13 @@ export interface operations {
                     "application/json": components["schemas"]["ListsForTitleOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -5776,14 +5303,14 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                media: components["schemas"]["MediaType"];
+                media: "movie" | "tv";
                 tmdb_id: number;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -5792,13 +5319,13 @@ export interface operations {
                     "application/json": components["schemas"]["NextEpisodeOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -5806,19 +5333,19 @@ export interface operations {
     play_info_api_v1_title__media___tmdb_id__play_get: {
         parameters: {
             query?: {
-                season?: number | null;
-                episode?: number | null;
+                season?: number;
+                episode?: number;
             };
             header?: never;
             path: {
-                media: components["schemas"]["MediaType"];
+                media: "movie" | "tv";
                 tmdb_id: number;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -5827,13 +5354,13 @@ export interface operations {
                     "application/json": components["schemas"]["PlayInfo"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -5843,7 +5370,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                media: components["schemas"]["MediaType"];
+                media: "movie" | "tv";
                 tmdb_id: number;
             };
             cookie?: never;
@@ -5854,7 +5381,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -5863,13 +5390,13 @@ export interface operations {
                     "application/json": components["schemas"]["PlayOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -5879,7 +5406,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                media: components["schemas"]["MediaType"];
+                media: "movie" | "tv";
                 tmdb_id: number;
             };
             cookie?: never;
@@ -5890,7 +5417,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -5899,13 +5426,13 @@ export interface operations {
                     "application/json": components["schemas"]["RatingOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -5915,14 +5442,14 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                media: components["schemas"]["MediaType"];
+                media: "movie" | "tv";
                 tmdb_id: number;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -5931,13 +5458,13 @@ export interface operations {
                     "application/json": components["schemas"]["RatingOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -5947,14 +5474,14 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                media: components["schemas"]["MediaType"];
+                media: "movie" | "tv";
                 tmdb_id: number;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -5963,13 +5490,13 @@ export interface operations {
                     "application/json": components["schemas"]["RelatedOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -5979,18 +5506,18 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                media: components["schemas"]["MediaType"];
+                media: "movie" | "tv";
                 tmdb_id: number;
             };
             cookie?: never;
         };
         requestBody?: {
             content: {
-                "application/json": components["schemas"]["RequestIn"] | null;
+                "application/json": components["schemas"]["RequestIn"];
             };
         };
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -5999,13 +5526,13 @@ export interface operations {
                     "application/json": components["schemas"]["RequestOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -6015,14 +5542,14 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                media: components["schemas"]["MediaType"];
+                media: "movie" | "tv";
                 tmdb_id: number;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -6031,13 +5558,13 @@ export interface operations {
                     "application/json": components["schemas"]["ScoresOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -6047,15 +5574,15 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                media: components["schemas"]["MediaType"];
-                number: number;
+                media: "movie" | "tv";
                 tmdb_id: number;
+                number: number;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -6064,13 +5591,13 @@ export interface operations {
                     "application/json": components["schemas"]["SeasonOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -6080,14 +5607,14 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                media: components["schemas"]["MediaType"];
+                media: "movie" | "tv";
                 tmdb_id: number;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -6096,13 +5623,13 @@ export interface operations {
                     "application/json": components["schemas"]["TitleState"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -6112,7 +5639,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                media: components["schemas"]["MediaType"];
+                media: "movie" | "tv";
                 tmdb_id: number;
             };
             cookie?: never;
@@ -6123,7 +5650,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -6132,13 +5659,13 @@ export interface operations {
                     "application/json": components["schemas"]["WatchesOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -6148,7 +5675,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                media: components["schemas"]["MediaType"];
+                media: "movie" | "tv";
                 tmdb_id: number;
             };
             cookie?: never;
@@ -6159,7 +5686,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -6168,13 +5695,13 @@ export interface operations {
                     "application/json": components["schemas"]["WatchesOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -6184,14 +5711,14 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                media: components["schemas"]["MediaType"];
+                media: "movie" | "tv";
                 tmdb_id: number;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -6200,13 +5727,13 @@ export interface operations {
                     "application/json": components["schemas"]["WatchlistOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -6216,14 +5743,14 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                media: components["schemas"]["MediaType"];
+                media: "movie" | "tv";
                 tmdb_id: number;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -6232,13 +5759,13 @@ export interface operations {
                     "application/json": components["schemas"]["WatchlistOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -6256,7 +5783,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Successful Response */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -6265,13 +5792,13 @@ export interface operations {
                     "application/json": components["schemas"]["FillOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
