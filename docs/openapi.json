@@ -2177,6 +2177,13 @@
        "null"
       ]
      },
+     "time_zone_mode": {
+      "enum": [
+       "automatic",
+       "manual"
+      ],
+      "type": "string"
+     },
      "user": {
       "type": "string"
      }
@@ -2187,7 +2194,8 @@
      "stats",
      "jellyfin",
      "features",
-     "scrobble_token_set"
+     "scrobble_token_set",
+     "time_zone_mode"
     ],
     "type": "object"
    },
@@ -4122,6 +4130,28 @@
     },
     "type": "object"
    },
+   "TimeZoneChoiceIn": {
+    "additionalProperties": true,
+    "properties": {
+     "mode": {
+      "enum": [
+       "automatic",
+       "manual"
+      ],
+      "type": "string"
+     },
+     "time_zone": {
+      "maxLength": 64,
+      "minLength": 1,
+      "type": "string"
+     }
+    },
+    "required": [
+     "mode",
+     "time_zone"
+    ],
+    "type": "object"
+   },
    "TimeZoneIn": {
     "additionalProperties": true,
     "properties": {
@@ -4136,15 +4166,54 @@
     ],
     "type": "object"
    },
+   "TimeZoneItem": {
+    "additionalProperties": false,
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "offset": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "name",
+     "offset"
+    ],
+    "type": "object"
+   },
    "TimeZoneOut": {
     "additionalProperties": false,
     "properties": {
+     "mode": {
+      "enum": [
+       "automatic",
+       "manual"
+      ],
+      "type": "string"
+     },
      "time_zone": {
       "type": "string"
      }
     },
     "required": [
-     "time_zone"
+     "time_zone",
+     "mode"
+    ],
+    "type": "object"
+   },
+   "TimeZonesOut": {
+    "additionalProperties": false,
+    "properties": {
+     "zones": {
+      "items": {
+       "$ref": "#/components/schemas/TimeZoneItem"
+      },
+      "type": "array"
+     }
+    },
+    "required": [
+     "zones"
     ],
     "type": "object"
    },
@@ -6901,7 +6970,7 @@
   },
   "/api/v1/me/time-zone": {
    "put": {
-    "description": "Store the time zone this browser or phone runs in (an IANA name such as\nEurope/Berlin). History's days, \"this year\", the daily rows and the\ndigest periods follow it. An unknown name is refused (422).",
+    "description": "Report the time zone this browser or phone runs in (an IANA name such as\nEurope/Berlin). History's days, \"this year\", the daily rows and the\ndigest periods follow it. An unknown name is refused (422); so is any\nreport while the person has a zone picked in Profile (409).",
     "operationId": "put_time_zone_api_v1_me_time_zone_put",
     "requestBody": {
      "content": {
@@ -6936,6 +7005,48 @@
      }
     },
     "summary": "Put Time Zone",
+    "tags": [
+     "profile"
+    ]
+   }
+  },
+  "/api/v1/me/time-zone/choice": {
+   "put": {
+    "description": "The person's own choice in Profile. mode \"manual\": keep time_zone (an IANA\nname from GET /time-zones) whatever their devices report. mode\n\"automatic\": follow their devices again, starting with time_zone, the zone\nof the device this is sent from. An unknown name is refused (422).",
+    "operationId": "choose_time_zone_api_v1_me_time_zone_choice_put",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/TimeZoneChoiceIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/TimeZoneOut"
+        }
+       }
+      },
+      "description": "OK"
+     },
+     "default": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      },
+      "description": "Error"
+     }
+    },
+    "summary": "Choose Time Zone",
     "tags": [
      "profile"
     ]
@@ -7771,6 +7882,38 @@
      }
     },
     "summary": "Run Sync",
+    "tags": [
+     "profile"
+    ]
+   }
+  },
+  "/api/v1/time-zones": {
+   "get": {
+    "description": "Every time zone a person can pick in Profile (IANA names, sorted), with\neach one's offset from UTC now.",
+    "operationId": "time_zones_api_v1_time_zones_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/TimeZonesOut"
+        }
+       }
+      },
+      "description": "OK"
+     },
+     "default": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      },
+      "description": "Error"
+     }
+    },
+    "summary": "Time Zones",
     "tags": [
      "profile"
     ]

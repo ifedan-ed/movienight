@@ -179,7 +179,7 @@ func (q *Queries) SyncUnclaimed(ctx context.Context, arg SyncUnclaimedParams) ([
 }
 
 const syncUserByJellyfinID = `-- name: SyncUserByJellyfinID :one
-SELECT id, username, email, display_name, is_admin, created_at, last_seen_at, jellyfin_user_id, jellyfin_user_name, jellyfin_token_enc, jellyfin_linked_at, seerr_user_id, scrobble_token_hash, oidc_sub, password_hash, session_epoch, time_zone FROM users WHERE jellyfin_user_id = $1 ORDER BY id LIMIT 1
+SELECT id, username, email, display_name, is_admin, created_at, last_seen_at, jellyfin_user_id, jellyfin_user_name, jellyfin_token_enc, jellyfin_linked_at, seerr_user_id, scrobble_token_hash, oidc_sub, password_hash, session_epoch, time_zone, time_zone_manual FROM users WHERE jellyfin_user_id = $1 ORDER BY id LIMIT 1
 `
 
 // SyncUserByJellyfinID: the person linked to a Jellyfin account (ids are
@@ -205,6 +205,7 @@ func (q *Queries) SyncUserByJellyfinID(ctx context.Context, jellyfinUserID *stri
 		&i.PasswordHash,
 		&i.SessionEpoch,
 		&i.TimeZone,
+		&i.TimeZoneManual,
 	)
 	return i, err
 }

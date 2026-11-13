@@ -444,6 +444,10 @@ button.trow { width: 100%; text-align: left; }
 .pin.star { padding: 0 10px; }
 .pin.star.on { color: var(--accent); }
 .opt .grow { display: flex; flex-direction: column; gap: 2px; }
+.opt:disabled { opacity: .5; cursor: default; }
+/* Profile's time-zone picker: the search stays on top while the long list
+   scrolls under it (the sheet itself is what scrolls; -8px is its padding). */
+.tz-search { position: sticky; top: -8px; z-index: 1; background: var(--bg-2); padding: 8px 0 6px; margin: 0 0 8px; }
 /* The search box has its own clear button; the browser's would be a second. */
 input[type="search"]::-webkit-search-cancel-button, input[type="search"]::-webkit-search-decoration { -webkit-appearance: none; appearance: none; display: none; }
 /* The day picker in "Mark as watched": a month drawn in the sheet. */

@@ -317,7 +317,7 @@ UPDATE users SET
     jellyfin_user_id = $1::text, jellyfin_user_name = $2,
     jellyfin_token_enc = $3, jellyfin_linked_at = now()
 WHERE id = $4
-RETURNING id, username, email, display_name, is_admin, created_at, last_seen_at, jellyfin_user_id, jellyfin_user_name, jellyfin_token_enc, jellyfin_linked_at, seerr_user_id, scrobble_token_hash, oidc_sub, password_hash, session_epoch, time_zone
+RETURNING id, username, email, display_name, is_admin, created_at, last_seen_at, jellyfin_user_id, jellyfin_user_name, jellyfin_token_enc, jellyfin_linked_at, seerr_user_id, scrobble_token_hash, oidc_sub, password_hash, session_epoch, time_zone, time_zone_manual
 `
 
 type LinkJellyfinParams struct {
@@ -355,6 +355,7 @@ func (q *Queries) LinkJellyfin(ctx context.Context, arg LinkJellyfinParams) (Use
 		&i.PasswordHash,
 		&i.SessionEpoch,
 		&i.TimeZone,
+		&i.TimeZoneManual,
 	)
 	return i, err
 }

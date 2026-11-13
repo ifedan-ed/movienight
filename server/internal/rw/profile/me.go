@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/danielgtaylor/huma/v2"
 
@@ -51,23 +52,52 @@ func (m *me) register() {
 		})
 
 	// The web app and the phone app call this once per start when the zone
-	// they run in differs from the one /me says is stored, so a person's
-	// days follow wherever their device is set to, including after travel.
+	// they run in differs from the one /me says is stored and the person
+	// has not picked one by hand, so a person's days follow wherever their
+	// device is set to, including after travel. A report is refused (409)
+	// once they have picked one: the device's zone must not undo their
+	// choice, and an older app that does not know about choosing still sends
+	// it.
 	huma.Register(h, rw.Op("put_time_zone_api_v1_me_time_zone_put", http.MethodPut, "/api/v1/me/time-zone", "Put Time Zone", "profile",
-		"Store the time zone this browser or phone runs in (an IANA name such as\nEurope/Berlin). History's days, \"this year\", the daily rows and the\ndigest periods follow it. An unknown name is refused (422)."),
+		"Report the time zone this browser or phone runs in (an IANA name such as\nEurope/Berlin). History's days, \"this year\", the daily rows and the\ndigest periods follow it. An unknown name is refused (422); so is any\nreport while the person has a zone picked in Profile (409)."),
 		func(ctx context.Context, in *rw.Body[schema.TimeZoneIn]) (*rw.Body[schema.TimeZoneOut], error) {
 			id, err := d.User(ctx)
 			if err != nil {
 				return nil, err
 			}
-			u, err := m.users.SetTimeZone(ctx, id.User.ID, in.Body.TimeZone)
-			if errors.Is(err, users.ErrBadTimeZone) {
-				return nil, rw.Err(http.StatusUnprocessableEntity, err.Error())
+			u, err := m.users.ReportTimeZone(ctx, id.User.ID, in.Body.TimeZone)
+			return zoneOut(ctx, d, u, err)
+		})
+
+	// Profile's "Time zone": pick one by hand, or back to Automatic. A
+	// separate operation from the report above, so the server, not the
+	// client, decides that a report never overrides a choice.
+	huma.Register(h, rw.Op("choose_time_zone_api_v1_me_time_zone_choice_put", http.MethodPut, "/api/v1/me/time-zone/choice", "Choose Time Zone", "profile",
+		"The person's own choice in Profile. mode \"manual\": keep time_zone (an IANA\nname from GET /time-zones) whatever their devices report. mode\n\"automatic\": follow their devices again, starting with time_zone, the zone\nof the device this is sent from. An unknown name is refused (422)."),
+		func(ctx context.Context, in *rw.Body[schema.TimeZoneChoiceIn]) (*rw.Body[schema.TimeZoneOut], error) {
+			id, err := d.User(ctx)
+			if err != nil {
+				return nil, err
 			}
+			u, err := m.users.ChooseTimeZone(ctx, id.User.ID, in.Body.TimeZone, in.Body.Mode == modeManual)
+			return zoneOut(ctx, d, u, err)
+		})
+
+	huma.Register(h, rw.Op("time_zones_api_v1_time_zones_get", http.MethodGet, "/api/v1/time-zones", "Time Zones", "profile",
+		"Every time zone a person can pick in Profile (IANA names, sorted), with\neach one's offset from UTC now."),
+		func(ctx context.Context, _ *struct{}) (*rw.Body[schema.TimeZonesOut], error) {
+			if _, err := d.User(ctx); err != nil {
+				return nil, err
+			}
+			zones, err := m.users.Zones(ctx, time.Now())
 			if err != nil {
 				return nil, d.Fail(ctx, err)
 			}
-			return rw.Out(schema.TimeZoneOut{TimeZone: *u.TimeZone}), nil
+			out := schema.TimeZonesOut{Zones: make([]schema.TimeZoneItem, len(zones))}
+			for i, z := range zones {
+				out.Zones[i] = schema.TimeZoneItem{Name: z.Name, Offset: z.Offset}
+			}
+			return rw.Out(out), nil
 		})
 
 	huma.Register(h, rw.Op("get_history_api_v1_history_get", http.MethodGet, "/api/v1/history", "Get History", "profile"),
@@ -178,7 +208,35 @@ func (m *me) me(ctx context.Context, uid int32) (schema.MeOut, error) {
 			NameMaxChars: c.RW.NameMaxChars, ReportedMaxChars: c.ReportedMaxChars, BatchMaxItems: c.RW.BatchMaxItems},
 		AdminNotices: notices,
 		TimeZone:     u.TimeZone,
+		TimeZoneMode: zoneMode(u),
 	}, nil
+}
+
+// The two values of time_zone_mode in /me and TimeZoneOut.mode.
+const (
+	modeAutomatic = "automatic"
+	modeManual    = "manual"
+)
+
+func zoneMode(u store.User) string {
+	if u.TimeZoneManual {
+		return modeManual
+	}
+	return modeAutomatic
+}
+
+// zoneOut answers both time-zone writes: what is stored now, or the
+// refusal in words.
+func zoneOut(ctx context.Context, d *rw.Deps, u store.User, err error) (*rw.Body[schema.TimeZoneOut], error) {
+	switch {
+	case errors.Is(err, users.ErrBadTimeZone):
+		return nil, rw.Err(http.StatusUnprocessableEntity, err.Error())
+	case errors.Is(err, users.ErrTimeZoneChosen):
+		return nil, rw.Err(http.StatusConflict, err.Error())
+	case err != nil:
+		return nil, d.Fail(ctx, err)
+	}
+	return rw.Out(schema.TimeZoneOut{TimeZone: *u.TimeZone, Mode: zoneMode(u)}), nil
 }
 
 // historyPage is one page of merged watches, grouped and paged in SQL

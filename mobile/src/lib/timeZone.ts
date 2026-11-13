@@ -2,7 +2,8 @@
 // (history, "this year", the daily rows, the digest emails' weeks) are the
 // phone's days. The zone comes from the phone's own setting (Intl, which
 // Hermes answers from the system), never from where the connection seems to
-// come from.
+// come from. Not while the person has a zone picked in Profile
+// (components/TimeZoneSheet.tsx).
 import { useEffect, useRef } from "react";
 import { AppState } from "react-native";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -33,8 +34,11 @@ export function useReportTimeZone() {
   // again until the app restarts; no connection is tried again next time.
   const sent = useRef<string | null>(null);
   const stored = me.data ? (me.data.time_zone ?? null) : undefined;
+  // A zone picked in Profile is kept whatever the phone is set to (the
+  // server refuses the report anyway: 409).
+  const manual = me.data?.time_zone_mode === "manual";
   useEffect(() => {
-    if (stored === undefined) return; // /me not read yet
+    if (stored === undefined || manual) return; // /me not read yet, or a zone chosen by hand
     const check = () => {
       const zone = deviceTimeZone();
       if (!zone || zone === stored || zone === sent.current) return;
@@ -46,5 +50,5 @@ export function useReportTimeZone() {
     check();
     const sub = AppState.addEventListener("change", (s) => { if (s === "active") check(); });
     return () => sub.remove();
-  }, [stored, qc]);
+  }, [stored, manual, qc]);
 }

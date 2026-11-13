@@ -31,7 +31,7 @@ Watch history, ratings, lists, requests and "what's next" in one place — on th
 - Requests through Seerr (optional), followed from waiting to available.
 - Every device: a website (installable as an app), an iPhone and Android app, a Kodi add-on and a Jellyfin plugin, all talking to your server.
 - Sign in your way: username and password (on the website and in the phone app, with iPhone password autofill), any OIDC provider (Authentik, Keycloak, Pocket ID, ...), or both. Sessions live on the server, so signing out really signs out.
-- Your own time zone: each person's days, "this year", Home's morning and evening rows and their digest emails follow the zone their browser or phone reports.
+- Your own time zone: each person's days, "this year", Home's morning and evening rows and their digest emails follow the zone their browser or phone reports, or one they pick in Profile.
 - Private by design: no ads, no analytics, no tracking. Your data stays on your server; everyone can download theirs.
 
 Movie Night is a watch diary, not a media source. It does not host, provide, stream, download or index films or television. It keeps what you and your people enter, reads titles and artwork from [TMDB](https://www.themoviedb.org/), and reads play state from a Jellyfin server you control.

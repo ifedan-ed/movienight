@@ -66,7 +66,7 @@ Watch history, ratings, lists, requests and "what's next", on the web, iPhone, A
 
 Movie Night is one Docker Compose stack behind your own reverse proxy: a small Go server (an `api` that serves and a `worker` that runs the background jobs, from one image), Postgres for everyone's data, Meilisearch for search and Valkey for shared caches and queues. Titles and artwork come from [TMDB](https://www.themoviedb.org/) (a free API key), and your library and plays from your Jellyfin server. Seerr, MDBList, an OpenAI-compatible AI endpoint and SMTP are optional.
 
-People sign in with a username and password you give them, with your OIDC provider (Authentik, Keycloak, Pocket ID, ...), or either, on the website and in the phone app. The Kodi add-on and Jellyfin plugin use their own device tokens. Each person's days and digest weeks follow the time zone their browser or phone reports.
+People sign in with a username and password you give them, with your OIDC provider (Authentik, Keycloak, Pocket ID, ...), or either, on the website and in the phone app. The Kodi add-on and Jellyfin plugin use their own device tokens. Each person's days and digest weeks follow the time zone their browser or phone reports, or one they pick in Profile.
 
 !!! note "A watch diary, not a media source"
     Movie Night does not host, provide, stream, download or index films or television. It keeps what you and your people enter, and can read play state from a Jellyfin server you control.

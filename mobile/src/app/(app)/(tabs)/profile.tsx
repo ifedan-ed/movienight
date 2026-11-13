@@ -1,6 +1,7 @@
 // Profile: your numbers, recently watched (an episode opens that episode),
-// connections (Jellyfin, players, emails, signed-in devices) and signing
-// this phone out.
+// connections (Jellyfin, players, emails, signed-in devices), the time zone
+// and signing this phone out.
+import { useState } from "react";
 import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
@@ -8,6 +9,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { PosterCard, usePosterWidth } from "@/components/cards";
 import { Icon, type IconName } from "@/components/Icon";
+import { TimeZoneSheet, timeZoneSummary } from "@/components/TimeZoneSheet";
 import { Button, ErrorBox, Loading, SectionTitle } from "@/components/ui";
 import { api } from "@/lib/api";
 import { flush, waiting } from "@/lib/outbox";
@@ -41,6 +43,7 @@ export default function Profile() {
       `${n} ${n === 1 ? "change" : "changes"} made on this phone (ratings, ticks, lists, ...) ${n === 1 ? "hasn't" : "haven't"} reached Movie Night yet. Signing out now loses ${n === 1 ? "it" : "them"}; stay signed in and ${n === 1 ? "it goes" : "they go"} as soon as the phone is online.`,
       [{ text: "Stay signed in", style: "cancel" }, { text: "Sign out anyway", style: "destructive", onPress: () => { signOut(); } }]);
   };
+  const [zoneOpen, setZoneOpen] = useState(false);
   const me = useQuery({ queryKey: ["me"], queryFn: () => api.get<MeOut>("/api/v1/me") });
   const hist = useQuery({ queryKey: ["history", 1], queryFn: () => api.get<HistoryOut>("/api/v1/history?page=1") });
   const wheel = usePullRefresh(() => Promise.all([me.refetch(), hist.refetch()]), me.isRefetching || hist.isRefetching);
@@ -105,6 +108,11 @@ export default function Profile() {
               <Row icon="mail" title="Emails" sub="Weekly digest, month and year in review: on or off" onPress={() => router.push("/settings/emails")} />
               <Row icon="phone" title="Signed-in devices" sub="Phones and tablets using this account" onPress={() => router.push("/settings/devices")} />
             </View>
+            <SectionTitle title="Settings" />
+            <View style={{ paddingHorizontal: gutter }}>
+              <Row icon="globe" title="Time zone" sub={timeZoneSummary(m)} onPress={() => setZoneOpen(true)} />
+            </View>
+            {zoneOpen ? <TimeZoneSheet me={m} onClose={() => setZoneOpen(false)} /> : null}
             <View style={{ padding: gutter, gap: 10 }}>
               <Button kind="danger" label="Sign out of this phone" onPress={askSignOut} />
             </View>

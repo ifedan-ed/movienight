@@ -10,11 +10,53 @@ import (
 	"time"
 )
 
+const chooseUserTimeZone = `-- name: ChooseUserTimeZone :one
+UPDATE users SET time_zone = $1::text, time_zone_manual = $2::boolean
+WHERE id = $3 AND (now() AT TIME ZONE $1::text) IS NOT NULL
+RETURNING id, username, email, display_name, is_admin, created_at, last_seen_at, jellyfin_user_id, jellyfin_user_name, jellyfin_token_enc, jellyfin_linked_at, seerr_user_id, scrobble_token_hash, oidc_sub, password_hash, session_epoch, time_zone, time_zone_manual
+`
+
+type ChooseUserTimeZoneParams struct {
+	TimeZone string
+	Manual   bool
+	ID       int32
+}
+
+// ChooseUserTimeZone is the person's own choice in Profile: a zone picked by
+// hand (manual true), or "Automatic" again with the zone their device runs
+// in now (manual false), after which reports change it again. Checked
+// against Postgres's zones as ReportUserTimeZone is.
+func (q *Queries) ChooseUserTimeZone(ctx context.Context, arg ChooseUserTimeZoneParams) (User, error) {
+	row := q.db.QueryRow(ctx, chooseUserTimeZone, arg.TimeZone, arg.Manual, arg.ID)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.DisplayName,
+		&i.IsAdmin,
+		&i.CreatedAt,
+		&i.LastSeenAt,
+		&i.JellyfinUserID,
+		&i.JellyfinUserName,
+		&i.JellyfinTokenEnc,
+		&i.JellyfinLinkedAt,
+		&i.SeerrUserID,
+		&i.ScrobbleTokenHash,
+		&i.OidcSub,
+		&i.PasswordHash,
+		&i.SessionEpoch,
+		&i.TimeZone,
+		&i.TimeZoneManual,
+	)
+	return i, err
+}
+
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (username, email, display_name, is_admin, oidc_sub, created_at, last_seen_at)
 VALUES ($1, $2, $3, $4, $5, now(), now())
 ON CONFLICT DO NOTHING
-RETURNING id, username, email, display_name, is_admin, created_at, last_seen_at, jellyfin_user_id, jellyfin_user_name, jellyfin_token_enc, jellyfin_linked_at, seerr_user_id, scrobble_token_hash, oidc_sub, password_hash, session_epoch, time_zone
+RETURNING id, username, email, display_name, is_admin, created_at, last_seen_at, jellyfin_user_id, jellyfin_user_name, jellyfin_token_enc, jellyfin_linked_at, seerr_user_id, scrobble_token_hash, oidc_sub, password_hash, session_epoch, time_zone, time_zone_manual
 `
 
 type CreateUserParams struct {
@@ -54,13 +96,14 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.PasswordHash,
 		&i.SessionEpoch,
 		&i.TimeZone,
+		&i.TimeZoneManual,
 	)
 	return i, err
 }
 
 const getUserByID = `-- name: GetUserByID :one
 
-SELECT id, username, email, display_name, is_admin, created_at, last_seen_at, jellyfin_user_id, jellyfin_user_name, jellyfin_token_enc, jellyfin_linked_at, seerr_user_id, scrobble_token_hash, oidc_sub, password_hash, session_epoch, time_zone FROM users WHERE id = $1
+SELECT id, username, email, display_name, is_admin, created_at, last_seen_at, jellyfin_user_id, jellyfin_user_name, jellyfin_token_enc, jellyfin_linked_at, seerr_user_id, scrobble_token_hash, oidc_sub, password_hash, session_epoch, time_zone, time_zone_manual FROM users WHERE id = $1
 `
 
 // People (the users table, as Alembic made it). created_at has no database
@@ -86,12 +129,13 @@ func (q *Queries) GetUserByID(ctx context.Context, id int32) (User, error) {
 		&i.PasswordHash,
 		&i.SessionEpoch,
 		&i.TimeZone,
+		&i.TimeZoneManual,
 	)
 	return i, err
 }
 
 const getUserByOIDCSub = `-- name: GetUserByOIDCSub :one
-SELECT id, username, email, display_name, is_admin, created_at, last_seen_at, jellyfin_user_id, jellyfin_user_name, jellyfin_token_enc, jellyfin_linked_at, seerr_user_id, scrobble_token_hash, oidc_sub, password_hash, session_epoch, time_zone FROM users WHERE oidc_sub = $1
+SELECT id, username, email, display_name, is_admin, created_at, last_seen_at, jellyfin_user_id, jellyfin_user_name, jellyfin_token_enc, jellyfin_linked_at, seerr_user_id, scrobble_token_hash, oidc_sub, password_hash, session_epoch, time_zone, time_zone_manual FROM users WHERE oidc_sub = $1
 `
 
 func (q *Queries) GetUserByOIDCSub(ctx context.Context, oidcSub *string) (User, error) {
@@ -115,12 +159,13 @@ func (q *Queries) GetUserByOIDCSub(ctx context.Context, oidcSub *string) (User, 
 		&i.PasswordHash,
 		&i.SessionEpoch,
 		&i.TimeZone,
+		&i.TimeZoneManual,
 	)
 	return i, err
 }
 
 const getUserByScrobbleTokenHash = `-- name: GetUserByScrobbleTokenHash :one
-SELECT id, username, email, display_name, is_admin, created_at, last_seen_at, jellyfin_user_id, jellyfin_user_name, jellyfin_token_enc, jellyfin_linked_at, seerr_user_id, scrobble_token_hash, oidc_sub, password_hash, session_epoch, time_zone FROM users WHERE scrobble_token_hash = $1
+SELECT id, username, email, display_name, is_admin, created_at, last_seen_at, jellyfin_user_id, jellyfin_user_name, jellyfin_token_enc, jellyfin_linked_at, seerr_user_id, scrobble_token_hash, oidc_sub, password_hash, session_epoch, time_zone, time_zone_manual FROM users WHERE scrobble_token_hash = $1
 `
 
 func (q *Queries) GetUserByScrobbleTokenHash(ctx context.Context, scrobbleTokenHash *string) (User, error) {
@@ -144,12 +189,13 @@ func (q *Queries) GetUserByScrobbleTokenHash(ctx context.Context, scrobbleTokenH
 		&i.PasswordHash,
 		&i.SessionEpoch,
 		&i.TimeZone,
+		&i.TimeZoneManual,
 	)
 	return i, err
 }
 
 const getUserByUsername = `-- name: GetUserByUsername :one
-SELECT id, username, email, display_name, is_admin, created_at, last_seen_at, jellyfin_user_id, jellyfin_user_name, jellyfin_token_enc, jellyfin_linked_at, seerr_user_id, scrobble_token_hash, oidc_sub, password_hash, session_epoch, time_zone FROM users WHERE username = $1
+SELECT id, username, email, display_name, is_admin, created_at, last_seen_at, jellyfin_user_id, jellyfin_user_name, jellyfin_token_enc, jellyfin_linked_at, seerr_user_id, scrobble_token_hash, oidc_sub, password_hash, session_epoch, time_zone, time_zone_manual FROM users WHERE username = $1
 `
 
 func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User, error) {
@@ -173,6 +219,7 @@ func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User,
 		&i.PasswordHash,
 		&i.SessionEpoch,
 		&i.TimeZone,
+		&i.TimeZoneManual,
 	)
 	return i, err
 }
@@ -184,7 +231,7 @@ SET oidc_sub = $2,
     display_name = COALESCE(display_name, $4),
     last_seen_at = now()
 WHERE id = $1 AND oidc_sub IS NULL
-RETURNING id, username, email, display_name, is_admin, created_at, last_seen_at, jellyfin_user_id, jellyfin_user_name, jellyfin_token_enc, jellyfin_linked_at, seerr_user_id, scrobble_token_hash, oidc_sub, password_hash, session_epoch, time_zone
+RETURNING id, username, email, display_name, is_admin, created_at, last_seen_at, jellyfin_user_id, jellyfin_user_name, jellyfin_token_enc, jellyfin_linked_at, seerr_user_id, scrobble_token_hash, oidc_sub, password_hash, session_epoch, time_zone, time_zone_manual
 `
 
 type LinkOIDCSubParams struct {
@@ -223,12 +270,13 @@ func (q *Queries) LinkOIDCSub(ctx context.Context, arg LinkOIDCSubParams) (User,
 		&i.PasswordHash,
 		&i.SessionEpoch,
 		&i.TimeZone,
+		&i.TimeZoneManual,
 	)
 	return i, err
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT id, username, email, display_name, is_admin, created_at, last_seen_at, jellyfin_user_id, jellyfin_user_name, jellyfin_token_enc, jellyfin_linked_at, seerr_user_id, scrobble_token_hash, oidc_sub, password_hash, session_epoch, time_zone FROM users ORDER BY username
+SELECT id, username, email, display_name, is_admin, created_at, last_seen_at, jellyfin_user_id, jellyfin_user_name, jellyfin_token_enc, jellyfin_linked_at, seerr_user_id, scrobble_token_hash, oidc_sub, password_hash, session_epoch, time_zone, time_zone_manual FROM users ORDER BY username
 `
 
 func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
@@ -258,6 +306,7 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 			&i.PasswordHash,
 			&i.SessionEpoch,
 			&i.TimeZone,
+			&i.TimeZoneManual,
 		); err != nil {
 			return nil, err
 		}
@@ -269,11 +318,56 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 	return items, nil
 }
 
+const reportUserTimeZone = `-- name: ReportUserTimeZone :one
+UPDATE users SET time_zone = $1::text
+WHERE id = $2 AND NOT time_zone_manual
+  AND (now() AT TIME ZONE $1::text) IS NOT NULL
+RETURNING id, username, email, display_name, is_admin, created_at, last_seen_at, jellyfin_user_id, jellyfin_user_name, jellyfin_token_enc, jellyfin_linked_at, seerr_user_id, scrobble_token_hash, oidc_sub, password_hash, session_epoch, time_zone, time_zone_manual
+`
+
+type ReportUserTimeZoneParams struct {
+	TimeZone string
+	ID       int32
+}
+
+// ReportUserTimeZone stores the zone the person's browser or phone reported,
+// unless they chose one by hand in Profile (time_zone_manual): then no row
+// comes back (pgx.ErrNoRows) and nothing changes, so a device report can
+// never undo a choice. internal/users checks the name against Go's zone database first;
+// the AT TIME ZONE here checks it against Postgres's own, which the history
+// queries group days with: a name only one of the two knows fails the
+// statement (invalid_parameter_value) and nothing is stored.
+func (q *Queries) ReportUserTimeZone(ctx context.Context, arg ReportUserTimeZoneParams) (User, error) {
+	row := q.db.QueryRow(ctx, reportUserTimeZone, arg.TimeZone, arg.ID)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.DisplayName,
+		&i.IsAdmin,
+		&i.CreatedAt,
+		&i.LastSeenAt,
+		&i.JellyfinUserID,
+		&i.JellyfinUserName,
+		&i.JellyfinTokenEnc,
+		&i.JellyfinLinkedAt,
+		&i.SeerrUserID,
+		&i.ScrobbleTokenHash,
+		&i.OidcSub,
+		&i.PasswordHash,
+		&i.SessionEpoch,
+		&i.TimeZone,
+		&i.TimeZoneManual,
+	)
+	return i, err
+}
+
 const setPassword = `-- name: SetPassword :one
 UPDATE users
 SET password_hash = $2, session_epoch = session_epoch + 1
 WHERE id = $1
-RETURNING id, username, email, display_name, is_admin, created_at, last_seen_at, jellyfin_user_id, jellyfin_user_name, jellyfin_token_enc, jellyfin_linked_at, seerr_user_id, scrobble_token_hash, oidc_sub, password_hash, session_epoch, time_zone
+RETURNING id, username, email, display_name, is_admin, created_at, last_seen_at, jellyfin_user_id, jellyfin_user_name, jellyfin_token_enc, jellyfin_linked_at, seerr_user_id, scrobble_token_hash, oidc_sub, password_hash, session_epoch, time_zone, time_zone_manual
 `
 
 type SetPasswordParams struct {
@@ -304,56 +398,44 @@ func (q *Queries) SetPassword(ctx context.Context, arg SetPasswordParams) (User,
 		&i.PasswordHash,
 		&i.SessionEpoch,
 		&i.TimeZone,
+		&i.TimeZoneManual,
 	)
 	return i, err
 }
 
-const setUserTimeZone = `-- name: SetUserTimeZone :one
-UPDATE users SET time_zone = $1::text
-WHERE id = $2 AND (now() AT TIME ZONE $1::text) IS NOT NULL
-RETURNING id, username, email, display_name, is_admin, created_at, last_seen_at, jellyfin_user_id, jellyfin_user_name, jellyfin_token_enc, jellyfin_linked_at, seerr_user_id, scrobble_token_hash, oidc_sub, password_hash, session_epoch, time_zone
+const timeZoneNames = `-- name: TimeZoneNames :many
+SELECT name::text FROM pg_catalog.pg_timezone_names ORDER BY name
 `
 
-type SetUserTimeZoneParams struct {
-	TimeZone string
-	ID       int32
-}
-
-// SetUserTimeZone stores the zone the person's browser or phone reported.
-// internal/users checks it against Go's zone database first; the AT TIME
-// ZONE here checks it against Postgres's own, which the history queries
-// group days with: a name only one of the two knows fails the statement
-// (invalid_parameter_value) and nothing is stored.
-func (q *Queries) SetUserTimeZone(ctx context.Context, arg SetUserTimeZoneParams) (User, error) {
-	row := q.db.QueryRow(ctx, setUserTimeZone, arg.TimeZone, arg.ID)
-	var i User
-	err := row.Scan(
-		&i.ID,
-		&i.Username,
-		&i.Email,
-		&i.DisplayName,
-		&i.IsAdmin,
-		&i.CreatedAt,
-		&i.LastSeenAt,
-		&i.JellyfinUserID,
-		&i.JellyfinUserName,
-		&i.JellyfinTokenEnc,
-		&i.JellyfinLinkedAt,
-		&i.SeerrUserID,
-		&i.ScrobbleTokenHash,
-		&i.OidcSub,
-		&i.PasswordHash,
-		&i.SessionEpoch,
-		&i.TimeZone,
-	)
-	return i, err
+// TimeZoneNames is every zone name Postgres knows: the list Profile offers
+// (internal/users.Zones, from zone.tab) keeps only names Postgres and Go
+// both know, so every name offered is one the writes above accept. pg_timezone_names reads the
+// zone files on each call: it is asked once per process.
+func (q *Queries) TimeZoneNames(ctx context.Context) ([]string, error) {
+	rows, err := q.db.Query(ctx, timeZoneNames)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
+		}
+		items = append(items, name)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const updateUserSeen = `-- name: UpdateUserSeen :one
 UPDATE users
 SET email = $2, display_name = $3, is_admin = $4, last_seen_at = $5
 WHERE id = $1
-RETURNING id, username, email, display_name, is_admin, created_at, last_seen_at, jellyfin_user_id, jellyfin_user_name, jellyfin_token_enc, jellyfin_linked_at, seerr_user_id, scrobble_token_hash, oidc_sub, password_hash, session_epoch, time_zone
+RETURNING id, username, email, display_name, is_admin, created_at, last_seen_at, jellyfin_user_id, jellyfin_user_name, jellyfin_token_enc, jellyfin_linked_at, seerr_user_id, scrobble_token_hash, oidc_sub, password_hash, session_epoch, time_zone, time_zone_manual
 `
 
 type UpdateUserSeenParams struct {
@@ -395,6 +477,7 @@ func (q *Queries) UpdateUserSeen(ctx context.Context, arg UpdateUserSeenParams) 
 		&i.PasswordHash,
 		&i.SessionEpoch,
 		&i.TimeZone,
+		&i.TimeZoneManual,
 	)
 	return i, err
 }

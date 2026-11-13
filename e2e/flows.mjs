@@ -62,6 +62,57 @@ async function run(name, browserType, device, zone) {
     expect(puts.length === 0, "sent again though the server has it");
   });
 
+  // Profile's time-zone picker: a zone picked by hand is kept (this
+  // browser's own zone is no longer reported), Automatic follows it again.
+  await step("a time zone picked in Profile sticks; Automatic follows the browser again", async () => {
+    const meNow = async () => (await (await ctx.request.get(`${BASE}/api/v1/me`)).json());
+    const until = async (want) => {
+      let m = null;
+      for (let i = 0; i < 25; i++) {
+        m = await meNow();
+        if (m.time_zone === want.zone && m.time_zone_mode === want.mode) return;
+        await page.waitForTimeout(200);
+      }
+      throw new Error(`the server has ${m.time_zone} (${m.time_zone_mode}), not ${want.zone} (${want.mode})`);
+    };
+    const row = page.locator("button.trow", { hasText: "Time zone" });
+    await go("/profile");
+    const shown = zone.replace(/_/g, " ");
+    expect((await row.innerText()).includes(`Automatic (this device) · ${shown}`), `the row says ${await row.innerText()}`);
+    if (SHOTS) await page.screenshot({ path: `${SHOTS}/${name}-profile.png`, fullPage: true });
+    await row.click();
+    const search = page.locator(".sheet input[type='search']");
+    await search.waitFor({ timeout: 5000 });
+    await page.waitForSelector(".sheet .opt:has-text('Asia/Tokyo')", { timeout: 5000 });
+    if (SHOTS) await page.screenshot({ path: `${SHOTS}/${name}-timezone-picker.png` });
+    await search.fill("tokyo");
+    // Automatic stays on top; of the zones only Tokyo is left.
+    const visible = await page.locator(".sheet .opt:visible").allInnerTexts();
+    expect(visible.length === 2 && visible[1].includes("Asia/Tokyo") && visible[1].includes("UTC+09:00"), `shown: ${visible.join(" | ")}`);
+    await search.fill("utc+5:30");
+    expect(await page.locator(".sheet .opt:visible", { hasText: "Asia/Kolkata" }).count() === 1, "searching an offset doesn't find Kolkata");
+    await search.fill("tokyo");
+    await page.locator(".sheet .opt", { hasText: "Asia/Tokyo" }).click();
+    await until({ zone: "Asia/Tokyo", mode: "manual" });
+    await page.waitForSelector("button.trow:has-text('Asia/Tokyo · chosen by you')", { timeout: 5000 });
+    await page.waitForTimeout(400); // the sheet has slid away
+    if (SHOTS) await page.screenshot({ path: `${SHOTS}/${name}-timezone-chosen.png` });
+    // A new page load reports nothing: the choice is kept.
+    const puts = [];
+    const watch = (r) => { if (r.url().endsWith("/api/v1/me/time-zone")) puts.push(r); };
+    page.on("request", watch);
+    await go("/");
+    page.off("request", watch);
+    expect(puts.length === 0, "this browser's zone was reported over the choice");
+    await until({ zone: "Asia/Tokyo", mode: "manual" });
+    // Back to Automatic: this browser's zone at once.
+    await go("/profile");
+    await row.click();
+    await page.locator(".sheet .opt", { hasText: "Automatic (this device)" }).click();
+    await until({ zone, mode: "automatic" });
+    await page.waitForSelector(`button.trow:has-text('Automatic (this device) · ${shown}')`, { timeout: 5000 });
+  });
+
   await step("rate with a comment; it shows under Ratings on Movie Night", async () => {
     await go("/title/movie/603");
     await page.locator(".actions .act", { hasText: "Rate" }).click();
@@ -308,6 +359,16 @@ async function wide() {
     const n = await page.locator(".grid .card").count();
     expect(n >= 40, `only ${n} titles loaded`);
     expect(await page.locator(".loadmore .spin").count() === 0, "the spinner is stuck");
+  });
+  await step("the time-zone picker on a wide screen", async () => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(`${BASE}/profile`, { waitUntil: "networkidle" });
+    await page.locator("button.trow", { hasText: "Time zone" }).click();
+    await page.waitForSelector(".sheet .opt:has-text('Europe/London')", { timeout: 5000 });
+    await page.waitForTimeout(400); // the sheet has slid up
+    if (SHOTS) await page.screenshot({ path: `${SHOTS}/desktop-timezone-picker.png` });
+    await page.goto(`${BASE}/profile`, { waitUntil: "networkidle" });
+    if (SHOTS) await page.screenshot({ path: `${SHOTS}/desktop-profile.png`, fullPage: true });
   });
   await browser.close();
 }

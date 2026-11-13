@@ -1,9 +1,10 @@
 // Profile: your numbers, what you watched, your requests, your connections
-// (Jellyfin, players, emails, Kodi) and settings.
+// (Jellyfin, players, emails, Kodi) and settings (Home rows, time zone, ...).
 import { get, post } from "../api.js";
 import { fillPosters, posterCard, rowHeader, toast } from "../ui.js";
 import { fmtDate, h, icon, initials, swap } from "../util.js";
 import { requestRow } from "./requests.js";
+import { timeZoneRow } from "./timezone.js";
 
 function syncButton(label, what, ic, sub = "") {
   const btn = h("button.trow", { style: { width: "100%", textAlign: "left" } },
@@ -88,6 +89,7 @@ export default async function render(root) {
       h("section.row", rowHeader("Settings"),
         h("div.rows",
           link("/settings/home", "sliders", "Home rows", "Choose and order what Home shows"),
+          timeZoneRow(me, load),
           h("a.trow", { href: "/account", "data-native": true }, h("span.ic", icon("key")),
             h("span.tx", h("b", "Account"), h("span", "Password and signing out")), icon("right")),
           me.is_admin ? syncButton("Rescan Jellyfin library", "library", "film", "For everyone on this Movie Night") : null,

@@ -33,9 +33,10 @@ How to read the tables:
   per person unless it says so.
 - Time zones: each person's dates (history's days, "this year", Home's
   morning/noon/night rows, a watch date given without a time, their digest
-  periods) follow the zone their browser or phone reports. `TIMEZONE` is the
-  install's clock: the worker's schedule, and the zone of anyone who has not
-  reported one yet.
+  periods) follow the zone their browser or phone reports, or one they
+  picked in Profile → Time zone (then reports are refused until they pick
+  Automatic again). `TIMEZONE` is the install's clock: the worker's
+  schedule, and the zone of anyone who has neither reported nor picked one.
 - Processes: the server is two programs from one image. `api` serves
   requests and never runs background work; `worker` runs the schedule and
   the queued work the API hands it. Caches, sign-in counters and queues are
@@ -126,7 +127,7 @@ says in plain words when it is hit.
 | Personal scrobble token (Profile, Kodi and other players, Other apps) | never expires | — | Turn it off by hand; making a new one turns the old one off |
 | Admin rights | follow `OWNER_USERNAME` and `ADMIN_USERS` on every request, both ways | `server/internal/users/users.go` (`Seen`) | Someone taken off the list loses admin rights at their next request |
 | Email address and display name | taken from the OIDC ID token at sign-in (`email`, `name`/`preferred_username`) and refreshed on each sign-in; once set, an empty claim doesn't clear them | `server/internal/users` | Your provider is the source of truth. A digest address set in Profile, Emails is kept separately |
-| A person's time zone | the IANA name their browser or phone reports (`PUT /api/v1/me/time-zone`), at most 64 characters, checked against the zone database | `server/internal/users/zone.go` | Anything else is refused (422). Someone who never reported one uses `TIMEZONE` |
+| A person's time zone | the IANA name their browser or phone reports (`PUT /api/v1/me/time-zone`) or they pick in Profile (`PUT /api/v1/me/time-zone/choice`), at most 64 characters, checked against the zone database | `server/internal/users/zone.go` | Anything else is refused (422); a report while a zone is picked by hand is refused (409). Someone who has neither uses `TIMEZONE`. Profile's list (`GET /api/v1/time-zones`) is read once per process |
 
 ### Watches, "Finished it?" and progress
 
@@ -264,6 +265,7 @@ About the digests:
 | Page data kept in the tab | 60 s; any change you make clears it all | hard-coded, `web/static/js/api.js:6`, `:50` | Back and tab switches are instant. A reload starts fresh |
 | "Rate it" bar | asked again at most every 5 min | hard-coded, `web/static/js/app.js:22` | |
 | Genres and streaming services (Discover) | 1 h | hard-coded, `web/static/js/views/discover.js:30` | |
+| Time zone list (Profile → Time zone) | 1 h | hard-coded, `web/static/js/views/timezone.js` (`ttl`) | Only the offsets can change (daylight saving) |
 | Pages kept for Back | 16 | hard-coded, `web/static/js/nav.js:43` | Older ones are drawn again when you go back to them |
 | Your tap wins over older server data | 2 min | hard-coded, `web/static/js/ui.js:19` | A row loaded just before a tap can't undo it |
 | Endless grids | go on to the end of the list | `web/static/js/ui.js:141` (`infiniteGrid`) | No longer stop after 100 pages; one that ends at TMDB's page 500 says so under the last cards |
@@ -284,7 +286,7 @@ About the digests:
 | What | Value | Where it's set | Why it exists / what happens when it's hit |
 |---|---|---|---|
 | Server answers kept on the phone | 1 week | hard-coded, `mobile/src/app/_layout.tsx:24` | The app opens at once and works offline. Wiped on sign-out |
-| Answers counted as fresh | 60 s; one retry on failure | hard-coded, `mobile/src/app/_layout.tsx:31` | |
+| Answers counted as fresh | 60 s; one retry on failure | hard-coded, `mobile/src/app/_layout.tsx:31` | The time zone list (Profile → Time zone): 1 h, `mobile/src/components/TimeZoneSheet.tsx` (`staleTime`) |
 | Refresh | every 60 s while open, when the app comes to the front, and when the connection returns | hard-coded, `mobile/src/app/_layout.tsx:54` | Changes waiting on the phone go first |
 | A request with no answer | counts as offline after 20 s | hard-coded, `mobile/src/lib/api.ts:45` | The change waits in the outbox |
 | Outbox (watchlist, ratings, ticks, episode hearts and ratings, "Finished it?", lists) | never expires; retries after 2 s, doubling up to 60 s | hard-coded, `mobile/src/lib/outbox.ts:20`, `:86` | A change the server refuses with a 4xx other than 401, 408 or 429 is dropped, and a toast says so with the server's words: "A change couldn't be saved: …" (`:74`). Cleared on sign-out, never without a word: Sign out (Profile) first sends what is waiting and, if some can't go (no connection), asks "Sign out of this phone? 3 changes … haven't reached Movie Night yet. Signing out now loses them" (`mobile/src/app/(app)/(tabs)/profile.tsx`); a sign-in that runs out (a 401) with changes waiting says on the sign-in screen how many weren't saved (`mobile/src/lib/session.tsx`, `lostNote`) |

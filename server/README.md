@@ -121,20 +121,36 @@ episode's rating (`PUT` stays).
 ### Time zones
 
 Each person has their own zone (`users.time_zone`, migration 0021): the
-IANA name their browser or phone reports, never guessed from their
-address. The website (`web/static/js/api.js`, `reportTimeZone`) and the
-phone app (`mobile/src/lib/timeZone.ts`) read the device's zone
-(`Intl.DateTimeFormat().resolvedOptions().timeZone`) and, when it differs
-from `time_zone` in `/me`, send it with `PUT /api/v1/me/time-zone`: once
-per page load on the web, at start and on coming back to the front on the
-phone. The name is checked against Go's zone database (built into the
+IANA name their browser or phone reports, or one they picked in Profile,
+never guessed from their address. `/me` gives it with `time_zone_mode`,
+`automatic` or `manual` (`users.time_zone_manual`, migration 0022).
+
+- Automatic: the website (`web/static/js/api.js`, `reportTimeZone`) and
+  the phone app (`mobile/src/lib/timeZone.ts`) read the device's zone
+  (`Intl.DateTimeFormat().resolvedOptions().timeZone`) and, when it
+  differs from `time_zone` in `/me`, send it with `PUT
+  /api/v1/me/time-zone`: once per page load on the web, at start and on
+  coming back to the front on the phone.
+- Manual: Profile → Time zone (`web/static/js/views/timezone.js`,
+  `mobile/src/components/TimeZoneSheet.tsx`) offers "Automatic (this
+  device)" and a searchable list (`GET /api/v1/time-zones`: the IANA's
+  `zone.tab`, embedded in `internal/users`, plus UTC, each with its offset
+  now; only names both Go and Postgres know, read once per process) and
+  saves with `PUT /api/v1/me/time-zone/choice` `{"mode": "manual" |
+  "automatic", "time_zone": ...}`. Automatic carries the zone of the device
+  it is chosen on, stored at once. While the mode is manual the apps send
+  no reports, and the server refuses any that come (an older app, another
+  browser) with 409 and changes nothing: the `UPDATE` itself has `NOT
+  time_zone_manual`, so a report racing a choice cannot undo it.
+
+Both writes check the name against Go's zone database (built into the
 binary) and Postgres's (the `UPDATE` itself uses it with `AT TIME ZONE`);
 anything else, `Local` included, is a 422 `{"detail": ...}`. Kodi and the
 Jellyfin plugin report none.
 
 `users.Location(user, install)` (also `rw.Deps.Zone`) is the one place a
-person's zone is chosen: their reported zone, else `TIMEZONE`, the
-documented default for someone who never reported one. It is used for
+person's zone is chosen: their reported or picked zone, else `TIMEZONE`,
+the documented default for someone who has neither. It is used for
 everything computed for a person: history's days and the times written
 with their offset, a film's watch count on cards and title pages, "this
 year" in Profile, a watch date typed without a time (20:00 that day),
@@ -243,7 +259,7 @@ server/scripts/sqlc.sh            # after changing db/queries or adding a migrat
 SQL lives in `db/queries/*.sql` (sqlc generates `internal/store`); schema
 changes are numbered files in `db/migrations` (0017 sessions, 0018 job
 runs, 0019 and 0020 indexes, 0021 time zones and per-person digest
-markers).
+markers, 0022 a time zone picked by hand).
 
 ## Testing
 
@@ -267,7 +283,8 @@ every nested schema with `docs/openapi.json`.
 
 Browser tests (`e2e/flows.mjs`, Playwright: WebKit as an iPhone in
 Pacific/Auckland, Chromium as an Android phone in Europe/Berlin, each
-checking that its zone is reported once, and a Chromium desktop) run
+checking that its zone is reported once and that a zone picked in Profile
+sticks until Automatic, and a Chromium desktop) run
 against the Go server:
 
 ```sh

@@ -54,12 +54,31 @@ RETURNING *;
 -- name: ListUsers :many
 SELECT * FROM users ORDER BY username;
 
--- SetUserTimeZone stores the zone the person's browser or phone reported.
--- internal/users checks it against Go's zone database first; the AT TIME
--- ZONE here checks it against Postgres's own, which the history queries
--- group days with: a name only one of the two knows fails the statement
--- (invalid_parameter_value) and nothing is stored.
--- name: SetUserTimeZone :one
+-- ReportUserTimeZone stores the zone the person's browser or phone reported,
+-- unless they chose one by hand in Profile (time_zone_manual): then no row
+-- comes back (pgx.ErrNoRows) and nothing changes, so a device report can
+-- never undo a choice. internal/users checks the name against Go's zone database first;
+-- the AT TIME ZONE here checks it against Postgres's own, which the history
+-- queries group days with: a name only one of the two knows fails the
+-- statement (invalid_parameter_value) and nothing is stored.
+-- name: ReportUserTimeZone :one
 UPDATE users SET time_zone = sqlc.arg(time_zone)::text
+WHERE id = sqlc.arg(id) AND NOT time_zone_manual
+  AND (now() AT TIME ZONE sqlc.arg(time_zone)::text) IS NOT NULL
+RETURNING *;
+
+-- ChooseUserTimeZone is the person's own choice in Profile: a zone picked by
+-- hand (manual true), or "Automatic" again with the zone their device runs
+-- in now (manual false), after which reports change it again. Checked
+-- against Postgres's zones as ReportUserTimeZone is.
+-- name: ChooseUserTimeZone :one
+UPDATE users SET time_zone = sqlc.arg(time_zone)::text, time_zone_manual = sqlc.arg(manual)::boolean
 WHERE id = sqlc.arg(id) AND (now() AT TIME ZONE sqlc.arg(time_zone)::text) IS NOT NULL
 RETURNING *;
+
+-- TimeZoneNames is every zone name Postgres knows: the list Profile offers
+-- (internal/users.Zones, from zone.tab) keeps only names Postgres and Go
+-- both know, so every name offered is one the writes above accept. pg_timezone_names reads the
+-- zone files on each call: it is asked once per process.
+-- name: TimeZoneNames :many
+SELECT name::text FROM pg_catalog.pg_timezone_names ORDER BY name;

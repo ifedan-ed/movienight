@@ -6,7 +6,7 @@ The app is in [`mobile/`](https://github.com/ifedan-ed/movienight/tree/main/mobi
 
 Signing in: type your Movie Night address on the first screen. Where the server has password sign-in on, the app shows username and password fields; otherwise, or with the browser button under them, your sign-in page opens in a private sheet, and after you sign in you confirm "Sign in the app?" and you're back in the app. Profile → Signed-in devices lists every phone and TV and signs any of them out. A phone's sign-in ends after 90 days unused, or a year after it was made. More in [Sign-in](sign-in.md#in-the-phone-app).
 
-The app reports the phone's time zone to your server when it starts and when it comes back to the front, so your days, "this year" and digest weeks follow where you are.
+The app reports the phone's time zone to your server when it starts and when it comes back to the front, so your days, "this year" and digest weeks follow where you are. To keep another zone whatever your devices are set to, pick it in Profile → Time zone (on the phone or the website); "Automatic (this device)" there follows the device again.
 
 Building it yourself (an [Expo](https://expo.dev) account; for iPhone, an Apple Developer account):
 

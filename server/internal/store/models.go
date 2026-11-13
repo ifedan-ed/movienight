@@ -259,6 +259,7 @@ type User struct {
 	PasswordHash      *string
 	SessionEpoch      int32
 	TimeZone          *string
+	TimeZoneManual    bool
 }
 
 type UserRating struct {

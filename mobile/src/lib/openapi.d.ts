@@ -771,11 +771,35 @@ export interface paths {
         get?: never;
         /**
          * Put Time Zone
-         * @description Store the time zone this browser or phone runs in (an IANA name such as
+         * @description Report the time zone this browser or phone runs in (an IANA name such as
          *     Europe/Berlin). History's days, "this year", the daily rows and the
-         *     digest periods follow it. An unknown name is refused (422).
+         *     digest periods follow it. An unknown name is refused (422); so is any
+         *     report while the person has a zone picked in Profile (409).
          */
         put: operations["put_time_zone_api_v1_me_time_zone_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/time-zone/choice": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Choose Time Zone
+         * @description The person's own choice in Profile. mode "manual": keep time_zone (an IANA
+         *     name from GET /time-zones) whatever their devices report. mode
+         *     "automatic": follow their devices again, starting with time_zone, the zone
+         *     of the device this is sent from. An unknown name is refused (422).
+         */
+        put: operations["choose_time_zone_api_v1_me_time_zone_choice_put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -1133,6 +1157,27 @@ export interface paths {
          * @description Install-wide: rescan the Jellyfin library, or re-sync MDBList lists.
          */
         post: operations["run_sync_api_v1_sync__what__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/time-zones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Time Zones
+         * @description Every time zone a person can pick in Profile (IANA names, sorted), with
+         *     each one's offset from UTC now.
+         */
+        get: operations["time_zones_api_v1_time_zones_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2104,6 +2149,8 @@ export interface components {
             scrobble_token_set: boolean;
             stats: components["schemas"]["Stats"];
             time_zone?: string | null;
+            /** @enum {string} */
+            time_zone_mode: "automatic" | "manual";
             user: string;
         };
         NextEpisode: {
@@ -2672,13 +2719,29 @@ export interface components {
              */
             text_max_chars: number;
         };
+        TimeZoneChoiceIn: {
+            /** @enum {string} */
+            mode: "automatic" | "manual";
+            time_zone: string;
+        } & {
+            [key: string]: unknown;
+        };
         TimeZoneIn: {
             time_zone: string;
         } & {
             [key: string]: unknown;
         };
+        TimeZoneItem: {
+            name: string;
+            offset: string;
+        };
         TimeZoneOut: {
+            /** @enum {string} */
+            mode: "automatic" | "manual";
             time_zone: string;
+        };
+        TimeZonesOut: {
+            zones: components["schemas"]["TimeZoneItem"][];
         };
         TitleDetail: {
             backdrop?: string | null;
@@ -4391,6 +4454,39 @@ export interface operations {
             };
         };
     };
+    choose_time_zone_api_v1_me_time_zone_choice_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TimeZoneChoiceIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimeZoneOut"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     person_api_v1_person__person_id__get: {
         parameters: {
             query?: never;
@@ -4981,6 +5077,35 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SyncOut"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    time_zones_api_v1_time_zones_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimeZonesOut"];
                 };
             };
             /** @description Error */

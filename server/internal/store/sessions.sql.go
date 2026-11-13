@@ -87,7 +87,7 @@ func (q *Queries) DeleteWebSession(ctx context.Context, idHash string) error {
 }
 
 const sessionUser = `-- name: SessionUser :one
-SELECT web_sessions.id_hash, web_sessions.user_id, web_sessions.epoch, web_sessions.created_at, web_sessions.last_seen_at, web_sessions.expires_at, users.id, users.username, users.email, users.display_name, users.is_admin, users.created_at, users.last_seen_at, users.jellyfin_user_id, users.jellyfin_user_name, users.jellyfin_token_enc, users.jellyfin_linked_at, users.seerr_user_id, users.scrobble_token_hash, users.oidc_sub, users.password_hash, users.session_epoch, users.time_zone
+SELECT web_sessions.id_hash, web_sessions.user_id, web_sessions.epoch, web_sessions.created_at, web_sessions.last_seen_at, web_sessions.expires_at, users.id, users.username, users.email, users.display_name, users.is_admin, users.created_at, users.last_seen_at, users.jellyfin_user_id, users.jellyfin_user_name, users.jellyfin_token_enc, users.jellyfin_linked_at, users.seerr_user_id, users.scrobble_token_hash, users.oidc_sub, users.password_hash, users.session_epoch, users.time_zone, users.time_zone_manual
 FROM web_sessions
 JOIN users ON users.id = web_sessions.user_id
 WHERE web_sessions.id_hash = $1 AND web_sessions.expires_at > now()
@@ -128,6 +128,7 @@ func (q *Queries) SessionUser(ctx context.Context, idHash string) (SessionUserRo
 		&i.User.PasswordHash,
 		&i.User.SessionEpoch,
 		&i.User.TimeZone,
+		&i.User.TimeZoneManual,
 	)
 	return i, err
 }

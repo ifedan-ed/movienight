@@ -1,0 +1,13 @@
+-- 0022: a time zone chosen by hand in Profile.
+--
+-- Until now users.time_zone was always the zone the person's browser or
+-- phone reported, and every report replaced it. Someone who wants their days
+-- in another zone than their device (a laptop left on home time while
+-- abroad, a phone set to UTC) picks one in Profile; time_zone_manual = true
+-- records that it was picked, and the automatic reports (PUT
+-- /api/v1/me/time-zone) then leave it alone until they switch back to
+-- "Automatic" (PUT /api/v1/me/time-zone/choice). A boolean rather than a
+-- second zone column: there is still one zone a person's days follow, and
+-- the flag only says who may change it. Existing rows are automatic, as
+-- they were.
+ALTER TABLE users ADD COLUMN time_zone_manual boolean NOT NULL DEFAULT false;

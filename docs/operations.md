@@ -18,7 +18,7 @@ Rolling back: migrations go forward only. To go back to an older version after a
 
 ## Upgrading from the Python version
 
-Earlier versions of Movie Night were a Python app (one `web` container). The Go server reads the same database, the same `.env` names and the same volumes, and takes over the database in place: `migrate` recognises the schema the Python version left (Alembic revision 0016, which every public release reached), records it, and only adds to it (tables for sessions, job runs and each person's sent digests, a time zone per person, and indexes).
+Earlier versions of Movie Night were a Python app (one `web` container). The Go server reads the same database, the same `.env` names and the same volumes, and takes over the database in place: `migrate` recognises the schema the Python version left (Alembic revision 0016, which every public release reached), records it, and only adds to it (tables for sessions, job runs and each person's sent digests, a time zone per person, reported or picked in Profile, and indexes).
 
 1. Back up the database:
 

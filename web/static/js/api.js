@@ -53,6 +53,10 @@ export function postRead(url, body = {}) { return call("POST", url, body); }
 export function put(url, body = {}) { cache.clear(); return call("PUT", url, body); }
 export function patch(url, body = {}) { cache.clear(); return call("PATCH", url, body); }
 export function del(url) { cache.clear(); return call("DELETE", url); }
+// The zone this browser runs in ("Europe/Berlin"), or null when it says none.
+export function deviceTimeZone() {
+  try { return Intl.DateTimeFormat().resolvedOptions().timeZone || null; } catch { return null; /* no Intl */ }
+}
 // /api/v1/me, read once per page load for what the shell needs from it (the
 // request limits, the stored time zone); {} when it can't be read.
 let meAsked = null;
@@ -73,11 +77,12 @@ export function limits() {
 // year", the daily rows, the digest weeks) are the browser's days. A failure
 // is left for the next page load.
 export async function reportTimeZone() {
-  let zone = null;
-  try { zone = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { /* no Intl: nothing to report */ }
+  const zone = deviceTimeZone();
   if (!zone) return;
   const m = await me();
-  if (!m.user || m.time_zone === zone) return;
+  // A zone picked in Profile is kept whatever this browser runs in (the
+  // server would refuse the report anyway: 409).
+  if (!m.user || m.time_zone_mode === "manual" || m.time_zone === zone) return;
   try { await put("/api/v1/me/time-zone", { time_zone: zone }); } catch { /* tried again next load */ }
 }
 export function forget(prefix = "") { for (const k of [...cache.keys()]) if (k.startsWith(prefix)) cache.delete(k); }

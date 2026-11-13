@@ -33,7 +33,7 @@ Open `.env` and set at least:
 | `JELLYFIN_USER_ID` | The id of a Jellyfin user who sees every library. |
 | `PUBLIC_URL` | Your address, e.g. `https://movies.example.com`. |
 | `OWNER_USERNAME` | Your own username (you'll make it below). The owner is always an admin. |
-| `TIMEZONE` | Your time zone, e.g. `Europe/London`: the clock the background jobs run on. Each person's own dates follow the zone their browser or phone reports. |
+| `TIMEZONE` | Your time zone, e.g. `Europe/London`: the clock the background jobs run on. Each person's own dates follow the zone their browser or phone reports, or one they pick in Profile. |
 | `TRUSTED_PROXY` | Your reverse proxy's address as Movie Night sees it (step 3). |
 | `PASSWORD_SIGNIN` | `true` to sign in with a username and password (see [Sign-in](sign-in.md) for OIDC). |
 

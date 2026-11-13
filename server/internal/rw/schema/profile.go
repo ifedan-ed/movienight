@@ -131,10 +131,14 @@ type MeOut struct {
 	Limits           TextLimits   `json:"limits" required:"false"`
 	// Admins only (empty for everyone else): what needs their attention.
 	AdminNotices []string `json:"admin_notices" required:"false" default:"[]"`
-	// The zone the person's browser or phone last reported (PUT
-	// /me/time-zone); null when none has. The apps compare it with their
-	// own and report theirs when it differs.
+	// The zone the person's days follow: the one their browser or phone last
+	// reported (PUT /me/time-zone), or the one they picked in Profile; null
+	// when neither has happened (their days follow the install's TIMEZONE).
 	TimeZone *string `json:"time_zone" required:"false" nullable:"true"`
+	// Who sets time_zone: "automatic" (their devices report it; the apps
+	// compare it with their own and report theirs when it differs) or
+	// "manual" (picked in Profile; the apps report nothing).
+	TimeZoneMode string `json:"time_zone_mode" enum:"automatic,manual"`
 }
 
 // TimeZoneIn is the zone the person's browser or phone reports: an IANA
@@ -145,9 +149,32 @@ type TimeZoneIn struct {
 	TimeZone string   `json:"time_zone" minLength:"1" maxLength:"64"`
 }
 
-// TimeZoneOut is the zone now stored.
+// TimeZoneChoiceIn is the person's choice in Profile. "manual": time_zone
+// is the zone they picked, kept until they choose again. "automatic": their
+// devices set it again; time_zone is the zone of the device they chose this
+// on, stored at once.
+type TimeZoneChoiceIn struct {
+	_        struct{} `additionalProperties:"true"`
+	Mode     string   `json:"mode" enum:"automatic,manual"`
+	TimeZone string   `json:"time_zone" minLength:"1" maxLength:"64"`
+}
+
+// TimeZoneOut is the zone now stored and who sets it (as in /me).
 type TimeZoneOut struct {
 	TimeZone string `json:"time_zone"`
+	Mode     string `json:"mode" enum:"automatic,manual"`
+}
+
+// TimeZoneItem is one zone Profile offers: its IANA name and its offset
+// from UTC now ("UTC+05:30"), which changes with daylight saving.
+type TimeZoneItem struct {
+	Name   string `json:"name"`
+	Offset string `json:"offset"`
+}
+
+// TimeZonesOut is every zone a person can pick, sorted by name.
+type TimeZonesOut struct {
+	Zones []TimeZoneItem `json:"zones"`
 }
 
 // HistoryItem is one merged watch with its card, and for an episode that
