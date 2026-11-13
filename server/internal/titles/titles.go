@@ -1,6 +1,6 @@
 // Package titles is the title cache: TMDB's metadata for every film and show
 // Movie Night has shown, kept in the titles table so a watchlist, a list or
-// the history draws its cards without asking TMDB (app/services/titles.py).
+// the history draws its cards without asking TMDB.
 //
 // Shared by the API and the worker: the worker's digests, AI rows, syncs and
 // nightly refresh read and write the same cache through this one package.

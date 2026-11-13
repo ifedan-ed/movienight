@@ -8,8 +8,8 @@ import (
 	"time"
 )
 
-// pythonFixtures are values app/core/crypto.py and friends produced
-// (server/scripts/python-fixtures.py, SECRET_KEY=fixture-secret-key).
+// pythonFixtures are values the Python app produced
+// (SECRET_KEY=fixture-secret-key).
 type pythonFixtures struct {
 	SecretKey string `json:"secret_key"`
 	Scrypt    []struct{ Password, Hash string }

@@ -1,7 +1,6 @@
 package lists_test
 
-// Ported from the Python's tests/test_lists.py, the lists parts of
-// test_outside_services.py and test_no_caps.py: own lists, curated
+// Own lists, curated
 // (this install) lists, MDBList lists, stars and Home pins, and MDBList's copy.
 
 import (

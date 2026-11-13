@@ -1,6 +1,6 @@
 package home
 
-// Ported from the Python's tests/test_units.py: the row sets' rotation and
+// The row sets' rotation and
 // "Because you watched" dealing, and the line saying what the AI read.
 
 import (

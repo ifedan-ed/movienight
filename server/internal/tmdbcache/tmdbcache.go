@@ -1,6 +1,6 @@
 // Package tmdbcache is TMDB's single-title answers, kept in the shared
 // cache (package cache): a title's full details and a show's season, each
-// for 6 hours, as app/services/detail.py and episodes.py kept them. A
+// for 6 hours, as the Python app kept them. A
 // title TMDB does not know (nil) is kept too, so an unknown id does not
 // cost a TMDB call per view. Shared by the title page, the season page and
 // "Up next".

@@ -1,6 +1,6 @@
 // Package playback is playing a title in an outside player (VLC, Infuse,
 // Outplayer, Jellyfin's apps, or one the person adds) and the "Finished
-// it?" question afterwards (app/services/playback.py, app/api/v1/play.py).
+// it?" question afterwards.
 //
 // The player is handed the original file from Jellyfin (the person's own
 // Jellyfin token in the link, as Jellyfin's apps do) and the chosen

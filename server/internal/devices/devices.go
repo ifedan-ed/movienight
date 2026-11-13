@@ -1,4 +1,4 @@
-// Package devices signs in the phone app and TV apps (app/services/devices.py).
+// Package devices signs in the phone app and TV apps.
 //
 // Phones: the app cannot use the browser's session, so it opens /app/connect
 // in a browser; the person confirms; the page hands the app a one-time code

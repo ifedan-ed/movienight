@@ -1,7 +1,7 @@
 package server_test
 
-// Playing in an outside player and "Finished it?" (tests/test_play_prompt.py
-// and the play and players tests of tests/test_shows_play_sync.py).
+// Playing in an outside player and "Finished it?", and the
+// players each person picks.
 
 import (
 	"fmt"

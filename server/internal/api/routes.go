@@ -15,8 +15,8 @@ import (
 	"movienight/server/internal/passwords"
 )
 
-// The request and response types below carry the Python schemas' names
-// (app/api/schemas.py), which become the OpenAPI component names the phone
+// The request and response types below carry the Python schemas' names,
+// which become the OpenAPI component names the phone
 // app's generated types use. Request bodies allow extra fields
 // (additionalProperties), as FastAPI did: an older client sending a field
 // this version no longer reads must keep working.

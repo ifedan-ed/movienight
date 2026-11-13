@@ -3,7 +3,7 @@
 // 200,000 titles, films in every language), each as title | original title |
 // (year) | genres | plot, so a described plot ("kids with a treasure map
 // trying to save their homes") finds the film, which TMDB's own title search
-// cannot (app/services/catalog.py).
+// cannot.
 //
 // The worker builds it weekly (never the API: a build is about 4,000 TMDB
 // calls). TMDB's discover is read a year at a time; Meilisearch only embeds

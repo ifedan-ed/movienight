@@ -27,7 +27,7 @@ type Source interface {
 }
 
 // ---------------------------------------------------------------------------
-// Movie Night's own copy of MDBList's lists (app/services/mdblist_copy.py)
+// Movie Night's own copy of MDBList's lists
 // ---------------------------------------------------------------------------
 //
 // The top lists, every list opened or searched for, and each one's titles

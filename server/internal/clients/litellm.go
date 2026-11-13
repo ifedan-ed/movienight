@@ -15,7 +15,7 @@ import (
 
 // LiteLLM is the AI client: OpenAI-style chat completions through the
 // install's LiteLLM proxy (LITELLM_BASE_URL), and only through it; no model
-// is ever called at a provider directly (app/clients/litellm.py).
+// is ever called at a provider directly.
 type LiteLLM struct {
 	http      *http.Client
 	base      string

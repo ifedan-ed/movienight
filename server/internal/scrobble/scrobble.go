@@ -1,5 +1,5 @@
-// Package scrobble is other apps telling Movie Night what was watched
-// (app/api/v1/scrobble.py), server to server:
+// Package scrobble is other apps telling Movie Night what was watched,
+// server to server:
 //
 //   - Record: a finished watch from another player (the Kodi add-on, a phone
 //     shortcut), sent with the person's scrobble token or a TV's token;

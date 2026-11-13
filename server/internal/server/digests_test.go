@@ -1,7 +1,6 @@
 package server_test
 
-// The digest emails' routes (tests/test_digest_send.py and
-// test_digest_year.py, their API parts): settings on by default, a preview
+// The digest emails' routes: settings on by default, a preview
 // made on request, the email page under its own strict policy, and "Send it
 // to me now" through a real SMTP conversation.
 

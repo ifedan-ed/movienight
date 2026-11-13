@@ -1,5 +1,5 @@
 // Package digest makes and sends the weekly digest, the month in review and
-// the year in review (app/services/digest.py).
+// the year in review.
 //
 // Each one is built from the person's own records for the period (what they
 // watched, rated and loved, what arrived in the library, what is coming from

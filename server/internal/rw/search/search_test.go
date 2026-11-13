@@ -1,8 +1,7 @@
 package search_test
 
 // Behaviour tests of search, the AI's best guess, people, /titles/fill and
-// the Jellyfin image proxy, ported from the Python's tests/test_search.py,
-// tests/test_spelling.py and tests/test_no_caps.py, against the fakes.
+// the Jellyfin image proxy, against the fakes.
 
 import (
 	"context"

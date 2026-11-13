@@ -22,7 +22,7 @@ func freshDB(t *testing.T, name string) *pgxpool.Pool {
 	t.Helper()
 	base := os.Getenv("TEST_DATABASE_URL")
 	if base == "" {
-		t.Fatal("TEST_DATABASE_URL is not set: run the tests with scripts/test.sh")
+		t.Fatal("TEST_DATABASE_URL is not set: run the tests with server/scripts/test.sh")
 	}
 	ctx := context.Background()
 	admin, err := pg.Open(ctx, base)

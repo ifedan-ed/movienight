@@ -3,7 +3,7 @@
 //
 //   - schema.sql is the schema exactly as Alembic left it at revision 0016
 //     (pg_dump --schema-only of a database migrated by the Python app's
-//     migrations/; regenerate with server/scripts/dump-schema.sh). It is the
+//     Alembic migrations, now removed). It is the
 //     Go server's baseline: an existing install is already at it, and a new,
 //     empty database is created from it.
 //   - migrations/NNNN_name.sql are the changes after 0016, applied in order by

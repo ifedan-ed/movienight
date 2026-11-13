@@ -49,7 +49,6 @@ What people notice:
 - Votes round halves up (7.55 shows as 7.6), and "In your library, not watched yet" has a different daily shuffle.
 - A few routes no client used were dropped: `GET /auth/config`, `GET /auth/oidc/config`, `POST /auth/oidc/logout`, `GET /me/digests`, `GET /ratings`, `POST /history/remove`, and the `POST` form of an episode's rating (`PUT` stays). The website, the phone app, Kodi and the Jellyfin plugin use none of them.
 
-Going back to the Python version: the Go migrations only add, and leave Alembic's record at 0016, so the Python app runs on the migrated database as it is. Run `docker compose down`, check out the last Python commit (`git log` shows where the Go server came in), and `docker compose up -d --build --remove-orphans`. Restore the dump only if data itself went wrong. The Python version ignores the per-person time zones, and may send the latest digest again to people the Go server already sent one with other week boundaries.
 
 ## Backups
 

@@ -5,7 +5,7 @@
 //	{"detail": "That sign-in code expired; sign in again"}
 //
 // and for a request that fails validation (422), a sentence a person can
-// act on plus the details, as app/main.py's validation_error wrote them:
+// act on plus the details, as the Python app wrote them:
 //
 //	{"detail": "Code is too long: at most 200 characters.",
 //	 "errors": [{"type": "string_too_long", "loc": ["body", "code"], "msg": "...", "ctx": {"max_length": 200}}]}

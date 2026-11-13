@@ -30,7 +30,7 @@ import (
 	"movienight/server/internal/server"
 )
 
-// listenAddr is fixed, as the Python's was (uvicorn on 8000): the
+// listenAddr is fixed, as the Python app's was (8000): the
 // container's port is mapped by compose, so a setting would add nothing.
 const listenAddr = ":8000"
 

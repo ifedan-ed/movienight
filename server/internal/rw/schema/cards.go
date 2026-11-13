@@ -1,5 +1,5 @@
 // Package schema holds the request and response types of the read and
-// write routes, named and shaped as app/api/schemas.py named them: the
+// write routes, named and shaped as the Python app named them: the
 // type names become the OpenAPI component names the phone app's TypeScript
 // types are generated from (docs/openapi.json), and the JSON field names are
 // what the website, the phone and the Kodi add-on read.

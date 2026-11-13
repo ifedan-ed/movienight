@@ -3,11 +3,9 @@
 // private: each signs in with a code or a token afterwards):
 //
 //   - /kodi/: the Kodi add-on (kodi/service.movienight), as a directory
-//     listing Kodi's "Install from zip file" can browse, and its zip
-//     (app/web/kodi.py);
+//     listing Kodi's "Install from zip file" can browse, and its zip;
 //   - /jellyfin/: the Jellyfin plugin's repository (jellyfin-plugin/), the
-//     manifest Jellyfin reads, the plugin's zip and its picture
-//     (app/web/jellyfin_catalog.py).
+//     manifest Jellyfin reads, the plugin's zip and its picture.
 //
 // Both zips are built once at start-up, from the files in the image, with a
 // fixed date on every entry: the same files always give the same bytes, so

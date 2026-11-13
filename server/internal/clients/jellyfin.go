@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-// Jellyfin talks to the install's Jellyfin server (app/clients/jellyfin.py).
+// Jellyfin talks to the install's Jellyfin server.
 // Two kinds of access:
 //   - the install's API key (admin): the library, anyone's plays, resume and
 //     next up, marking items played. It never leaves the server.

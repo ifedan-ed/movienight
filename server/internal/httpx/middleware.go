@@ -19,8 +19,6 @@
 //     them with a token, never a browser.
 //  5. Request size: a body over MaxBodyBytes is refused (413). The Python had
 //     no overall limit, only per-field ones.
-//
-// Ported from app/core/security.py and app/core/logs.py.
 package httpx
 
 import (
@@ -41,7 +39,7 @@ import (
 // the same figure per operation (internal/api).
 const MaxBodyBytes = 1 << 20
 
-// CSP is the policy for the app shell and the API, as in app/core/security.py.
+// CSP is the policy for the app shell and the API.
 const CSP = "default-src 'self'; script-src 'self'; style-src 'self'; " +
 	"img-src 'self' data: https://image.tmdb.org; connect-src 'self'; font-src 'self'; " +
 	"manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; " +
@@ -160,7 +158,7 @@ func accessLog(log *slog.Logger, next http.Handler) http.Handler {
 
 // routeOf is the pattern the mux matched ("/api/v1/me/devices/{device_id}"),
 // never the concrete path; a request no route matched keeps only its first
-// segment, as app/core/logs.py's _generic did.
+// segment.
 func routeOf(pattern, path string) string {
 	if p := pattern; p != "" {
 		if _, path, ok := strings.Cut(p, " "); ok { // "GET /x" -> "/x"

@@ -10,8 +10,8 @@ import (
 	"movienight/server/internal/store"
 )
 
-// Requests to the install's Seerr, made as the person asking
-// (app/services/media_requests.py). Each person's Seerr user is the one
+// Requests to the install's Seerr, made as the person asking.
+// Each person's Seerr user is the one
 // Seerr made from their Jellyfin account (Seerr's Jellyfin import), so
 // requests, quotas and approvals are theirs; the install's admins may
 // request without a linked Jellyfin (as the API key's user).

@@ -1,8 +1,7 @@
 // Package title is a title's page and everything done on it: details,
 // live request status, scores, related titles, the Seerr request, the
 // person's watchlist, watches, rating and favourite, the lists it is in,
-// and its seasons and episodes (ticks, hearts, ratings)
-// (app/api/v1/titles.py, app/services/detail.py, episodes.py, history.py).
+// and its seasons and episodes (ticks, hearts, ratings).
 //
 // Playing (/play) belongs to the playback routes, not here.
 package title

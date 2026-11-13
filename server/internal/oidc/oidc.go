@@ -1,5 +1,5 @@
 // Package oidc is sign-in with the install's OIDC provider (the OIDC_*
-// settings; app/api/v1/auth_oidc.py). Register this exact redirect URL on
+// settings). Register this exact redirect URL on
 // the provider: {PUBLIC_URL}/api/v1/auth/oidc/callback (or OIDC_REDIRECT_URL).
 //
 // The flow is the authorization code flow with PKCE (S256), a state and a

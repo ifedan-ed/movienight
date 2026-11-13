@@ -1,7 +1,7 @@
 package server_test
 
 // The phone app's sign-in (connect page, PKCE code swap, device tokens) and
-// TV pairing: tests/test_devices.py and tests/test_kodi.py, plus the
+// TV pairing, plus the
 // server-to-server checks (scrobble tokens, the Jellyfin plugin secret).
 
 import (

@@ -1,8 +1,6 @@
 package title_test
 
-// Behaviour tests of a title's page and everything done on it, ported from
-// the Python's tests/test_titles.py, test_outside_services.py (scores,
-// Seerr) and test_no_caps.py (the title parts), against a real Postgres and
+// Behaviour tests of a title's page and everything done on it, against a real Postgres and
 // Valkey with the outside services faked over HTTP.
 
 import (

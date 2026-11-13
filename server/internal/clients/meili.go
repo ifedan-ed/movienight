@@ -14,7 +14,7 @@ import (
 
 // Meilisearch indexes: the Jellyfin library, and the TMDB catalog (every
 // title with enough ratings), searched by meaning and by typo-tolerant
-// words together (app/clients/meili.py).
+// words together.
 const (
 	LibraryIndex = "library"
 	CatalogIndex = "catalog"

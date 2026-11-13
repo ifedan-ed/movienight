@@ -1,6 +1,5 @@
 // Package crypto holds every primitive whose output is stored or exchanged,
-// written to be byte-compatible with the Python app (app/core/crypto.py,
-// app/services/passwords.py, app/services/devices.py) so that nothing
+// written to be byte-compatible with the Python app so that nothing
 // already in the database or on a device has to be redone at cutover:
 //
 //   - password hashes "scrypt$N$r$p$salt_b64$hash_b64" (users.password_hash)
@@ -8,8 +7,7 @@
 //   - sha256-hex hashes of tokens and codes (app_tokens, app_codes, ...)
 //   - the phone connect form's HMAC, and the PKCE S256 challenge
 //
-// testdata/python.json holds values the Python code produced
-// (server/scripts/python-fixtures.py); the tests check Go against them.
+// testdata/python.json holds values the Python code produced; the tests check Go against them.
 package crypto
 
 import (
@@ -85,7 +83,7 @@ func (k *Keys) Fernet() *Fernet { return k.fernet }
 
 // ConnectSig signs the phone connect form (/app/connect) so the POST can only
 // carry what the page showed this person, within FORM_TTL. Same message and
-// key as app/services/devices.form_sig.
+// key as the Python app used.
 func (k *Keys) ConnectSig(username, challenge, redirect, device string, ts int64) string {
 	m := hmac.New(sha256.New, k.connect)
 	fmt.Fprintf(m, "%s|%s|%s|%s|%d", username, challenge, redirect, device, ts)

@@ -10,8 +10,7 @@ import (
 
 // Breaker is a circuit breaker shared by every replica through Valkey: when
 // a service fails or refuses, it is left alone for a while, so nothing waits
-// on it again meanwhile. The Python kept this per process (app/clients/
-// mdblist.py, _down_until), so each new replica would have hammered the
+// on it again meanwhile. The Python kept this per process, so each new replica would have hammered the
 // service again.
 //
 // Valkey being unreachable is not a reason to stop calling the service: the

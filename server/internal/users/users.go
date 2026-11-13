@@ -1,5 +1,5 @@
 // Package users finds and creates people, and keeps what the sign-in tells
-// about them current (app/services/users.py).
+// about them current.
 package users
 
 import (

@@ -1,7 +1,7 @@
 // Package episodes is a show's seasons and episodes for one person: TMDB's
 // episode list with their ticks (watched), hearts and ratings, what is in
 // the Jellyfin library, the next episode to play, and ticking or unticking
-// episodes (app/services/episodes.py). Ticking also marks them played in
+// episodes. Ticking also marks them played in
 // the person's Jellyfin (unticking unplays them), so Jellyfin's Next Up
 // agrees.
 //

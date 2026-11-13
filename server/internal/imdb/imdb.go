@@ -1,4 +1,4 @@
-// Package imdb keeps IMDb's own ratings here (app/services/imdb.py). IMDb
+// Package imdb keeps IMDb's own ratings here. IMDb
 // publishes every rated title's rating and vote count as a free file,
 // refreshed daily (datasets.imdbws.com, title.ratings.tsv.gz, about 9 MB
 // gzipped, 1.5 million lines; for personal, non-commercial use). The

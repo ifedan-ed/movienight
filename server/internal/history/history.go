@@ -1,7 +1,6 @@
 // Package history is a person's watch history: their merged watches (one
 // per title or episode and day), a title's watches, marking and removing
-// watches, Profile's numbers and the "Rate what you just watched" prompt
-// (app/services/history.py).
+// watches, Profile's numbers and the "Rate what you just watched" prompt.
 //
 // Shared: the title routes, Profile (GET /history, /me stats, the rate
 // prompt) and, for MarkWatched, anything that records a watch.

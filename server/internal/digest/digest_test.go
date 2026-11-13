@@ -1,7 +1,6 @@
 package digest_test
 
-// Digest emails (tests/test_digest_send.py, test_digest_year.py and the
-// digest parts of test_units.py): on by default for everyone with an
+// Digest emails: on by default for everyone with an
 // address, never sent empty, every one with a way to turn it off, a list
 // cut short says how many more, and above all never one email twice: two
 // runs at once, a catch-up after a failure, a send whose fate is unknown.

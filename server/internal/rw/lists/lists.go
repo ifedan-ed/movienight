@@ -1,8 +1,7 @@
 // Package lists is the Lists tab: watchlist, favourites and ratings as
 // collections, the person's own lists (and smart lists), the install's
 // curated and MDBList lists, stars and Home pins, list items and their
-// order, and MDBList explore, preview, follow and sync
-// (app/api/v1/lists.py, app/services/lists.py, mdblist_copy.py).
+// order, and MDBList explore, preview, follow and sync.
 package lists
 
 import (

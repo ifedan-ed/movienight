@@ -15,6 +15,14 @@ jobs:
       - run: server/scripts/go.sh vet ./...
       - run: server/scripts/test.sh
 
+  kodi:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # The add-on's own tests, against stand-ins for Kodi, in a throwaway
+      # Python image.
+      - run: kodi/tests/run.sh
+
   mobile:
     runs-on: ubuntu-latest
     defaults:

@@ -3,7 +3,7 @@ package mail_test
 // The mailers tell three endings apart: sent, a clear failure (safe to try
 // again) and a send whose fate is unknown because the connection broke after
 // the email was handed over (MaybeSent: counted as sent, never repeated).
-// tests/test_mailer.py and tests/test_smtp2go.py, against a real SMTP
+// Tested against a real SMTP
 // conversation on loopback and a stand-in for SMTP2GO's API.
 
 import (

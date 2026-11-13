@@ -20,8 +20,8 @@ type TMDBError struct {
 
 func (e *TMDBError) Error() string { return "TMDB: " + e.Msg }
 
-// TMDB reads titles, discovery, search and people from TMDB directly
-// (app/clients/tmdb.py). Answers are TMDB's own shapes.
+// TMDB reads titles, discovery, search and people from TMDB directly.
+// Answers are TMDB's own shapes.
 type TMDB struct {
 	http      *http.Client
 	base      string

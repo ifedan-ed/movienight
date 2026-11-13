@@ -1,6 +1,6 @@
 // Package homecfg is which rows each Home tab shows a person, in what order
-// (the "Home rows" screen), and how lists are named and grouped
-// (app/services/home_config.py). Each tab's choice is a list of {key, on}
+// (the "Home rows" screen), and how lists are named and grouped.
+// Each tab's choice is a list of {key, on}
 // in the person's settings under "home_rows:<tab>".
 //
 // Row keys are read per tab: "trending" on Movies is trending films, on For

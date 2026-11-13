@@ -1,7 +1,6 @@
 // Package players is a person's outside players (VLC, Infuse, their own
 // links) and their play choices: which players the Play sheet offers, the
-// default, the subtitle language, and whether to ask "Finished it?"
-// (app/services/playback.py, the settings half).
+// default, the subtitle language, and whether to ask "Finished it?".
 //
 // The one home of player settings: GET/PUT /me/players (rw/profile) and
 // the Play sheet (package playback: GET/POST /title/.../play) both read

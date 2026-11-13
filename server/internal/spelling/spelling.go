@@ -1,5 +1,4 @@
-// Package spelling fixes typos in a search before it is embedded
-// (app/services/spelling.py).
+// Package spelling fixes typos in a search before it is embedded.
 //
 // Meilisearch's keyword search forgives a typo or two per word, but the
 // meaning model reads "trasure" as noise, and a described plot full of typos

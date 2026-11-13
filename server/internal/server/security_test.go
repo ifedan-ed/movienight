@@ -1,7 +1,6 @@
 package server_test
 
-// Request-level protections, the error envelope and the access log:
-// tests/test_people_and_security.py and tests/test_logs.py.
+// Request-level protections, the error envelope and the access log.
 
 import (
 	"encoding/json"

@@ -13,7 +13,7 @@ import (
 )
 
 // SMTPServer is a tiny SMTP server on loopback for the mail and digest
-// tests (the Python's tests/smtp_server.py): it speaks just enough SMTP for
+// tests: it speaks just enough SMTP for
 // net/smtp, keeps every email it was handed in full, and can misbehave the
 // ways a real one does. Mode:
 //

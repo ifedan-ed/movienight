@@ -56,7 +56,7 @@ func (t *Title) seerrInfo(ctx context.Context, media string, id int) clients.JSO
 }
 
 // withSeerr folds Seerr's live record into the title state the request
-// button reads (app/services/detail.py request_status).
+// button reads.
 func (t *Title) withSeerr(st schema.TitleState, info clients.JSON) schema.TitleState {
 	if info == nil {
 		return st

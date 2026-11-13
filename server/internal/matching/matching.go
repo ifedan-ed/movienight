@@ -1,6 +1,5 @@
 // Package matching scores how well a search names a title, and counts a
-// search's words in any script (app/services/catalog.py title_match and
-// popularity_bonus, app/services/identify.py words). Pure functions, shared
+// search's words in any script. Pure functions, shared
 // by search and the AI's best guess.
 package matching
 

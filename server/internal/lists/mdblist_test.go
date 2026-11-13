@@ -1,9 +1,8 @@
 package lists_test
 
 // MDBList lists kept in step (the worker's nightly mdblist job and the
-// admin's "Sync now"), and the nightly copy of MDBList's top lists:
-// tests/test_outside_services.py (followed lists, the nightly copy) and
-// tests/test_lists.py (follow and sync), against a stub MDBList.
+// admin's "Sync now"), and the nightly copy of MDBList's top lists,
+// against a stub MDBList.
 
 import (
 	"context"

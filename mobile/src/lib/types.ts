@@ -1,5 +1,5 @@
 // The API's own types, generated from the server's OpenAPI description
-// (npm run types). Names match app/api/schemas.py on the server.
+// (npm run types). Names match the server's schema names in docs/openapi.json.
 import type { components } from "./openapi";
 
 type S = components["schemas"];

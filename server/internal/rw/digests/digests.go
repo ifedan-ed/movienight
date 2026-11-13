@@ -1,5 +1,4 @@
-// Package digests is the digest emails' routes (app/api/v1/account.py,
-// the digests part): each person's email settings (/me/emails), making a
+// Package digests is the digest emails' routes: each person's email settings (/me/emails), making a
 // digest, its preview and "Send it to me now". There is no list of a
 // person's digests: no client ever asked for one (dropped with phase 2). What a digest holds, and
 // whom it is sent to, is package digest's; the schedule's sends are the

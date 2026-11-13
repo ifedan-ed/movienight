@@ -4,7 +4,7 @@
 # Run: `api` by default; `migrate` as its own deploy step first; `worker`
 # as its own service; `admin user add NAME` for accounts.
 # The Jellyfin plugin (jellyfin-plugin/), served from /jellyfin/ for
-# Jellyfin's plugin catalog; the same build as the Python image's.
+# Jellyfin's plugin catalog.
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS jellyfin-plugin
 WORKDIR /src
 COPY jellyfin-plugin/Jellyfin.Plugin.MovieNight ./Jellyfin.Plugin.MovieNight

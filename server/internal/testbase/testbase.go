@@ -1,6 +1,6 @@
 // Package testbase is what every database test shares, without the API:
 // the throwaway Postgres (pgvector/pgvector:pg17, migrated by
-// internal/migrate) and Valkey that scripts/test.sh starts, emptied for each
+// internal/migrate) and Valkey that server/scripts/test.sh starts, emptied for each
 // test (Conns), and a complete, valid test install's settings (BaseEnv).
 // Without TEST_DATABASE_URL and TEST_VALKEY_URL a test that needs them
 // fails and says so (it does not skip: a skipped test reads as a passing
@@ -43,7 +43,7 @@ func Conns(t testing.TB) (*pgxpool.Pool, valkey.Client) {
 	once.Do(func() {
 		dbURL, kvURL := os.Getenv("TEST_DATABASE_URL"), os.Getenv("TEST_VALKEY_URL")
 		if dbURL == "" || kvURL == "" {
-			openErr = errString("TEST_DATABASE_URL and TEST_VALKEY_URL are not set: run the tests with scripts/test.sh")
+			openErr = errString("TEST_DATABASE_URL and TEST_VALKEY_URL are not set: run the tests with server/scripts/test.sh")
 			return
 		}
 		ctx := context.Background()

@@ -306,13 +306,13 @@ func splitLocation(s string) []any {
 	return out
 }
 
-// fieldNames: how a field is named in a sentence (app/main.py _plain).
+// fieldNames: how a field is named in a sentence.
 var fieldNames = map[string]string{
 	"review": "Your comment", "description": "The description", "q": "A search", "name": "The name",
 }
 
 // plain is one validation error as a sentence a person can act on: "Your
-// comment is too long: at most 5,000 characters." (app/main.py _plain).
+// comment is too long: at most 5,000 characters."
 func plain(it apierr.ValidationError) string {
 	field := ""
 	for i := len(it.Loc) - 1; i >= 0; i-- {

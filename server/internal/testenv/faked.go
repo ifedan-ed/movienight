@@ -19,8 +19,8 @@ type Fakes struct {
 	Jellyfin *fakes.Jellyfin
 }
 
-// StartFaked is Start with every outside service faked (package fakes), as
-// the Python's tests/conftest.py set them up: Seerr on in DRY_RUN, MDBList
+// StartFaked is Start with every outside service faked (package fakes):
+// Seerr on in DRY_RUN, MDBList
 // with a key. Those settings already in env win (a test may turn MDBList
 // off).
 // TMDB's and MDBList's addresses are fixed in the clients, so those two

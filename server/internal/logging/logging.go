@@ -1,6 +1,6 @@
 // Package logging sets up the server's log: JSON lines on stdout (Loki
 // collects them), one access line per request, and the owner's rule that the
-// log keeps only what debugging needs (app/core/logs.py):
+// log keeps only what debugging needs:
 //
 //   - People are named by their numeric id only; never usernames, names or
 //     email addresses. Titles, search text and query strings never appear.
@@ -100,7 +100,7 @@ func SetUser(ctx context.Context, id int64) {
 	}
 }
 
-// The patterns below are the Python's (app/core/logs.py), which its tests
+// The patterns below are the Python's, which its tests
 // pinned down; see there for the examples each one is for.
 var (
 	// A URL or an absolute path followed by a query string: keep the path.

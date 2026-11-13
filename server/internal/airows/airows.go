@@ -1,7 +1,6 @@
 // Package airows is "Picked for you": themed rows of films the install's
 // model picks from a person's history, ratings and comments, matched on
-// TMDB and kept in ai_row_cache (app/services/recommend.py and the AI part
-// of app/services/rows.py).
+// TMDB and kept in ai_row_cache.
 //
 // Who does what:
 //

@@ -7,8 +7,7 @@ import (
 )
 
 // JobSettings are the settings of the worker's scheduled jobs, the digest
-// emails and the AI rows (app/core/config.py: timezone, run_jobs, imdb_*,
-// catalog_*, mail_sender, smtp_*, digest_send_tries, ai_*). They sit in
+// emails and the AI rows. They sit in
 // their own file so the API's settings and these can grow apart. The API
 // reads a few of them too: CATALOG_ENABLED (search), the AI rows' freshness
 // (Home asks for a rebuild) and EmailEnabled (GET /me).

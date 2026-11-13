@@ -14,8 +14,7 @@ import (
 
 // watch is one watch of a title (or episode) on one day: the same watch can
 // arrive twice (a mark here that Jellyfin later reports too), so rows for
-// the same title and episode on the same day count once
-// (app/services/history.py, group_rows).
+// the same title and episode on the same day count once.
 type watch struct {
 	mediaType string // "movie" or "episode"
 	key       string // the title's cache key; "" for a watch without a TMDB id

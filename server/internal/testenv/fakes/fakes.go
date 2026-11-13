@@ -1,9 +1,7 @@
 // Package fakes stands in for TMDB, Seerr, Meilisearch, MDBList, Jellyfin
 // and the AI model over real HTTP, so tests run the real clients (package
-// clients) against canned answers and never reach the internet. Ported from
-// the Python's tests/fakes.py: titles are made up from their ids (movie 603
-// is "Movie 603", show 1399 has 3 seasons of 10 episodes), so the Go tests
-// read like the Python ones they port.
+// clients) against canned answers and never reach the internet. Titles are made up from their
+// ids: movie 603 is "Movie 603", show 1399 has 3 seasons of 10 episodes.
 //
 // Every fake records the calls it got (Calls, Count) and lets a test
 // replace any answer (Override), e.g. to make TMDB fail.

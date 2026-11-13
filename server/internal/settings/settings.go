@@ -1,6 +1,5 @@
 // Package settings reads and writes the JSON values kept per person
-// (user_settings) and for the install (app_settings), as
-// app/services/users.py get_setting/set_setting and services/status.py did.
+// (user_settings) and for the install (app_settings).
 //
 // One difference on purpose: a stored value that is not valid JSON is an
 // error here (logged by the caller), not silently the default; the Python

@@ -1,7 +1,6 @@
 package server_test
 
-// The Kodi add-on and the Jellyfin plugin, downloaded without signing in
-// (tests/test_kodi.py's download test, tests/test_jellyfin_catalog.py).
+// The Kodi add-on and the Jellyfin plugin, downloaded without signing in.
 
 import (
 	"archive/zip"

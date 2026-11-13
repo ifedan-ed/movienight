@@ -1,6 +1,6 @@
 // Package rows loads the titles behind every single Home row key and the
-// "See all" grids, list pages and collections behind them
-// (app/services/rows.py load_items and its TMDB lists): the person's own
+// "See all" grids, list pages and collections behind them:
+// the person's own
 // collections and the library from the database, TMDB's lists through the
 // shared cache.
 //

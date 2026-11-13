@@ -15,7 +15,7 @@ import (
 	"movienight/server/internal/titles"
 )
 
-// The outside scores of a title (app/services/scores.py):
+// The outside scores of a title:
 //
 //   - IMDb's own rating from the nightly IMDb file (imdb_ratings), by the
 //     title's IMDb id, so it shows even when MDBList is down or not set up;

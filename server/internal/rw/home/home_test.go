@@ -1,8 +1,6 @@
 package home_test
 
-// Ported from the Home, rows, "See all", Discover and "Picked for you"
-// parts of the Python's tests (test_no_caps.py, test_ai_rows.py,
-// test_titles.py, test_units.py).
+// Home, its rows, "See all", Discover and "Picked for you".
 
 import (
 	"context"

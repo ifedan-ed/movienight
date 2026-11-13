@@ -1,6 +1,6 @@
 // Package mail sends Movie Night's outgoing email (the weekly digest, the
 // month in review, the year in review), over SMTP or over SMTP2GO's HTTP API
-// (MAIL_SENDER), the Python's app/clients/mailer.py and smtp2go.py.
+// (MAIL_SENDER).
 //
 // A send ends one of three ways, and the digests treat each differently
 // (internal/digest):

@@ -1,7 +1,6 @@
 package server_test
 
-// Scrobbles from other players: tests/test_kodi.py (the reporting half) and
-// tests/test_shows_play_sync.py's scrobble token test.
+// Scrobbles from Kodi and other players, and the personal scrobble token.
 
 import (
 	"strings"

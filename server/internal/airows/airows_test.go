@@ -1,6 +1,6 @@
 package airows
 
-// tests/test_ai_rows.py, as Go behaviour tests against the real Postgres
+// "Picked for you": behaviour tests against the real Postgres
 // and Valkey, with LiteLLM and TMDB stood in by httptest servers. Inside the
 // package: the worker's runOne is what a worker's queue loop calls.
 

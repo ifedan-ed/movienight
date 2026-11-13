@@ -19,7 +19,7 @@ import (
 	"movienight/server/internal/titles"
 )
 
-// buildRows is one Home row key's rows (app/services/rows.py build_rows):
+// buildRows is one Home row key's rows:
 // "continue" (landscape), "because" and "ai" (several rows), or one row of
 // any other key. The note says why "Picked for you" has no rows.
 func (r *routes) buildRows(ctx context.Context, u *store.User, tab, key string) ([]schema.Row, *string, error) {

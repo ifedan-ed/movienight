@@ -1,6 +1,5 @@
 // Package clients talks to the services outside Movie Night: TMDB, Jellyfin,
-// Seerr, MDBList, Meilisearch and the AI model (through LiteLLM only). Ported
-// from app/clients/.
+// Seerr, MDBList, Meilisearch and the AI model (through LiteLLM only).
 //
 // What every client shares:
 //
@@ -70,7 +69,7 @@ func transport(perHost, idle int) *http.Transport {
 
 // JSON is an upstream answer as decoded JSON. The services' own shapes are
 // kept as they are (TMDB's snake_case, Jellyfin's PascalCase); the services
-// layer turns them into Movie Night's types, as app/services/ did.
+// layer turns them into Movie Night's types.
 type JSON = map[string]any
 
 // response is one finished upstream call.

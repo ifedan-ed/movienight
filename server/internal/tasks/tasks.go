@@ -6,7 +6,7 @@
 // the web process and kept "already asked" in a dict in that process's
 // memory. With two replicas each kept its own dict (two syncs, two AI calls
 // for one person), the tasks died with a restart, and one create_task
-// (episodes.py) was not even referenced, so Python could drop it mid-run.
+// was not even referenced, so Python could drop it mid-run.
 // Here no API request starts background work at all; it only records it.
 //
 // The shape:

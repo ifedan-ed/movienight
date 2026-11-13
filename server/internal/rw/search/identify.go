@@ -15,7 +15,7 @@ import (
 	"movienight/server/internal/matching"
 )
 
-// The AI's best guess for a described plot (app/services/identify.py).
+// The AI's best guess for a described plot.
 //
 // "kids with a treasure map trying to save their homes" is a memory, not a
 // title. The meaning search matches it against TMDB's short plot summaries;

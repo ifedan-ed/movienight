@@ -1,7 +1,6 @@
 package title_test
 
-// Outside scores on a title page, ported from tests/test_titles.py and
-// tests/test_outside_services.py.
+// Outside scores on a title page.
 
 import (
 	"net/http"

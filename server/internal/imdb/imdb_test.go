@@ -1,6 +1,6 @@
 package imdb_test
 
-// IMDb's own ratings: tests/test_outside_services.py (the IMDb part), plus
+// IMDb's own ratings: loading, refreshing and refusing a short file, plus
 // a large streamed load that must stay within a small memory budget.
 
 import (

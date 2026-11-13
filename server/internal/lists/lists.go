@@ -1,4 +1,4 @@
-// Package lists is lists (app/services/lists.py).
+// Package lists is lists.
 //
 // A person's own lists (owner_id = them): hand-made lists they edit, and
 // smart lists (saved TMDB filters, run live by package rows).

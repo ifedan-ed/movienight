@@ -1,7 +1,7 @@
 package catalog_test
 
-// The search catalog: tests/test_search.py (catalog_doc, the sync sending
-// only new and changed titles, adult titles, TMDB's 500-page limit) against
+// The search catalog: the document per title, the sync sending only new
+// and changed titles, adult titles and TMDB's 500-page limit, against
 // stub TMDB and Meilisearch servers and the real Postgres.
 
 import (

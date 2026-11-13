@@ -1,9 +1,7 @@
 // Package devices is the routes other apps and Movie Night's own players
 // call: scrobbles from the Kodi add-on and other players, the Jellyfin
 // Webhook plugin and the Movie Night plugin for Jellyfin, playing a title in
-// an outside player and "Finished it?", and the manual syncs
-// (app/api/v1/scrobble.py, play.py, the play routes of titles.py and the
-// sync routes of profile.py).
+// an outside player and "Finished it?", and the manual syncs.
 //
 // The handlers authenticate and validate; packages scrobble, playback and
 // jfsync decide what is recorded. Background work (a person's plays after a

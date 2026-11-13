@@ -26,8 +26,8 @@ const MDBListDownFor = 10 * time.Minute
 // MDBListRefusedText is what callers say when MDBList refuses, in plain words.
 const MDBListRefusedText = "MDBList refused Movie Night's requests just now (its own limit for this install's key)"
 
-// MDBList is curated lists, outside scores and a search fallback
-// (app/clients/mdblist.py). Movie Night sets no allowance of its own; when
+// MDBList is curated lists, outside scores and a search fallback.
+// Movie Night sets no allowance of its own; when
 // MDBList refuses (its own limit for the key) or fails, it is left alone for
 // MDBListDownFor, shared across replicas (Breaker), and admins see the
 // refusal (Refusal). Nothing depends on MDBList answering: callers keep

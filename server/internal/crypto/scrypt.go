@@ -11,7 +11,7 @@ import (
 	"golang.org/x/crypto/scrypt"
 )
 
-// Password hashing parameters, as in app/services/passwords.py: N=2^15, r=8,
+// Password hashing parameters, as the Python app had them: N=2^15, r=8,
 // p=1, a 32-byte key, a 16-byte salt. One hash takes about 0.1 s of CPU and
 // 32 MiB of memory (128*N*r bytes). The parameters are written into each
 // hash, so they can be raised later and old hashes still verify.

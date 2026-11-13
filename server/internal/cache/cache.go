@@ -2,7 +2,7 @@
 // Seerr's live status, MDBList answers, the search AI's guesses) in Valkey,
 // shared by every API replica, with a time to live on every key.
 //
-// What it does better than the Python's in-process dict (app/core/cache.py):
+// What it does better than the Python's in-process dict:
 //
 //   - Shared: two replicas (or a restart) no longer each ask TMDB for the
 //     same page. One upstream call per key per window, install-wide.

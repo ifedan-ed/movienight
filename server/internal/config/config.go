@@ -2,7 +2,7 @@
 // at startup. Each person's own settings (Jellyfin account, players, Home
 // rows, digests) live in the database instead.
 //
-// The names are the Python app's (app/core/config.py), so an install's
+// The names are the Python app's, so an install's
 // existing .env keeps working; docs/configuration.md describes each one.
 // What changed, on purpose (the "no hidden fallbacks" rule):
 //
@@ -43,7 +43,7 @@ import (
 var appleAppIDRe = regexp.MustCompile(`^[A-Z0-9]{10}\.[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$`)
 
 // Config is every setting the Go server reads (the API and the worker read
-// the same Config). Fields are grouped as in app/core/config.py; the read
+// the same Config). Fields are grouped as the Python app grouped them; the read
 // and write routes' own settings are in rw.go (Config.RW), the worker's,
 // the digests' and the AI rows' in jobs.go (JobSettings).
 type Config struct {

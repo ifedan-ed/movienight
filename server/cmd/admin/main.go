@@ -1,5 +1,4 @@
-// Command admin manages accounts and devices from the command line (the
-// Python's app/cli.py and scripts/sign_out_devices.py). Run it inside the
+// Command admin manages accounts and devices from the command line. Run it inside the
 // API container, which has the install's settings:
 //
 //	admin user add alice [-name "Alice"] [-email a@example.com] [-stdin]

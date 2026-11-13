@@ -3,8 +3,7 @@
 // out), the phone app's connect page, the OIDC redirects, the app shell
 // (web/index.html) and the website's static files.
 //
-// The pages are server-rendered forms with no script (app/web/signin.py,
-// app/web/connect.py). Each form carries an anti-forgery token: the HMAC of
+// The pages are server-rendered forms with no script. Each form carries an anti-forgery token: the HMAC of
 // a random per-browser cookie (mn_form, SameSite=Strict), so a page on
 // another site cannot submit them. /api writes have their own guard
 // (X-Requested-With, internal/httpx).

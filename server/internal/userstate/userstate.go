@@ -1,7 +1,7 @@
 // Package userstate is a title's state as every card shows it: in the
 // Jellyfin library, requested or downloading in Seerr (shared by everyone on
 // the install), and the person's own watchlist, watches, rating and
-// favourite (app/services/state.py).
+// favourite.
 //
 // What changed from the Python, on purpose:
 //
@@ -171,7 +171,7 @@ func StatusLabel(status int) *string {
 	return &s
 }
 
-// Of is one title's state (app/services/state.py title_state).
+// Of is one title's state.
 func (st *State) Of(media string, id int) schema.TitleState {
 	k := Key{media, id}
 	if media != "tv" {

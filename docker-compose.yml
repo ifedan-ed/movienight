@@ -4,11 +4,12 @@
 #   docker compose up -d --build
 #
 # migrate runs once before api and worker on every start and brings the
-# schema up to date (a database left by the Python version at Alembic
-# 0016 is taken over in place). api serves on 127.0.0.1:8137; worker runs
-# the scheduled jobs and the queued work. api and worker run as uid 1000
-# and see the movienight-data volume read-only at /data (for a file
-# such as SMTP2GO_API_KEY_FILE).
+# schema up to date. A database left by the Python version at Alembic 0016
+# is taken over in place. api serves on 127.0.0.1:8137; worker runs the
+# scheduled jobs and the queued work. Valkey holds caches, sign-in limits
+# and the work queues, with no persistence (sessions are in Postgres).
+# api and worker run as uid 1000 and see the movienight-data volume
+# read-only at /data, for a file such as SMTP2GO_API_KEY_FILE.
 
 # The project name pins the volumes and the network to the existing ones
 # (movienight_movienight-pg, movienight_default, ...) whatever folder this

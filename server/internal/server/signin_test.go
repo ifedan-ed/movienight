@@ -1,8 +1,7 @@
 package server_test
 
 // Sign-in with a username and password, browser sessions, the account page
-// and sign-out: the behaviour tests/test_password.py pinned down for the
-// Python, plus what server-side sessions add (sign-out truly revokes).
+// and sign-out, plus what server-side sessions add (sign-out truly revokes).
 
 import (
 	"context"

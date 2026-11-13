@@ -10,8 +10,8 @@ import (
 	"strconv"
 )
 
-// Seerr (Jellyseerr/Overseerr): requests and their download status
-// (app/clients/seerr.py). Requests carry X-Api-User so each is made as the
+// Seerr (Jellyseerr/Overseerr): requests and their download status.
+// Requests carry X-Api-User so each is made as the
 // person asking. DRY_RUN is enforced here: CreateRequest and
 // ImportJellyfinUser then never send (reads still go out).
 type Seerr struct {

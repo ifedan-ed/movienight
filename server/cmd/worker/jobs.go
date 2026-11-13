@@ -1,6 +1,6 @@
 package main
 
-// The schedule: every job of the Python's APScheduler setup (app/jobs.py),
+// The schedule: every job of the Python's APScheduler setup,
 // at the same local times (TIMEZONE), with what each does at start-up when
 // its latest due run was missed (jobs.Job.CatchUp). The Python's
 // first-runs-soon-after-start ("library 20 s after start", "IMDb 3 min 20 s

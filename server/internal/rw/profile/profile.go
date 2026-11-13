@@ -1,7 +1,6 @@
 // Package profile is the Profile tab and the person's own settings: /me,
 // their time zone, history, requests, the rate prompt, the data export, the
-// scrobble token, the Jellyfin account link and players
-// (app/api/v1/profile.py, app/api/v1/account.py).
+// scrobble token, the Jellyfin account link and players.
 //
 // Not here: digest emails (/me/emails, /me/digests/*: rw/digests, with the
 // digest code); /sync/* (rw/devices, with the syncs).

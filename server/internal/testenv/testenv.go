@@ -1,6 +1,6 @@
 // Package testenv gives tests the API built exactly as cmd/api builds it,
 // served over real HTTP, on the real database and Valkey of package
-// testbase (scripts/test.sh starts both containers).
+// testbase (server/scripts/test.sh starts both containers).
 //
 // Packages share the one database, so test.sh runs packages one at a time
 // (go test -p 1); within a package, tests that use the database do not run

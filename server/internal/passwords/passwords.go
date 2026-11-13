@@ -1,5 +1,5 @@
-// Package passwords is sign-in with a username and password (PASSWORD_SIGNIN;
-// app/services/passwords.py): hashing on a bounded pool, checking, and the
+// Package passwords is sign-in with a username and password (PASSWORD_SIGNIN):
+// hashing on a bounded pool, checking, and the
 // lockout against guessing.
 package passwords
 

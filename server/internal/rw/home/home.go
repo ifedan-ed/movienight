@@ -1,7 +1,6 @@
 // Package home is the Home tabs: which rows each tab shows (and the Home
 // rows settings), each row's cards, the hero banner, the "See all" grids
-// behind the rows, Discover, and the genre and provider lists
-// (app/api/v1/home.py, app/services/rows.py, app/services/home_config.py).
+// behind the rows, Discover, and the genre and provider lists.
 //
 // Every handler loads the person's state once, for the titles it is about
 // to show (rows.Loader.Cards / userstate.Load): the Python reloaded their

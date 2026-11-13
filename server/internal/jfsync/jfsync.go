@@ -1,5 +1,4 @@
-// Package jfsync brings Jellyfin's state into Movie Night, additively
-// (app/services/sync.py):
+// Package jfsync brings Jellyfin's state into Movie Night, additively:
 //
 //   - the install's library -> library_items and the library search index.
 //     Only a complete, successful read of the whole library changes it, and

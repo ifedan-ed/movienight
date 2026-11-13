@@ -1,5 +1,4 @@
-// Package auth answers "who is this request?" (app/api/deps.py and the token
-// checks of app/api/v1/scrobble.py). Nothing but these signs a request in:
+// Package auth answers "who is this request?". Nothing but these signs a request in:
 //
 //   - a phone's device token (Authorization: Bearer mn_app_...), for the API;
 //   - a browser session (the mn_session cookie, internal/sessions);

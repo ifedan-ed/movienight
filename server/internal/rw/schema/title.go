@@ -1,7 +1,6 @@
 package schema
 
-// The title page and everything done on it (app/api/schemas.py, "Title
-// page", "Seasons and episodes"). Lists that Pydantic defaulted to [] are
+// The title page and everything done on it. Lists that Pydantic defaulted to [] are
 // always sent as arrays, never null: the handlers fill them (an empty Go
 // slice, not nil), so a client's `.length` keeps working.
 

@@ -2,8 +2,7 @@ package server_test
 
 // Jellyfin into Movie Night: the Webhook plugin (debounced through the
 // queue a worker serves), the Movie Night plugin's events, the plays sync
-// and the library sync (tests/test_jellyfin_plugin.py,
-// tests/test_library_sync.py, tests/test_shows_play_sync.py).
+// and the library sync.
 
 import (
 	"context"

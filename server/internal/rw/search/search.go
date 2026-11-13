@@ -1,7 +1,7 @@
 // Package search is finding titles: search (library, catalog and TMDB,
 // ranked together, with spelling correction), the AI's best guess for a
 // described plot, a person's page, poster back-fill (/titles/fill) and the
-// Jellyfin image proxy (app/api/v1/catalog.py).
+// Jellyfin image proxy.
 //
 // What changed from the Python, on purpose:
 //

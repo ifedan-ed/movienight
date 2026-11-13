@@ -1,8 +1,6 @@
 package title_test
 
-// Seasons and episodes: ticks, hearts and ratings, ported from
-// tests/test_episode_favorites.py, test_episode_ratings.py and the episode
-// parts of test_no_caps.py.
+// Seasons and episodes: ticks, hearts and ratings.
 
 import (
 	"context"

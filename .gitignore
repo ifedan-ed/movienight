@@ -4,10 +4,8 @@
 data/
 __pycache__/
 *.pyc
-.pytest_cache/
 *.db
 *.db-shm
 *.db-wal
 secrets/
-.venv
 e2e/node_modules/

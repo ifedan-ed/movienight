@@ -16,8 +16,8 @@ import (
 // handful of Jellyfin calls the person must not wait for, so the API only
 // records them here and a worker makes them (RunQueued).
 //
-// The Python fired them with asyncio.create_task and kept no reference
-// (episodes.py:180), so the task could be dropped mid-run, and a restart
+// The Python fired them with asyncio.create_task and kept no reference,
+// so the task could be dropped mid-run, and a restart
 // lost it. Here the marks wait in Valkey:
 //
 //   - "task:jf-marks:items:<user id>", a hash of Jellyfin item id -> the

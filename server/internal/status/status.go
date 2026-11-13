@@ -1,6 +1,6 @@
 // Package status keeps what the install's admins (and each person) should
 // know about work Movie Night does by itself, so it can be shown instead of
-// only logged (app/services/status.py): the last library sync, each linked
+// only logged: the last library sync, each linked
 // person's last plays read from Jellyfin, the search catalog's last
 // refresh, and MDBList refusing Movie Night's requests.
 //
