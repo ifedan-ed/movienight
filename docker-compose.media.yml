@@ -1,0 +1,59 @@
+# The media service on this machine, next to docker-compose.yml: the media
+# libraries' scans and playback (ffmpeg) on the films and shows in
+# MEDIA_FOLDER, which it sees read-only at /media. Library folders are
+# written as /media/... in the website. Only api and worker reach it, with
+# MEDIA_SECRET.
+#
+# Used when .env lists it, as .env.example does:
+#   COMPOSE_FILE=docker-compose.yml:docker-compose.media.yml
+# For a media service on the machine that holds the files, leave it out of
+# COMPOSE_FILE and set MEDIA_URL instead (docker-compose.media-host.yml is
+# that machine's file).
+
+services:
+  # The media service's address for api and worker, added to theirs.
+  api:
+    environment:
+      MEDIA_URL: http://media:8100
+  worker:
+    environment:
+      MEDIA_URL: http://media:8100
+
+  media:
+    # The same image as api and worker (docker-compose.yml builds it too).
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    image: movienight-server:latest
+    entrypoint: ["/usr/local/bin/media"]
+    restart: unless-stopped
+    user: "1000:1000"
+    environment:
+      MEDIA_SECRET: ${MEDIA_SECRET:?set MEDIA_SECRET in .env (openssl rand -base64 32)}
+      MEDIA_LIBRARIES: /media
+      MEDIA_CACHE_DIR: /cache
+      MEDIA_MAX_TRANSCODES: ${MEDIA_MAX_TRANSCODES:-2}
+      MEDIA_HWACCEL: ${MEDIA_HWACCEL:-none}
+    volumes:
+      - ${MEDIA_FOLDER:?set MEDIA_FOLDER in .env to the folder that holds your films and shows}:/media:ro
+      - movienight-media-cache:/cache
+    # A transcode in flight is dropped on stop; the player starts it again.
+    stop_grace_period: 15s
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/media", "-healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    logging:
+      driver: json-file
+      options:
+        max-size: "${LOG_MAX_SIZE:-10m}"
+        max-file: "${LOG_MAX_FILES:-5}"
+    networks:
+      - default
+
+volumes:
+  # Transcoded segments and extracted subtitles and fonts: a cache, safe to
+  # remove.
+  movienight-media-cache:

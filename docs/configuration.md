@@ -3,7 +3,7 @@
 Every install-wide setting comes from the environment, which
 `docker compose` fills from `.env` (`env_file` in the compose file).
 `.env.example` is the template to copy; the server reads the settings in
-`server/internal/config`. Each person's own settings (Jellyfin account,
+`server/internal/config` (the media service's in `media.go` there). Each person's own settings (Jellyfin account,
 players, Home rows, emails, time zone) are in the database and changed in
 the app, not here.
 
@@ -29,16 +29,46 @@ needs to change for your server.
 | `SECRET_KEY` | required | Encrypts each person's Jellyfin token and keys the signatures of the sign-in forms. Generate once (`openssl rand -base64 48`) and keep it: a new key makes every stored Jellyfin link unreadable, so everyone has to connect Jellyfin again |
 | `POSTGRES_PASSWORD` | required | Used by the compose file for the Postgres container and to build `DATABASE_URL` |
 | `TMDB_API_KEY` | required | Titles, discovery, search, people, images |
-| `JELLYFIN_BASE_URL` | required | Where the server reaches Jellyfin (can be an internal address) |
-| `JELLYFIN_PUBLIC_URL` | required | The Jellyfin address people's browsers and players use (Play links, "Open in Jellyfin") |
-| `JELLYFIN_API_KEY` | required | Jellyfin Dashboard, API Keys. Reads the library for everyone |
-| `JELLYFIN_USER_ID` | required | A Jellyfin user who sees every library. The whole library is read as this user; if that read fails, comes back incomplete or lists nothing (a 404, an empty answer, or the user no longer sees the libraries), nothing is removed and admins see why at the top of Profile ([limits](limits.md#watches-finished-it-and-progress)) |
+| `MEDIA_FOLDER` | required by `docker-compose.media.yml` | The folder on the host that holds your films and shows. The `media` service sees it read-only as `/media`, so a library's folders are written as `/media/...` in the website. Not needed when the media service runs on another machine |
+| `COMPOSE_FILE` | `docker-compose.yml:docker-compose.media.yml` in `.env.example` | Read by Docker Compose: the files to start. With the media service on another machine, leave out `docker-compose.media.yml` ([self-hosting](self-hosting.md#the-media-service-on-another-machine)) |
+| `MEDIA_SECRET` | required with `MEDIA_URL` | Shared by the api and the media service; every call between them carries it. At least 16 characters (`openssl rand -base64 32`) |
 | `PUBLIC_URL` | required | Movie Night's own address, e.g. `https://movies.example.com`: links in emails, a player's link back (`{done}`), the Jellyfin plugin catalog, the OIDC callback. An `https` address also marks the cookies Secure |
 | `OWNER_USERNAME` | required | The sign-in username of the install's owner, who is always an admin |
 | `TIMEZONE` | required | An IANA zone name (e.g. `Europe/London`): the install's clock. The worker's schedule runs on it (Monday 09:00, 02:30, ...). Each person's own dates follow their own zone, the one their browser or phone reports or one they picked in Profile → Time zone (history's days, "this year" in Profile, Home's morning/noon/night rows and daily shuffle, "today" for aired episodes, a watch date given without a time at 20:00 that day, their digest weeks, months and years, due at 09:00 on their own Monday); `TIMEZONE` is the zone of someone who has neither reported nor picked one (a new account before its first page load, someone who only uses Kodi). An unknown name stops startup |
 | `TRUSTED_PROXY` | required | Your reverse proxy's address(es) as the app sees them: IPs or CIDRs, comma separated, or `none` when nothing sits in front. Only a request from one of these has its `X-Forwarded-For` believed, which is what the per-address sign-in lockout and the TV pairing limit count by. With a proxy on the host in front of `127.0.0.1:8137`, it is the gateway of the compose network: `docker network inspect movienight_default --format '{{(index .IPAM.Config 0).Gateway}}'`. With a proxy container on that network, its address. Trusting the wrong address makes every visitor look like the proxy, so one person's wrong passwords would lock out everyone |
 | `MEILI_MASTER_KEY` | (empty), set one | Given to the Meilisearch container by the compose file. Set a long random one (`openssl rand -base64 32`): without it Meilisearch answers anything on the compose network |
 | `MEILI_API_KEY` | (empty) | What Movie Night sends to Meilisearch. Movie Night creates and configures its indexes, so it needs the master key (or an admin key): the simplest is the same value as `MEILI_MASTER_KEY` |
+
+## Media libraries
+
+Movie Night plays your films and shows itself. The `media` command scans
+the folders and plays the files with ffmpeg; it runs next to the files.
+The api reaches it at `MEDIA_URL` and never lets a browser talk to it
+directly. An admin sets up the libraries in Profile → Libraries.
+
+| Setting | Read by | Default | What it does |
+|---|---|---|---|
+| `MEDIA_URL` | api, worker | `http://media:8100`, set by `docker-compose.media.yml` | Where the api reaches the media service; set it yourself for one on another machine. Empty, with `MEDIA_SECRET` empty too: no libraries (Jellyfin may still be the source). One without the other stops startup |
+| `MEDIA_SECRET` | api, worker, media | required | See [Required](#required) |
+| `MEDIA_LIBRARIES` | media | `/media` in the media compose files | The folders the media service may read, comma separated full paths. A library's folders must be inside one; nothing outside is ever opened |
+| `MEDIA_CACHE_DIR` | media | `/cache` in the media compose files (the `movienight-media-cache` volume); else `movienight-media` in the system's temporary folder | Transcoded segments while a film plays (removed when it stops), and the subtitles and fonts taken out of files (removed after 3 days unused). Room for a few films' segments is enough |
+| `MEDIA_MAX_TRANSCODES` | media | `2` | How many films are converted at once (the picture encoded again). One more play that needs it is told to try again in a moment. Files the browser plays as they are, or with only the container changed, are not counted |
+| `MEDIA_PROBE_WORKERS` | media | `4` | How many files ffprobe reads at once while scanning |
+| `MEDIA_HWACCEL` | media | `none` | Hardware encoding for transcodes: `none`, `vaapi` (Intel and AMD), `qsv` (Intel Quick Sync) or `nvenc` (NVIDIA). The media service tries one frame at start and stops with a message if the encoder doesn't work. With `none` it logs when it sees a GPU it could use |
+| `MEDIA_HWACCEL_DEVICE` | media | `/dev/dri/renderD128` | The GPU's render node for `vaapi` and `qsv` |
+| `MEDIA_BIND` | `docker-compose.media-host.yml` | required there | The address the media service listens on when it runs alone on another machine: a private one, such as its Tailscale address |
+
+## Jellyfin
+
+Optional: all four or none. With Jellyfin set up, its library is a second
+source next to the media libraries; a title in both plays from the library.
+
+| Setting | Default | What it does |
+|---|---|---|
+| `JELLYFIN_BASE_URL` | (empty) | Where the server reaches Jellyfin (can be an internal address) |
+| `JELLYFIN_PUBLIC_URL` | (empty) | The Jellyfin address people's browsers and players use (Play links, "Open in Jellyfin") |
+| `JELLYFIN_API_KEY` | (empty) | Jellyfin Dashboard, API Keys. Reads the library for everyone |
+| `JELLYFIN_USER_ID` | (empty) | A Jellyfin user who sees every library. The whole library is read as this user; if that read fails, comes back incomplete or lists nothing (a 404, an empty answer, or the user no longer sees the libraries), nothing is removed and admins see why at the top of Profile ([limits](limits.md#watches-finished-it-and-progress)) |
 
 ## Sign-in and people
 
@@ -98,6 +128,35 @@ needs to change for your server.
 | `SMTP_FROM` | `Movie Night <movienight@example.com>` | The sender, for either `MAIL_SENDER` |
 | `DIGEST_SEND_TRIES` | `3` | How many times the schedule (and its hourly catch-up) tries one person's digest of one period when the mail server clearly fails (no connection, a refusal with an error code); then it is given up on for that period, with an ERROR in the log ("Send it to me now" still works). A send whose fate is unknown (the connection broke after the email was handed over, or the app stopped midway) counts as sent and is never repeated ([limits](limits.md#background-jobs)) |
 | `JELLYFIN_WEBHOOK_SECRET` | (empty) | The shared secret for the Jellyfin Webhook plugin and the Movie Night plugin for Jellyfin (sent as `X-MovieNight-Token`). Empty: both are refused with 503 |
+
+## Subtitles online
+
+The player's subtitle menu has Search online. It asks every source that is
+on at once and lists what they offer for the file playing. A picked
+subtitle is stored as a track of that file for the whole household. These
+sites hold subtitles their users uploaded, and each has its own terms.
+
+Every setting here is optional. A source that needs a key is off without
+it. Podnapisi and Gestdown need none and are on. `SUBTITLE_SOURCES`
+replaces that rule with an exact list.
+
+| Setting | Default | What it does |
+|---|---|---|
+| `SUBTITLE_SOURCES` | (empty) | The sources to use, comma separated: `opensubtitles`, `subdl`, `subsource`, `jimaku`, `podnapisi`, `gestdown`, or `none` for no Search online. Empty: every source whose key is set, plus Podnapisi and Gestdown. An unknown name, or a source listed without its key, stops startup |
+| `OPENSUBTITLES_API_KEY` | (empty) | OpenSubtitles.com: a consumer key from your account's API page. Searches use it alone. The file's hash goes with each search, so the subtitle made for that very file comes first |
+| `OPENSUBTITLES_USERNAME`, `OPENSUBTITLES_PASSWORD` | (empty) | An OpenSubtitles account. Downloads then count against its daily quota (20 on a free account). Without them the key allows only a few downloads a day from your server's address. Both or neither; either one without the key stops startup. A refused login is not tried again for 15 minutes |
+| `SUBDL_API_KEY` | (empty) | SubDL (subdl.com) |
+| `SUBSOURCE_API_KEY` | (empty) | SubSource (subsource.net) |
+| `JIMAKU_API_KEY` | (empty) | Jimaku (jimaku.cc): anime, searched only when the language is Japanese |
+
+Podnapisi searches by title and year. Gestdown passes on Addic7ed's
+subtitles and has TV only.
+
+Each person may search 30 times and download 20 subtitles an hour. A
+search's answer is kept for an hour, so asking again costs the sites
+nothing. When OpenSubtitles' daily downloads are used up, its results stay
+listed but greyed out, and the player says when they come back. The other
+limits are in [limits](limits.md#subtitles-online).
 
 ## Error reports
 
@@ -162,6 +221,8 @@ now and safe to delete: `SESSION_SECRET`, `TRAKT_EXPORT_DIR`,
 
 | Feature | Needs | Without it |
 |---|---|---|
+| Media libraries (Play here from your own folders) | `MEDIA_URL` + `MEDIA_SECRET`, and the `media` service | Titles play only from Jellyfin, if it is set up |
+| Jellyfin as a source, its library sync and plays sync | the four `JELLYFIN_*` settings | No Jellyfin links, sign-in to Jellyfin or outside players |
 | Plays from Jellyfin into history | each person connects Jellyfin in Profile | Their plays don't come in |
 | Instant plays (Webhook plugin) and progress (Movie Night plugin) | `JELLYFIN_WEBHOOK_SECRET` | 503; plays still arrive within 5 minutes |
 | Requests | `SEERR_BASE_URL` + `SEERR_API_KEY`, or `DRY_RUN=true` | No Request button |
@@ -171,5 +232,6 @@ now and safe to delete: `SESSION_SECRET`, `TRAKT_EXPORT_DIR`,
 | Digest emails | `SMTP_HOST`, or `SMTP2GO_API_KEY_FILE` with `MAIL_SENDER=smtp2go` | No emails |
 | Password autofill in the iPhone app | `APPLE_APP_ID` and an app build naming your host | The app signs in without autofill |
 | Expo Go sign-in | `APP_DEV_REDIRECTS=true` | Only the real app (`movienight://`) can sign in |
+| Search online in the player | nothing for Podnapisi and Gestdown; `OPENSUBTITLES_API_KEY`, `SUBDL_API_KEY`, `SUBSOURCE_API_KEY`, `JIMAKU_API_KEY` for the others | `SUBTITLE_SOURCES=none`: no Search online |
 | Error reports | `ERROR_REPORTS_SERVER_DSN`, `ERROR_REPORTS_WEB_DSN`, `ERROR_REPORTS_APP_DSN` | Errors go only to the log |
-| Admin buttons (library rescan, sync every MDBList list, removing a catalog list) | `OWNER_USERNAME`, `ADMIN_USERS` | Hidden |
+| Admin pages and buttons (Libraries, Jellyfin library rescan, sync every MDBList list, removing a catalog list) | `OWNER_USERNAME`, `ADMIN_USERS` | Hidden |

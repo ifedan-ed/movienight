@@ -202,7 +202,8 @@ func (m *me) me(ctx context.Context, uid int32) (schema.MeOut, error) {
 	return schema.MeOut{
 		User: u.Username, DisplayName: u.DisplayName, Email: u.Email, IsAdmin: u.IsAdmin, Stats: stats, Jellyfin: link,
 		Features: schema.Features{Requests: d.Clients.Seerr.Enabled() || c.DryRun, MDBList: c.MDBListEnabled(),
-			AI: c.AIEnabled(), Email: c.EmailEnabled(), DryRun: c.DryRun},
+			AI: c.AIEnabled(), Email: c.EmailEnabled(), DryRun: c.DryRun, Jellyfin: c.JellyfinEnabled(),
+			Libraries: c.Media.Enabled()},
 		ScrobbleTokenSet: u.ScrobbleTokenHash != nil && *u.ScrobbleTokenHash != "",
 		Limits: schema.TextLimits{TextMaxChars: c.RW.TextMaxChars, SearchMaxChars: c.RW.SearchMaxChars,
 			NameMaxChars: c.RW.NameMaxChars, ReportedMaxChars: c.ReportedMaxChars, BatchMaxItems: c.RW.BatchMaxItems},

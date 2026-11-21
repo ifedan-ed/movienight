@@ -283,7 +283,8 @@ func (s *Service) index(ctx context.Context, items []jsonx.Obj, seen []string) (
 	}
 	var gone []string
 	for id := range current {
-		if !keep[id] {
+		// Movie Night's own libraries' documents are theirs to keep.
+		if !keep[id] && !strings.HasPrefix(id, clients.LibraryOwnPrefix) {
 			gone = append(gone, id)
 		}
 	}

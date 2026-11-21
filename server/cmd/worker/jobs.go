@@ -28,8 +28,10 @@ import (
 	"movienight/server/internal/imdb"
 	"movienight/server/internal/jfsync"
 	"movienight/server/internal/jobs"
+	"movienight/server/internal/libraries"
 	"movienight/server/internal/lists"
 	"movienight/server/internal/mail"
+	"movienight/server/internal/rw"
 	"movienight/server/internal/settings"
 	"movienight/server/internal/status"
 	"movienight/server/internal/store"
@@ -47,6 +49,7 @@ type services struct {
 	lists   *lists.Service
 	digests *digest.Service
 	titles  *titles.Service
+	libs    *libraries.Service
 	q       *store.Queries
 	clients *clients.Set
 }
@@ -64,6 +67,7 @@ func build(cfg *config.Config, pool *pgxpool.Pool, kv valkey.Client, cl *clients
 		lists:   lists.New(pool, q, t, st, homecfg.New(q, st), log),
 		digests: digest.New(cfg, pool, cl, mail.New(cfg), log),
 		titles:  t,
+		libs:    rw.NewLibraries(cfg, pool, kv, cl, t, log),
 		q:       q,
 		clients: cl,
 	}
@@ -75,9 +79,21 @@ const keepRuns = 30 * 24 * time.Hour
 // schedule is the job list for this install (a job whose feature is off is
 // left out, and the log says so at start-up).
 func schedule(cfg *config.Config, s *services, log *slog.Logger) []jobs.Job {
-	loc := cfg.Location
 	var list []jobs.Job
 	off := func(name, why string) { log.Info("job not scheduled", "job", name, "why", why) }
+
+	// Every 30 minutes: Movie Night's own media libraries, rescanned (only
+	// new and changed files are probed). "Scan now" is the queue.
+	if cfg.Media.Enabled() {
+		list = append(list, jobs.Job{Name: "media-scan", Schedule: jobs.Every{Interval: 30 * time.Minute, Offset: 2 * time.Minute},
+			MaxLate: 30 * time.Minute, Run: s.libs.ScanAll})
+	} else {
+		off("media-scan", "MEDIA_URL is not set")
+	}
+	if !cfg.JellyfinEnabled() {
+		off("plays, library", "Jellyfin is not set up")
+		return append(list, common(cfg, s, log)...)
+	}
 
 	// Every 5 minutes: each linked person's Jellyfin plays (the webhook
 	// makes this instant; this catches the rest). Under each person's sync
@@ -113,6 +129,15 @@ func schedule(cfg *config.Config, s *services, log *slog.Logger) []jobs.Job {
 			log.InfoContext(ctx, "library sync", "result", res.String())
 			return nil
 		}})
+
+	return append(list, common(cfg, s, log)...)
+}
+
+// common is every job that needs no Jellyfin.
+func common(cfg *config.Config, s *services, log *slog.Logger) []jobs.Job {
+	loc := cfg.Location
+	var list []jobs.Job
+	off := func(name, why string) { log.Info("job not scheduled", "job", name, "why", why) }
 
 	// Daily 02:30: IMDb's ratings. Run at start-up when none are loaded, or
 	// when the night's load was missed within the day.

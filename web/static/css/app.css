@@ -616,3 +616,25 @@ body.watching #tabbar, body.watching #rate-bar { display: none; }
 body.watching #view { padding-bottom: 0; }
 body.watching #view::before { display: none; }
 body.watching { overflow: hidden; }
+
+/* Libraries (views/libraries.js) */
+.lib { display: flex; flex-direction: column; gap: 8px; }
+.lib-head { display: flex; align-items: center; gap: 12px; }
+.lib-head .ic { width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center; background: var(--surface-2); color: var(--accent); flex: none; }
+.lib-head .tx { min-width: 0; }
+.lib-head h2 { margin: 0; overflow-wrap: anywhere; }
+.lib-paths { display: flex; flex-wrap: wrap; gap: 6px; }
+.lib-paths code { font-size: 13px; padding: 3px 8px; border-radius: 8px; background: var(--surface-2); color: var(--text-2); overflow-wrap: anywhere; }
+.lib-progress { display: flex; flex-direction: column; gap: 6px; }
+.lib-bar { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+.lib-bar i { display: block; height: 100%; background: var(--accent); transition: width .6s; }
+.lib-error { color: #ffc2c2; font-size: 14px; overflow-wrap: anywhere; }
+.lib-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.lib-toggle { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; background: none; border: 0; color: var(--accent); font: inherit; font-size: 15px; font-weight: 700; padding: 6px 0; cursor: pointer; }
+.lib-toggle svg.i { width: 18px; height: 18px; }
+.lib-file .tx b { font-size: 15px; overflow-wrap: anywhere; }
+.lib-add { padding: 4px var(--gutter) 24px; }
+.lib-form .chips { padding: 0; }
+.lib-paths-in { height: auto; padding: 12px 14px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 14.5px; resize: vertical; }
+.lib-roots { padding: 6px 0 0; flex-wrap: wrap; }
+@media (min-width: 700px) { .lib-add .btn { width: auto; padding: 0 24px; } }

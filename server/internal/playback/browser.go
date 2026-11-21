@@ -33,10 +33,23 @@ import (
 // session stands alone (the Python's users.device_id).
 func JellyfinDevice(u store.User) string { return "movienight-" + strconv.Itoa(int(u.ID)) }
 
+// BrowserCaps is what the browser says it decodes (jfplay.Caps for
+// Jellyfin's device profile, plan.Caps for a library file), and how many
+// audio channels its output has (0: not said).
+type BrowserCaps struct {
+	DirectContainers, DirectVideo, DirectAudio, HLSVideo, HLSAudio []string
+	AudioChannels                                                  int
+}
+
+func (c BrowserCaps) jellyfin() jfplay.Caps {
+	return jfplay.Caps{DirectContainers: c.DirectContainers, DirectVideo: c.DirectVideo, DirectAudio: c.DirectAudio,
+		HLSVideo: c.HLSVideo, HLSAudio: c.HLSAudio}
+}
+
 // WatchRequest starts (or restarts) a play in the browser.
 type WatchRequest struct {
 	Season, Episode *int
-	Caps            jfplay.Caps
+	Caps            BrowserCaps
 	// Audio picks an audio track; nil keeps the file's default.
 	Audio *int
 	// Burn is an image subtitle to burn into the picture; nil burns none.
@@ -106,6 +119,9 @@ type Watch struct {
 	Segments []Stretch
 	Next     *Next
 	Fonts    []string
+	// Source is where the file comes from: "library" (Movie Night's own,
+	// through the media service) or "jellyfin".
+	Source string
 }
 
 var (
@@ -153,6 +169,18 @@ func (s *Service) Watch(ctx context.Context, u store.User, media string, tmdbID 
 		}
 		prev = &c
 	}
+	// The library's copy first: it plays without Jellyfin, and a file
+	// served by Movie Night itself is the one it knows best.
+	file, err := s.libraryFile(ctx, u, media, tmdbID, r.Season, r.Episode)
+	if err != nil {
+		return Watch{}, err
+	}
+	if file != nil {
+		return s.watchLibrary(ctx, u, media, tmdbID, file, r, prev)
+	}
+	if !s.cfg.JellyfinEnabled() || (prev != nil && prev.Library()) {
+		return Watch{}, apierr.New(http.StatusNotFound, "This isn't in the library yet")
+	}
 	itemID, err := s.findItem(ctx, u, media, tmdbID, r.Season, r.Episode)
 	if err != nil {
 		return Watch{}, err
@@ -176,7 +204,7 @@ func (s *Service) Watch(ctx context.Context, u store.User, media string, tmdbID 
 		return Watch{}, apierr.New(http.StatusNotFound, "This isn't in the library yet")
 	}
 
-	req := jfplay.InfoRequest{UserID: uid, Caps: r.Caps, AudioIndex: r.Audio, BurnSubtitle: r.Burn, NoDirect: r.Burn != nil}
+	req := jfplay.InfoRequest{UserID: uid, Caps: r.Caps.jellyfin(), AudioIndex: r.Audio, BurnSubtitle: r.Burn, NoDirect: r.Burn != nil}
 	info, err := s.jf.PlaybackInfo(ctx, auth, itemID, req)
 	if err != nil {
 		return Watch{}, jellyfinDown(err)
@@ -206,7 +234,7 @@ func (s *Service) Watch(ctx context.Context, u store.User, media string, tmdbID 
 	if runtime == 0 {
 		runtime = item.RunTimeTicks
 	}
-	out := Watch{Media: media, TMDBID: tmdbID, Key: titles.Key(media, tmdbID), ItemID: itemID,
+	out := Watch{Media: media, TMDBID: tmdbID, Key: titles.Key(media, tmdbID), ItemID: itemID, Source: "jellyfin",
 		Duration: secs(runtime), Audio: []Track{}, Subs: []Track{}, Chapters: []Mark{}, Segments: []Stretch{}, Fonts: []string{}}
 	out.Title = item.Name
 	if item.Type == "Episode" && item.Season != nil && item.Episode != nil {
@@ -254,7 +282,7 @@ func (s *Service) Watch(ctx context.Context, u store.User, media string, tmdbID 
 		if out.Play, err = s.startPlay(ctx, u, media, tmdbID, out, itemID); err != nil {
 			return Watch{}, err
 		}
-		if out.Resume, err = s.resumeAt(ctx, u, media, tmdbID, out, item); err != nil {
+		if out.Resume, err = s.resumeAt(ctx, u, media, tmdbID, out, secs(item.UserData.PlaybackPositionTicks)); err != nil {
 			return Watch{}, err
 		}
 	}
@@ -436,11 +464,12 @@ func (s *Service) startPlay(ctx context.Context, u store.User, media string, tmd
 }
 
 // resumeAt is where the person left off: Jellyfin's resume point when it
-// has one, else Movie Night's own (watch_progress: Kodi, the Jellyfin
-// plugin, an earlier play here).
-func (s *Service) resumeAt(ctx context.Context, u store.User, media string, tmdbID int, w Watch, item *jfplay.Item) (float64, error) {
-	if t := item.UserData.PlaybackPositionTicks; t > 0 {
-		return secs(t), nil
+// has one (jellyfin, in seconds; 0 for none or a library play), else Movie
+// Night's own (watch_progress: Kodi, the Jellyfin plugin, an earlier play
+// here).
+func (s *Service) resumeAt(ctx context.Context, u store.User, media string, tmdbID int, w Watch, jellyfin float64) (float64, error) {
+	if jellyfin > 0 {
+		return jellyfin, nil
 	}
 	kind := "episode"
 	if media == "movie" {
@@ -509,25 +538,16 @@ func (s *Service) WatchReport(ctx context.Context, u store.User, r Report) (bool
 	if !ok {
 		return false, apierr.New(http.StatusUnprocessableEntity, "Unknown event")
 	}
-	auth, err := s.watchAuth(u)
-	if err != nil {
-		return false, err
-	}
-	auth.Device = c.Device
-	ticks := jfplay.Ticks(r.Position)
-	// Jellyfin's records are a courtesy next to Movie Night's own: a
-	// failure is logged, and the report still counts here.
-	if err := s.jf.Report(ctx, auth, ev, jfplay.Progress{ItemID: c.Item, MediaSourceID: c.Source, PlaySessionID: c.PlaySession,
-		PositionTicks: ticks, Paused: r.Paused || r.Event == "pause", AudioIndex: r.Audio, SubtitleIndex: r.Subtitle,
-		Transcoded: r.Transcoded}); err != nil {
-		s.log.WarnContext(ctx, "reporting playback to Jellyfin failed", "user", u.ID, "err", err)
-	}
-	if auth.Token == "" && u.JellyfinUserID != nil && ev != jfplay.Started {
-		// The install's key plays as no Jellyfin user, so the person's
-		// resume point is set by hand.
-		if err := s.jf.SavePosition(ctx, *u.JellyfinUserID, c.Item, ticks); err != nil {
-			s.log.WarnContext(ctx, "saving the Jellyfin resume point failed", "user", u.ID, "err", err)
+	if c.Library() {
+		if ev == jfplay.Stopped && s.library != nil && s.library.Media() != nil {
+			// The play's ffmpeg ends now rather than when it goes idle.
+			// Best effort: an idle job ends by itself within minutes.
+			if err := s.library.Media().Stop(ctx, c.Play); err != nil {
+				s.log.InfoContext(ctx, "stopping the play's ffmpeg failed", "err", err)
+			}
 		}
+	} else if err := s.reportJellyfin(ctx, u, c, ev, r); err != nil {
+		return false, err
 	}
 
 	ps, err := s.q.PlaySessionGet(ctx, store.PlaySessionGetParams{ID: c.Play, UserID: u.ID})
@@ -573,11 +593,15 @@ func (s *Service) WatchReport(ctx context.Context, u store.User, r Report) (bool
 		dur = &d
 	}
 	client, device := "Movie Night", "Browser"
-	item := jfsync.NormalizeID(c.Item)
+	var item *string
+	if !c.Library() {
+		id := jfsync.NormalizeID(c.Item)
+		item = &id
+	}
 	if err := s.q.ProgressSave(ctx, store.ProgressSaveParams{UserID: u.ID, Key: key, MediaType: ps.MediaType,
 		TmdbID: *ps.TmdbID, Season: ps.Season, Episode: ps.Episode, Title: title, EpisodeTitle: epTitle,
 		PositionS: int32(r.Position), DurationS: dur, State: state, Client: &client, Device: &device,
-		JellyfinItemID: &item}); err != nil {
+		JellyfinItemID: item}); err != nil {
 		return false, err
 	}
 	if ev != jfplay.Progressed {
@@ -591,4 +615,29 @@ func (s *Service) WatchReport(ctx context.Context, u store.User, r Report) (bool
 		}
 	}
 	return false, nil
+}
+
+// reportJellyfin tells Jellyfin where a Jellyfin play is. Jellyfin's
+// records are a courtesy next to Movie Night's own: a failure is logged,
+// and the report still counts here.
+func (s *Service) reportJellyfin(ctx context.Context, u store.User, c stream.Claims, ev jfplay.Event, r Report) error {
+	auth, err := s.watchAuth(u)
+	if err != nil {
+		return err
+	}
+	auth.Device = c.Device
+	ticks := jfplay.Ticks(r.Position)
+	if err := s.jf.Report(ctx, auth, ev, jfplay.Progress{ItemID: c.Item, MediaSourceID: c.Source, PlaySessionID: c.PlaySession,
+		PositionTicks: ticks, Paused: r.Paused || r.Event == "pause", AudioIndex: r.Audio, SubtitleIndex: r.Subtitle,
+		Transcoded: r.Transcoded}); err != nil {
+		s.log.WarnContext(ctx, "reporting playback to Jellyfin failed", "user", u.ID, "err", err)
+	}
+	if auth.Token == "" && u.JellyfinUserID != nil && ev != jfplay.Started {
+		// The install's key plays as no Jellyfin user, so the person's
+		// resume point is set by hand.
+		if err := s.jf.SavePosition(ctx, *u.JellyfinUserID, c.Item, ticks); err != nil {
+			s.log.WarnContext(ctx, "saving the Jellyfin resume point failed", "user", u.ID, "err", err)
+		}
+	}
+	return nil
 }

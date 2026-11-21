@@ -82,6 +82,8 @@ type SubtitleTrack struct {
 // PlayInfo is what the Play sheet shows.
 type PlayInfo struct {
 	Available        bool            `json:"available"`
+	InJellyfin       bool            `json:"in_jellyfin" required:"false" doc:"Jellyfin has it: the outside players can play it"`
+	InLibrary        bool            `json:"in_library" required:"false" doc:"Movie Night's own library has it: Play here plays that copy"`
 	Linked           bool            `json:"linked"`
 	JellyfinItemID   *string         `json:"jellyfin_item_id" required:"false" nullable:"true"`
 	WebURL           *string         `json:"web_url" required:"false" nullable:"true"`
@@ -165,6 +167,7 @@ type WatchCaps struct {
 	DirectAudio      []string `json:"direct_audio" enum:"aac,mp3,opus,flac,ac3,eac3,vorbis,alac" maxItems:"10"`
 	HLSVideo         []string `json:"hls_video" enum:"h264,hevc,av1,vp9,vp8" maxItems:"8"`
 	HLSAudio         []string `json:"hls_audio" enum:"aac,mp3,opus,flac,ac3,eac3,vorbis,alac" maxItems:"10"`
+	AudioChannels    int      `json:"audio_channels,omitempty" required:"false" minimum:"0" maximum:"32" doc:"the audio output's channels (AudioContext maxChannelCount); 6 or more keeps surround sound in a library transcode"`
 }
 
 // WatchIn starts a play in the browser, or restarts one with another audio
@@ -215,29 +218,30 @@ type WatchNext struct {
 
 // WatchOut is everything the player needs.
 type WatchOut struct {
-	Ticket       string         `json:"ticket" doc:"the stream ticket: in every stream address and every report"`
-	PlayID       string         `json:"play_id"`
-	Mode         string         `json:"mode" enum:"direct,hls"`
-	URL          string         `json:"url"`
-	DurationS    float64        `json:"duration_s"`
-	ResumeS      float64        `json:"resume_s" doc:"where the person left off; 0 from the start"`
-	Title        string         `json:"title"`
-	MediaType    string         `json:"media_type"`
-	TMDBID       int            `json:"tmdb_id"`
-	Season       *int           `json:"season" required:"false" nullable:"true"`
-	Episode      *int           `json:"episode" required:"false" nullable:"true"`
-	Key          string         `json:"key"`
-	ItemID       string         `json:"jellyfin_item_id"`
-	Backdrop     string         `json:"backdrop"`
-	Audio        []WatchTrack   `json:"audio" nullable:"false"`
-	AudioIndex   *int           `json:"audio_index" required:"false" nullable:"true"`
-	Subtitles    []WatchTrack   `json:"subtitles" nullable:"false"`
-	Subtitle     *int           `json:"subtitle_index" required:"false" nullable:"true" doc:"the subtitle to show at the start"`
-	BurntIndex   *int           `json:"burnt_subtitle" required:"false" nullable:"true"`
-	Chapters     []WatchChapter `json:"chapters" nullable:"false"`
-	Segments     []WatchSegment `json:"segments" nullable:"false"`
-	Next         *WatchNext     `json:"next,omitempty" required:"false" doc:"the episode after this one; left out at the end"`
-	Fonts        []string       `json:"fonts" nullable:"false" doc:"fonts embedded in the file, for styled subtitles"`
+	Ticket     string         `json:"ticket" doc:"the stream ticket: in every stream address and every report"`
+	PlayID     string         `json:"play_id"`
+	Mode       string         `json:"mode" enum:"direct,hls"`
+	URL        string         `json:"url"`
+	DurationS  float64        `json:"duration_s"`
+	ResumeS    float64        `json:"resume_s" doc:"where the person left off; 0 from the start"`
+	Title      string         `json:"title"`
+	MediaType  string         `json:"media_type"`
+	TMDBID     int            `json:"tmdb_id"`
+	Season     *int           `json:"season" required:"false" nullable:"true"`
+	Episode    *int           `json:"episode" required:"false" nullable:"true"`
+	Key        string         `json:"key"`
+	ItemID     string         `json:"jellyfin_item_id"`
+	Backdrop   string         `json:"backdrop"`
+	Audio      []WatchTrack   `json:"audio" nullable:"false"`
+	AudioIndex *int           `json:"audio_index" required:"false" nullable:"true"`
+	Subtitles  []WatchTrack   `json:"subtitles" nullable:"false"`
+	Subtitle   *int           `json:"subtitle_index" required:"false" nullable:"true" doc:"the subtitle to show at the start"`
+	BurntIndex *int           `json:"burnt_subtitle" required:"false" nullable:"true"`
+	Chapters   []WatchChapter `json:"chapters" nullable:"false"`
+	Segments   []WatchSegment `json:"segments" nullable:"false"`
+	Next       *WatchNext     `json:"next,omitempty" required:"false" doc:"the episode after this one; left out at the end"`
+	Fonts      []string       `json:"fonts" nullable:"false" doc:"fonts embedded in the file, for styled subtitles"`
+	Source     string         `json:"source,omitempty" required:"false" enum:"library,jellyfin" doc:"where the file comes from: Movie Night's own library or Jellyfin"`
 }
 
 // WatchReportIn is the player saying where it is.
@@ -246,7 +250,7 @@ type WatchReportIn struct {
 	Ticket     string   `json:"ticket" minLength:"10" maxLength:"2000"`
 	Event      string   `json:"event" enum:"start,progress,pause,stop"`
 	PositionS  float64  `json:"position_s" minimum:"0" maximum:"1000000"`
-	DurationS  float64  `json:"duration_s,omitempty" minimum:"0" maximum:"1000000" doc:"the player's own length, used when Jellyfin names none"`
+	DurationS  float64  `json:"duration_s,omitempty" minimum:"0" maximum:"1000000" doc:"the player's own length, used when the file's is unknown"`
 	Paused     bool     `json:"paused,omitempty"`
 	Audio      *int     `json:"audio,omitempty" minimum:"0" maximum:"100000" nullable:"true"`
 	Subtitle   *int     `json:"subtitle,omitempty" minimum:"0" maximum:"100000" nullable:"true"`

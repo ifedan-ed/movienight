@@ -16,6 +16,7 @@ import (
 
 	"movienight/server/internal/apierr"
 	"movienight/server/internal/clients"
+	"movienight/server/internal/media/mediaclient"
 )
 
 // Route is the proxy's address pattern; the player's URLs are built from
@@ -44,13 +45,13 @@ const (
 // connections kept alive between segments).
 func NewClient() *http.Client {
 	return &http.Client{Transport: &http.Transport{
-		Proxy:                 http.ProxyFromEnvironment,
-		DialContext:           (&net.Dialer{Timeout: 10 * time.Second, KeepAlive: 30 * time.Second}).DialContext,
-		TLSHandshakeTimeout:   10 * time.Second,
-		MaxConnsPerHost:       128,
-		MaxIdleConns:          64,
-		MaxIdleConnsPerHost:   64,
-		IdleConnTimeout:       90 * time.Second,
+		Proxy:               http.ProxyFromEnvironment,
+		DialContext:         (&net.Dialer{Timeout: 10 * time.Second, KeepAlive: 30 * time.Second}).DialContext,
+		TLSHandshakeTimeout: 10 * time.Second,
+		MaxConnsPerHost:     128,
+		MaxIdleConns:        64,
+		MaxIdleConnsPerHost: 64,
+		IdleConnTimeout:     90 * time.Second,
 		// A transcode's first segment can take a while; nothing else should.
 		ResponseHeaderTimeout: 90 * time.Second,
 		// Bytes pass through untouched: Go's transparent gzip would drop
@@ -67,23 +68,29 @@ func NewClient() *http.Client {
 type Proxy struct {
 	signer *Signer
 	client *http.Client
-	base   *url.URL
+	base   *url.URL // Jellyfin; nil when there is none
 	apiKey string
+	media  *mediaclient.Client // the media service; nil when libraries are off
 	log    *slog.Logger
 	bufs   sync.Pool
 }
 
 // NewProxy makes the proxy. base is Jellyfin's internal address
-// (JELLYFIN_BASE_URL) and apiKey the install's key: the proxy fetches with
-// the install's key, never a person's token, so it needs nothing from the
-// database. The key reaches only what the ticket names: one item's media
-// source, in Jellyfin's play session the person's own PlaybackInfo made.
-func NewProxy(signer *Signer, client *http.Client, base, apiKey string, log *slog.Logger) (*Proxy, error) {
-	u, err := url.Parse(strings.TrimRight(base, "/"))
-	if err != nil || u.Host == "" {
-		return nil, errors.New("JELLYFIN_BASE_URL is not an address")
+// (JELLYFIN_BASE_URL, "" for none) and apiKey the install's key: the proxy
+// fetches with the install's key, never a person's token, so it needs
+// nothing from the database. The key reaches only what the ticket names:
+// one item's media source, in Jellyfin's play session the person's own
+// PlaybackInfo made. media is the media service (nil for none), reached
+// the same way for a library file's ticket (library.go).
+func NewProxy(signer *Signer, client *http.Client, base, apiKey string, media *mediaclient.Client, log *slog.Logger) (*Proxy, error) {
+	p := &Proxy{signer: signer, client: client, apiKey: apiKey, media: media, log: log}
+	if base != "" {
+		u, err := url.Parse(strings.TrimRight(base, "/"))
+		if err != nil || u.Host == "" {
+			return nil, errors.New("JELLYFIN_BASE_URL is not an address")
+		}
+		p.base = u
 	}
-	p := &Proxy{signer: signer, client: client, base: u, apiKey: apiKey, log: log}
 	p.bufs.New = func() any { b := make([]byte, copyBuf); return &b }
 	return p, nil
 }
@@ -162,6 +169,14 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		apierr.Write(w, apierr.New(http.StatusForbidden, "This stream link has expired"))
 		return
 	}
+	if c.Library() {
+		p.library(w, r, c)
+		return
+	}
+	if p.base == nil {
+		apierr.Write(w, apierr.NotFound())
+		return
+	}
 	target, k, ok := p.target(c, r.PathValue("path"), r.URL.Query())
 	if !ok {
 		apierr.Write(w, apierr.NotFound())
@@ -213,13 +228,19 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		p.playlist(w, r.Context(), resp, target, c.Item)
 		return
 	}
+	p.pass(w, r, resp, k, method)
+}
+
+// pass sends an upstream answer on as it is: the headers that matter, and
+// the body streamed through a pooled buffer, never held whole.
+func (p *Proxy) pass(w http.ResponseWriter, r *http.Request, resp *http.Response, k kind, method string) {
 	h := w.Header()
 	for _, name := range passHeaders {
 		if v := resp.Header.Get(name); v != "" {
 			h.Set(name, v)
 		}
 	}
-	if k == kindFile {
+	if k == kindFile || k == kindPlaylist {
 		h.Set("Cache-Control", "private, no-store")
 	} else {
 		// A segment, subtitle or font never changes under its address

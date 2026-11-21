@@ -1,7 +1,8 @@
 // Package stream is the in-browser player's media proxy: the bytes of one
-// Jellyfin item (the file itself, Jellyfin's HLS playlists and segments,
-// subtitle tracks and embedded fonts) passed through Movie Night, so the
-// browser never holds a Jellyfin key.
+// Jellyfin item or one library file (the file itself, HLS playlists and
+// segments, subtitle tracks and embedded fonts) passed through Movie Night,
+// from Jellyfin or from the media service, so the browser never holds a
+// Jellyfin key or the media service's secret.
 //
 // Every request carries a ticket in its path. A ticket is a signed,
 // short-lived set of claims (Claims): whose play it is, which item and media
@@ -29,16 +30,26 @@ const TicketLife = 6 * time.Hour
 // Claims are what a ticket says. The short JSON names keep the URL short:
 // every segment request carries the whole ticket.
 type Claims struct {
-	Member      int32  `json:"u"` // the Movie Night person the play belongs to
-	Item        string `json:"i"` // Jellyfin item id
-	Source      string `json:"m"` // Jellyfin media source id
-	PlaySession string `json:"p"` // Jellyfin's PlaySessionId (its transcode job)
-	Device      string `json:"d"` // the Jellyfin device id the play runs under
-	Play        string `json:"s"` // Movie Night's play session (play_sessions.id)
+	Member      int32  `json:"u"`           // the Movie Night person the play belongs to
+	Item        string `json:"i"`           // Jellyfin item id
+	Source      string `json:"m"`           // Jellyfin media source id
+	PlaySession string `json:"p"`           // Jellyfin's PlaySessionId (its transcode job)
+	Device      string `json:"d"`           // the Jellyfin device id the play runs under
+	Play        string `json:"s"`           // Movie Night's play session (play_sessions.id)
 	Runtime     int    `json:"r,omitempty"` // seconds; for the watched-at-the-end rule
 	Credits     int    `json:"c,omitempty"` // seconds where the credits start; 0 when unknown
-	Expires     int64  `json:"e"`           // Unix seconds
+	// A play from Movie Night's own library (no Jellyfin): the file's path
+	// on the media service and how it is sent (plan.Plan). Item and Source
+	// are then both "lib-<media_files.id>" (what online subtitles are
+	// stored under), and PlaySession and Device are empty.
+	File    string `json:"f,omitempty"`
+	Plan    string `json:"x,omitempty"`
+	Expires int64  `json:"e"` // Unix seconds
 }
+
+// Library reports whether the ticket is for a library file (the media
+// service) rather than a Jellyfin item.
+func (c Claims) Library() bool { return c.File != "" }
 
 // Errors a ticket can fail with. Both mean "ask for a new one": the
 // proxy answers 403 either way.

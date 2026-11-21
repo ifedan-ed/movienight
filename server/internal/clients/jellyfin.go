@@ -84,7 +84,17 @@ func AuthHeader(token, deviceID, device string) string {
 	return "MediaBrowser " + strings.Join(parts, ", ")
 }
 
+// Enabled reports whether Jellyfin is set up (JELLYFIN_BASE_URL).
+func (j *Jellyfin) Enabled() bool { return j.base != "" }
+
+// errOff is every call when Jellyfin is not set up: said plainly, never
+// a request to nowhere.
+var errOff = &JellyfinError{Status: http.StatusConflict, Msg: "Jellyfin is not set up on this install"}
+
 func (j *Jellyfin) newRequest(method, path string, params url.Values, body any, token, deviceID string) (*http.Request, error) {
+	if j.base == "" {
+		return nil, errOff
+	}
 	u := j.base + path
 	if len(params) > 0 {
 		u += "?" + params.Encode()

@@ -34,16 +34,20 @@ type Subtitle struct {
 
 // Info is what the Play sheet shows.
 type Info struct {
-	Available      bool
-	Linked         bool
-	JellyfinItemID *string
-	WebURL         *string
-	Title          *string
-	Season         *int
-	Episode        *int
-	Subtitles      []Subtitle
-	ChosenSubtitle *int
-	ResumeSeconds  int
+	Available bool
+	// InJellyfin: the outside players can play it (they play Jellyfin's
+	// file). InLibrary: Movie Night's own library has it (Play here plays
+	// that copy).
+	InJellyfin, InLibrary bool
+	Linked                bool
+	JellyfinItemID        *string
+	WebURL                *string
+	Title                 *string
+	Season                *int
+	Episode               *int
+	Subtitles             []Subtitle
+	ChosenSubtitle        *int
+	ResumeSeconds         int
 	players.Settings
 	// source is the file's media source (for Start; not shown).
 	source jsonx.Obj
@@ -213,9 +217,15 @@ func PickSubtitle(subs []Subtitle, language string) *int {
 
 // PlayInfo is what the Play sheet needs for a title.
 func (s *Service) PlayInfo(ctx context.Context, u store.User, media string, tmdbID int, season, episode *int) (Info, error) {
-	itemID, err := s.findItem(ctx, u, media, tmdbID, season, episode)
+	file, err := s.libraryFile(ctx, u, media, tmdbID, season, episode)
 	if err != nil {
 		return Info{}, err
+	}
+	itemID := ""
+	if s.cfg.JellyfinEnabled() {
+		if itemID, err = s.findItem(ctx, u, media, tmdbID, season, episode); err != nil {
+			return Info{}, err
+		}
 	}
 	prefs, err := s.players.Get(ctx, u.ID)
 	if err != nil {
@@ -228,8 +238,13 @@ func (s *Service) PlayInfo(ctx context.Context, u store.User, media string, tmdb
 		}
 	}
 	prefs.Players = on
-	out := Info{Available: itemID != "", Linked: u.JellyfinTokenEnc != nil, Subtitles: []Subtitle{}, Settings: prefs}
+	out := Info{Available: itemID != "" || file != nil, InJellyfin: itemID != "", InLibrary: file != nil,
+		Linked: u.JellyfinTokenEnc != nil, Subtitles: []Subtitle{}, Settings: prefs}
 	if itemID == "" {
+		if file != nil && file.Season != nil {
+			// Only Play here: the sheet needs the episode it plays.
+			out.Season, out.Episode = file.Season, file.Episode
+		}
 		return out, nil
 	}
 	web := s.clients.Jellyfin.WebURL(itemID)
@@ -333,6 +348,11 @@ func (s *Service) Start(ctx context.Context, u store.User, media string, tmdbID 
 	}
 	if !info.Available {
 		return Started{}, apierr.New(http.StatusNotFound, "This isn't in the library yet")
+	}
+	if !info.InJellyfin {
+		// Outside players are handed Jellyfin's file; a library file plays
+		// in Movie Night's own player.
+		return Started{}, apierr.New(http.StatusConflict, "This plays only here (Play here)")
 	}
 	// Only a player the Play sheet offers (ticked) can be started.
 	template := ""

@@ -915,6 +915,12 @@
      "email": {
       "type": "boolean"
      },
+     "jellyfin": {
+      "type": "boolean"
+     },
+     "libraries": {
+      "type": "boolean"
+     },
      "mdblist": {
       "type": "boolean"
      },
@@ -998,6 +1004,22 @@
     },
     "required": [
      "outcome"
+    ],
+    "type": "object"
+   },
+   "FolderProblem": {
+    "additionalProperties": false,
+    "properties": {
+     "error": {
+      "type": "string"
+     },
+     "path": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "path",
+     "error"
     ],
     "type": "object"
    },
@@ -1614,6 +1636,281 @@
      "id",
      "title",
      "items"
+    ],
+    "type": "object"
+   },
+   "LibrariesOut": {
+    "additionalProperties": false,
+    "properties": {
+     "enabled": {
+      "description": "media libraries are set up on this install (MEDIA_URL)",
+      "type": "boolean"
+     },
+     "folders": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "libraries": {
+      "items": {
+       "$ref": "#/components/schemas/Library"
+      },
+      "type": "array"
+     },
+     "media_error": {
+      "type": [
+       "string",
+       "null"
+      ]
+     }
+    },
+    "required": [
+     "enabled",
+     "libraries",
+     "folders"
+    ],
+    "type": "object"
+   },
+   "Library": {
+    "additionalProperties": false,
+    "properties": {
+     "files": {
+      "format": "int64",
+      "type": "integer"
+     },
+     "folder_problems": {
+      "items": {
+       "$ref": "#/components/schemas/FolderProblem"
+      },
+      "type": "array"
+     },
+     "id": {
+      "format": "int32",
+      "type": "integer"
+     },
+     "kind": {
+      "enum": [
+       "movies",
+       "shows"
+      ],
+      "type": "string"
+     },
+     "name": {
+      "type": "string"
+     },
+     "paths": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "problems": {
+      "description": "files that can't be read or matched",
+      "format": "int64",
+      "type": "integer"
+     },
+     "scan": {
+      "$ref": "#/components/schemas/LibraryScan",
+      "description": "the scan under way or asked for; left out when none"
+     },
+     "scan_error": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "scanned_at": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "titles": {
+      "description": "films or shows found and matched",
+      "format": "int64",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "id",
+     "name",
+     "kind",
+     "paths",
+     "files",
+     "titles",
+     "problems",
+     "folder_problems"
+    ],
+    "type": "object"
+   },
+   "LibraryCreated": {
+    "additionalProperties": false,
+    "properties": {
+     "id": {
+      "format": "int32",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "id"
+    ],
+    "type": "object"
+   },
+   "LibraryIn": {
+    "additionalProperties": true,
+    "properties": {
+     "kind": {
+      "description": "movies or shows; left out when changing a library",
+      "maxLength": 10,
+      "type": "string"
+     },
+     "name": {
+      "maxLength": 100,
+      "minLength": 1,
+      "type": "string"
+     },
+     "paths": {
+      "items": {
+       "type": "string"
+      },
+      "maxItems": 20,
+      "minItems": 1,
+      "type": "array"
+     }
+    },
+    "required": [
+     "name",
+     "paths"
+    ],
+    "type": "object"
+   },
+   "LibraryMatchIn": {
+    "additionalProperties": true,
+    "properties": {
+     "tmdb_id": {
+      "format": "int64",
+      "maximum": 100000000,
+      "minimum": 1,
+      "type": "integer"
+     }
+    },
+    "required": [
+     "tmdb_id"
+    ],
+    "type": "object"
+   },
+   "LibraryMatchOut": {
+    "additionalProperties": false,
+    "properties": {
+     "files": {
+      "format": "int64",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "files"
+    ],
+    "type": "object"
+   },
+   "LibraryProblem": {
+    "additionalProperties": false,
+    "properties": {
+     "episode": {
+      "format": "int32",
+      "type": [
+       "integer",
+       "null"
+      ]
+     },
+     "file_id": {
+      "format": "int64",
+      "type": "integer"
+     },
+     "path": {
+      "description": "inside the library's folder",
+      "type": "string"
+     },
+     "problem": {
+      "type": "string"
+     },
+     "readable": {
+      "description": "false: the file itself can't be read",
+      "type": "boolean"
+     },
+     "season": {
+      "format": "int32",
+      "type": [
+       "integer",
+       "null"
+      ]
+     },
+     "title": {
+      "description": "the title the name gave",
+      "type": "string"
+     },
+     "year": {
+      "format": "int32",
+      "type": [
+       "integer",
+       "null"
+      ]
+     }
+    },
+    "required": [
+     "file_id",
+     "path",
+     "problem",
+     "title",
+     "readable"
+    ],
+    "type": "object"
+   },
+   "LibraryProblemsOut": {
+    "additionalProperties": false,
+    "properties": {
+     "items": {
+      "items": {
+       "$ref": "#/components/schemas/LibraryProblem"
+      },
+      "type": "array"
+     }
+    },
+    "required": [
+     "items"
+    ],
+    "type": "object"
+   },
+   "LibraryScan": {
+    "additionalProperties": false,
+    "properties": {
+     "probed": {
+      "format": "int64",
+      "type": "integer"
+     },
+     "seen": {
+      "description": "videos found so far",
+      "format": "int64",
+      "type": "integer"
+     },
+     "state": {
+      "enum": [
+       "queued",
+       "scanning"
+      ],
+      "type": "string"
+     },
+     "to_probe": {
+      "description": "new or changed among them",
+      "format": "int64",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "state",
+     "seen",
+     "to_probe",
+     "probed"
     ],
     "type": "object"
    },
@@ -2269,6 +2566,75 @@
     },
     "type": "object"
    },
+   "OnlineSubtitle": {
+    "additionalProperties": false,
+    "properties": {
+     "can_remove": {
+      "description": "the person who added it, or an admin",
+      "type": "boolean"
+     },
+     "delay_s": {
+      "description": "seconds; positive shows the lines later",
+      "format": "double",
+      "type": "number"
+     },
+     "hearing_impaired": {
+      "type": "boolean"
+     },
+     "id": {
+      "format": "int64",
+      "type": "integer"
+     },
+     "kind": {
+      "description": "text (WebVTT) or ass, as the Watch tracks",
+      "type": "string"
+     },
+     "label": {
+      "description": "the language and the source",
+      "type": "string"
+     },
+     "language": {
+      "type": "string"
+     },
+     "release": {
+      "type": "string"
+     },
+     "source": {
+      "type": "string"
+     },
+     "url": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "label",
+     "language",
+     "source",
+     "release",
+     "hearing_impaired",
+     "kind",
+     "url",
+     "delay_s",
+     "can_remove"
+    ],
+    "type": "object"
+   },
+   "OnlineSubtitlesOut": {
+    "additionalProperties": false,
+    "properties": {
+     "tracks": {
+      "items": {
+       "$ref": "#/components/schemas/OnlineSubtitle"
+      },
+      "type": "array"
+     }
+    },
+    "required": [
+     "tracks"
+    ],
+    "type": "object"
+   },
    "OpenSessionOut": {
     "properties": {
      "session": {
@@ -2660,6 +3026,14 @@
        "integer",
        "null"
       ]
+     },
+     "in_jellyfin": {
+      "description": "Jellyfin has it: the outside players can play it",
+      "type": "boolean"
+     },
+     "in_library": {
+      "description": "Movie Night's own library has it: Play here plays that copy",
+      "type": "boolean"
      },
      "jellyfin_item_id": {
       "type": [
@@ -4061,6 +4435,177 @@
     },
     "type": "object"
    },
+   "SubtitleAddIn": {
+    "additionalProperties": true,
+    "properties": {
+     "id": {
+      "maxLength": 300,
+      "minLength": 1,
+      "type": "string"
+     },
+     "source": {
+      "pattern": "^[a-z0-9]{1,20}$",
+      "type": "string"
+     },
+     "ticket": {
+      "description": "the play's stream ticket: which file the subtitle is for",
+      "maxLength": 2000,
+      "minLength": 1,
+      "type": "string"
+     }
+    },
+    "required": [
+     "ticket",
+     "source",
+     "id"
+    ],
+    "type": "object"
+   },
+   "SubtitleDelayIn": {
+    "additionalProperties": true,
+    "properties": {
+     "delay_s": {
+      "format": "double",
+      "maximum": 600,
+      "minimum": -600,
+      "type": "number"
+     }
+    },
+    "required": [
+     "delay_s"
+    ],
+    "type": "object"
+   },
+   "SubtitleLanguage": {
+    "additionalProperties": false,
+    "properties": {
+     "code": {
+      "description": "ISO 639-1, or pt-br / zh-tw",
+      "type": "string"
+     },
+     "name": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "code",
+     "name"
+    ],
+    "type": "object"
+   },
+   "SubtitleLanguagesOut": {
+    "additionalProperties": false,
+    "properties": {
+     "default": {
+      "description": "the person's subtitle language (Profile → Players), else en",
+      "type": "string"
+     },
+     "enabled": {
+      "description": "false: no subtitle source is set up, and the player hides Search online",
+      "type": "boolean"
+     },
+     "languages": {
+      "items": {
+       "$ref": "#/components/schemas/SubtitleLanguage"
+      },
+      "type": "array"
+     }
+    },
+    "required": [
+     "enabled",
+     "default",
+     "languages"
+    ],
+    "type": "object"
+   },
+   "SubtitleResult": {
+    "additionalProperties": false,
+    "properties": {
+     "available": {
+      "description": "false while the source's download allowance is used up",
+      "type": "boolean"
+     },
+     "downloads": {
+      "format": "int64",
+      "type": "integer"
+     },
+     "hash_match": {
+      "description": "made for this very file (OpenSubtitles' moviehash)",
+      "type": "boolean"
+     },
+     "hearing_impaired": {
+      "type": "boolean"
+     },
+     "id": {
+      "description": "the source's id; POST it back with source to add the subtitle",
+      "type": "string"
+     },
+     "language": {
+      "type": "string"
+     },
+     "machine_translated": {
+      "type": "boolean"
+     },
+     "rating": {
+      "format": "double",
+      "type": "number"
+     },
+     "release": {
+      "description": "the release(s) it was made for, one per line",
+      "type": "string"
+     },
+     "source": {
+      "description": "opensubtitles, subdl, subsource, jimaku, podnapisi or gestdown",
+      "type": "string"
+     },
+     "source_label": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "source",
+     "source_label",
+     "id",
+     "language",
+     "release",
+     "hearing_impaired",
+     "machine_translated",
+     "hash_match",
+     "downloads",
+     "rating",
+     "available"
+    ],
+    "type": "object"
+   },
+   "SubtitleSearchOut": {
+    "additionalProperties": false,
+    "properties": {
+     "hidden": {
+      "description": "machine-translated results left out (ask again with machine=true)",
+      "format": "int64",
+      "type": "integer"
+     },
+     "notes": {
+      "description": "sources that failed or are out of downloads, in plain words",
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "results": {
+      "items": {
+       "$ref": "#/components/schemas/SubtitleResult"
+      },
+      "type": "array"
+     }
+    },
+    "required": [
+     "results",
+     "hidden",
+     "notes"
+    ],
+    "type": "object"
+   },
    "SubtitleTrack": {
     "additionalProperties": false,
     "properties": {
@@ -4755,6 +5300,13 @@
    "WatchCaps": {
     "additionalProperties": false,
     "properties": {
+     "audio_channels": {
+      "description": "the audio output's channels (AudioContext maxChannelCount); 6 or more keeps surround sound in a library transcode",
+      "format": "int64",
+      "maximum": 32,
+      "minimum": 0,
+      "type": "integer"
+     },
      "direct_audio": {
       "items": {
        "enum": [
@@ -5027,6 +5579,14 @@
       },
       "type": "array"
      },
+     "source": {
+      "description": "where the file comes from: Movie Night's own library or Jellyfin",
+      "enum": [
+       "library",
+       "jellyfin"
+      ],
+      "type": "string"
+     },
      "subtitle_index": {
       "description": "the subtitle to show at the start",
       "format": "int64",
@@ -5090,7 +5650,7 @@
       ]
      },
      "duration_s": {
-      "description": "the player's own length, used when Jellyfin names none",
+      "description": "the player's own length, used when the file's is unknown",
       "format": "double",
       "maximum": 1000000,
       "minimum": 0,
@@ -6266,6 +6826,304 @@
     "summary": "Jellyfin Image",
     "tags": [
      "catalog"
+    ]
+   }
+  },
+  "/api/v1/libraries": {
+   "get": {
+    "description": "Movie Night's own media libraries, each with its counts and any scan under way.",
+    "operationId": "libraries_api_v1_libraries_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/LibrariesOut"
+        }
+       }
+      },
+      "description": "OK"
+     },
+     "default": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      },
+      "description": "Error"
+     }
+    },
+    "summary": "Libraries",
+    "tags": [
+     "libraries"
+    ]
+   },
+   "post": {
+    "description": "Adds a library and asks for its first scan.",
+    "operationId": "library_add_api_v1_libraries_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/LibraryIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/LibraryCreated"
+        }
+       }
+      },
+      "description": "Created"
+     },
+     "default": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      },
+      "description": "Error"
+     }
+    },
+    "summary": "Add Library",
+    "tags": [
+     "libraries"
+    ]
+   }
+  },
+  "/api/v1/libraries/files/{file_id}/match": {
+   "put": {
+    "description": "Matches a file to a TMDB title by hand, with every file named like it (a show's episodes). It stays over rescans.",
+    "operationId": "library_match_api_v1_libraries_files__file_id__match_put",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "file_id",
+      "required": true,
+      "schema": {
+       "format": "int64",
+       "minimum": 1,
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/LibraryMatchIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/LibraryMatchOut"
+        }
+       }
+      },
+      "description": "OK"
+     },
+     "default": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      },
+      "description": "Error"
+     }
+    },
+    "summary": "Match File",
+    "tags": [
+     "libraries"
+    ]
+   }
+  },
+  "/api/v1/libraries/{library_id}": {
+   "delete": {
+    "description": "Removes a library from Movie Night. The files stay where they are.",
+    "operationId": "library_delete_api_v1_libraries__library_id__delete",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "library_id",
+      "required": true,
+      "schema": {
+       "format": "int32",
+       "minimum": 1,
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Ok"
+        }
+       }
+      },
+      "description": "OK"
+     },
+     "default": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      },
+      "description": "Error"
+     }
+    },
+    "summary": "Remove Library",
+    "tags": [
+     "libraries"
+    ]
+   },
+   "put": {
+    "description": "Renames a library or changes its folders, and asks for a scan.",
+    "operationId": "library_update_api_v1_libraries__library_id__put",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/LibraryIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Ok"
+        }
+       }
+      },
+      "description": "OK"
+     },
+     "default": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      },
+      "description": "Error"
+     }
+    },
+    "summary": "Change Library",
+    "tags": [
+     "libraries"
+    ]
+   }
+  },
+  "/api/v1/libraries/{library_id}/problems": {
+   "get": {
+    "description": "Files that can't be read, or whose name matched no film or show.",
+    "operationId": "library_problems_api_v1_libraries__library_id__problems_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "library_id",
+      "required": true,
+      "schema": {
+       "format": "int32",
+       "minimum": 1,
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/LibraryProblemsOut"
+        }
+       }
+      },
+      "description": "OK"
+     },
+     "default": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      },
+      "description": "Error"
+     }
+    },
+    "summary": "Library Problems",
+    "tags": [
+     "libraries"
+    ]
+   }
+  },
+  "/api/v1/libraries/{library_id}/scan": {
+   "post": {
+    "description": "Scan now: a worker scans the library (only new and changed files are read).",
+    "operationId": "library_scan_api_v1_libraries__library_id__scan_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "library_id",
+      "required": true,
+      "schema": {
+       "format": "int32",
+       "minimum": 1,
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "202": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Ok"
+        }
+       }
+      },
+      "description": "Accepted"
+     },
+     "default": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      },
+      "description": "Error"
+     }
+    },
+    "summary": "Scan Library",
+    "tags": [
+     "libraries"
     ]
    }
   },
@@ -8387,6 +9245,173 @@
     ]
    }
   },
+  "/api/v1/subtitles/languages": {
+   "get": {
+    "description": "The languages Search online offers, and the person's own (Profile → Players).",
+    "operationId": "subtitle_languages_api_v1_subtitles_languages_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SubtitleLanguagesOut"
+        }
+       }
+      },
+      "description": "OK"
+     },
+     "default": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      },
+      "description": "Error"
+     }
+    },
+    "summary": "Subtitle Languages",
+    "tags": [
+     "subtitles"
+    ]
+   }
+  },
+  "/api/v1/subtitles/{subtitle_id}": {
+   "delete": {
+    "description": "Remove a stored subtitle for everyone: the person who added it, or an admin.",
+    "operationId": "subtitle_delete_api_v1_subtitles__subtitle_id__delete",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "subtitle_id",
+      "required": true,
+      "schema": {
+       "exclusiveMinimum": 0,
+       "format": "int64",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Ok"
+        }
+       }
+      },
+      "description": "OK"
+     },
+     "default": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      },
+      "description": "Error"
+     }
+    },
+    "summary": "Subtitle Delete",
+    "tags": [
+     "subtitles"
+    ]
+   }
+  },
+  "/api/v1/subtitles/{subtitle_id}/delay": {
+   "put": {
+    "description": "Set a stored subtitle's delay for every device.",
+    "operationId": "subtitle_delay_api_v1_subtitles__subtitle_id__delay_put",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "subtitle_id",
+      "required": true,
+      "schema": {
+       "exclusiveMinimum": 0,
+       "format": "int64",
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/SubtitleDelayIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Ok"
+        }
+       }
+      },
+      "description": "OK"
+     },
+     "default": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      },
+      "description": "Error"
+     }
+    },
+    "summary": "Subtitle Delay",
+    "tags": [
+     "subtitles"
+    ]
+   }
+  },
+  "/api/v1/subtitles/{subtitle_id}/file": {
+   "get": {
+    "description": "A stored subtitle's text: WebVTT, or ASS for a styled one.",
+    "operationId": "subtitle_file_api_v1_subtitles__subtitle_id__file_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "subtitle_id",
+      "required": true,
+      "schema": {
+       "exclusiveMinimum": 0,
+       "format": "int64",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK"
+     },
+     "default": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      },
+      "description": "Error"
+     }
+    },
+    "summary": "Subtitle File",
+    "tags": [
+     "subtitles"
+    ]
+   }
+  },
   "/api/v1/sync/plays": {
    "post": {
     "description": "Pull your Jellyfin plays now (it also happens every few minutes).",
@@ -9727,6 +10752,225 @@
     "summary": "Get Status",
     "tags": [
      "titles"
+    ]
+   }
+  },
+  "/api/v1/title/{media}/{tmdb_id}/subtitles": {
+   "get": {
+    "description": "The subtitles added online for the file a play is showing, for everyone in the household.",
+    "operationId": "subtitles_api_v1_title__media___tmdb_id__subtitles_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "media",
+      "required": true,
+      "schema": {
+       "enum": [
+        "movie",
+        "tv"
+       ],
+       "type": "string"
+      }
+     },
+     {
+      "in": "path",
+      "name": "tmdb_id",
+      "required": true,
+      "schema": {
+       "exclusiveMinimum": 0,
+       "format": "int64",
+       "maximum": 10000000000,
+       "type": "integer"
+      }
+     },
+     {
+      "explode": false,
+      "in": "query",
+      "name": "ticket",
+      "required": true,
+      "schema": {
+       "maxLength": 2000,
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/OnlineSubtitlesOut"
+        }
+       }
+      },
+      "description": "OK"
+     },
+     "default": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      },
+      "description": "Error"
+     }
+    },
+    "summary": "Subtitles",
+    "tags": [
+     "subtitles"
+    ]
+   },
+   "post": {
+    "description": "Download a search result and keep it as a track of the playing file. 20 downloads an hour per person.",
+    "operationId": "subtitle_add_api_v1_title__media___tmdb_id__subtitles_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "media",
+      "required": true,
+      "schema": {
+       "enum": [
+        "movie",
+        "tv"
+       ],
+       "type": "string"
+      }
+     },
+     {
+      "in": "path",
+      "name": "tmdb_id",
+      "required": true,
+      "schema": {
+       "exclusiveMinimum": 0,
+       "format": "int64",
+       "maximum": 10000000000,
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/SubtitleAddIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/OnlineSubtitle"
+        }
+       }
+      },
+      "description": "OK"
+     },
+     "default": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      },
+      "description": "Error"
+     }
+    },
+    "summary": "Subtitle Add",
+    "tags": [
+     "subtitles"
+    ]
+   }
+  },
+  "/api/v1/title/{media}/{tmdb_id}/subtitles/search": {
+   "get": {
+    "description": "Search every subtitle source at once for the file a play is showing: made for this file first, then the release closest to its name, then the most downloaded. Machine-translated ones are left out unless machine=true. 30 searches an hour per person.",
+    "operationId": "subtitle_search_api_v1_title__media___tmdb_id__subtitles_search_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "media",
+      "required": true,
+      "schema": {
+       "enum": [
+        "movie",
+        "tv"
+       ],
+       "type": "string"
+      }
+     },
+     {
+      "in": "path",
+      "name": "tmdb_id",
+      "required": true,
+      "schema": {
+       "exclusiveMinimum": 0,
+       "format": "int64",
+       "maximum": 10000000000,
+       "type": "integer"
+      }
+     },
+     {
+      "explode": false,
+      "in": "query",
+      "name": "ticket",
+      "required": true,
+      "schema": {
+       "maxLength": 2000,
+       "type": "string"
+      }
+     },
+     {
+      "explode": false,
+      "in": "query",
+      "name": "language",
+      "required": true,
+      "schema": {
+       "maxLength": 10,
+       "type": "string"
+      }
+     },
+     {
+      "description": "include machine-translated subtitles",
+      "explode": false,
+      "in": "query",
+      "name": "machine",
+      "schema": {
+       "description": "include machine-translated subtitles",
+       "type": "boolean"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SubtitleSearchOut"
+        }
+       }
+      },
+      "description": "OK"
+     },
+     "default": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      },
+      "description": "Error"
+     }
+    },
+    "summary": "Subtitle Search",
+    "tags": [
+     "subtitles"
     ]
    }
   },

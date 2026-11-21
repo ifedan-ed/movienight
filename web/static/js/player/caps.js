@@ -46,5 +46,28 @@ export function caps() {
     direct_audio: pick(AUDIO, plays),
     hls_video: pick(VIDEO_MP4, hlsPlays),
     hls_audio: pick(AUDIO, hlsPlays),
+    audio_channels: audioChannels(),
   };
+}
+
+// audioChannels is how many channels the sound output has (2 for stereo,
+// 6 or 8 on a surround setup), so a library transcode keeps 5.1 only where
+// it can be heard. 0 when the browser won't say. Asked once per page: a
+// browser allows only a few audio contexts.
+let channels = null;
+function audioChannels() {
+  if (channels != null) return channels;
+  channels = 0;
+  // Not on Apple's WebKit: an audio context there takes over the page's
+  // audio session (on an iPhone it can pause the video), and Safari's
+  // output reports stereo anyway.
+  if (/Apple/.test(navigator.vendor || "")) return channels;
+  const AC = window.AudioContext;
+  if (!AC) return channels;
+  try {
+    const ctx = new AC();
+    channels = Math.min(32, ctx.destination.maxChannelCount || 0);
+    ctx.close();
+  } catch { /* stays 0: stereo */ }
+  return channels;
 }

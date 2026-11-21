@@ -197,7 +197,7 @@ func newFake(t *testing.T, item string, file []byte) *fakeJellyfin {
 
 func proxyFor(t *testing.T, f *fakeJellyfin) (*Proxy, *Signer, *httptest.Server) {
 	s := NewSigner(testMAC("k"), nil)
-	p, err := NewProxy(s, NewClient(), f.URL, "SERVERKEY", slog.New(slog.NewTextHandler(io.Discard, nil)))
+	p, err := NewProxy(s, NewClient(), f.URL, "SERVERKEY", nil, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -100,11 +100,14 @@ func New(cfg *config.Config, pool *pgxpool.Pool, kv valkey.Client, log *slog.Log
 	}
 	// The in-browser player's media (internal/stream): plain bytes, not an
 	// API operation, on a connection pool of its own.
-	proxy, err := stream.NewProxy(rwDeps.Tickets, stream.NewClient(), cfg.JellyfinBaseURL, cfg.JellyfinAPIKey, log)
+	proxy, err := stream.NewProxy(rwDeps.Tickets, stream.NewClient(), cfg.JellyfinBaseURL, cfg.JellyfinAPIKey,
+		rwDeps.Libraries.Media(), log)
 	if err != nil {
 		return nil, err
 	}
 	proxy.Register(mux)
+	// Search online reads the playing file's name and moviehash through it.
+	rwDeps.Subtitles.UseFiles(proxy)
 
 	// Inside out: the mux (with the route recorder for the access line),
 	// then the browser sign-in redirect for /api, then the lazy auth state

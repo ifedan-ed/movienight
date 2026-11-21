@@ -46,7 +46,7 @@ func TestEveryMissingRequiredSettingIsNamedAtOnce(t *testing.T) {
 		t.Fatal("an empty environment loaded")
 	}
 	for _, name := range []string{"DATABASE_URL", "VALKEY_URL", "SECRET_KEY", "PUBLIC_URL", "TRUSTED_PROXY", "WEB_DIR",
-		"OWNER_USERNAME", "JELLYFIN_BASE_URL", "JELLYFIN_API_KEY", "TMDB_API_KEY", "MEILI_BASE_URL", "TIMEZONE"} {
+		"OWNER_USERNAME", "TMDB_API_KEY", "MEILI_BASE_URL", "TIMEZONE"} {
 		if !strings.Contains(err.Error(), name) {
 			t.Errorf("%s is not named in: %v", name, err)
 		}
@@ -58,6 +58,9 @@ func TestNoGuessesAndNoHalfConfiguredServices(t *testing.T) {
 		"SQLAlchemy URL":       {"DATABASE_URL": "postgresql+psycopg://u:p@db/mn"},
 		"OIDC half":            {"OIDC_ISSUER": "https://sso"},
 		"Seerr half":           {"SEERR_API_KEY": "k"},
+		"Jellyfin half":        {"JELLYFIN_API_KEY": ""},
+		"media without secret": {"MEDIA_URL": "http://media:8100"},
+		"media secret short":   {"MEDIA_URL": "http://media:8100", "MEDIA_SECRET": "short"},
 		"LiteLLM without URL":  {"LITELLM_API_KEY": "k"},
 		"model without key":    {"LITELLM_MODEL": "m"},
 		"unknown time zone":    {"TIMEZONE": "Mars/Olympus"},
@@ -191,5 +194,82 @@ func TestOIDCIssuerKeepsTrailingSlash(t *testing.T) {
 	}
 	if c.OIDCIssuer != "https://sso.example/application/o/movienight/" {
 		t.Fatalf("issuer changed to %q", c.OIDCIssuer)
+	}
+}
+
+// Jellyfin is optional (all four settings or none), and the media libraries
+// are on with MEDIA_URL and MEDIA_SECRET.
+func TestNoJellyfinWithLibraries(t *testing.T) {
+	m := base()
+	for _, k := range []string{"JELLYFIN_BASE_URL", "JELLYFIN_PUBLIC_URL", "JELLYFIN_API_KEY", "JELLYFIN_USER_ID"} {
+		delete(m, k)
+	}
+	m["MEDIA_URL"], m["MEDIA_SECRET"] = "http://media:8100/", "0123456789abcdef"
+	c, err := load(m)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.JellyfinEnabled() || !c.Media.Enabled() || c.Media.URL != "http://media:8100" {
+		t.Fatalf("jellyfin %v media %+v", c.JellyfinEnabled(), c.Media)
+	}
+}
+
+func TestMediaServiceSettings(t *testing.T) {
+	env := func(m map[string]string) func(string) (string, bool) {
+		return func(k string) (string, bool) { v, ok := m[k]; return v, ok }
+	}
+	c, err := LoadMediaService(env(map[string]string{"MEDIA_SECRET": "0123456789abcdef", "MEDIA_LIBRARIES": "/media, /mnt/films/"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(c.Libraries) != 2 || c.Libraries[1] != "/mnt/films" || c.MaxTranscodes != 2 || c.ProbeWorkers != 4 ||
+		c.HWAccel != "none" || c.HWDevice != "/dev/dri/renderD128" || c.CacheDir == "" {
+		t.Fatalf("%+v", c)
+	}
+	for name, m := range map[string]map[string]string{
+		"nothing":       {},
+		"relative path": {"MEDIA_SECRET": "0123456789abcdef", "MEDIA_LIBRARIES": "media"},
+		"bad hwaccel":   {"MEDIA_SECRET": "0123456789abcdef", "MEDIA_LIBRARIES": "/media", "MEDIA_HWACCEL": "cuda"},
+		"short secret":  {"MEDIA_SECRET": "x", "MEDIA_LIBRARIES": "/media"},
+	} {
+		if _, err := LoadMediaService(env(m)); err == nil {
+			t.Errorf("%s: accepted", name)
+		}
+	}
+}
+
+func TestSubtitleSources(t *testing.T) {
+	with := func(extra map[string]string) (*Config, error) {
+		m := base()
+		for k, v := range extra {
+			m[k] = v
+		}
+		return load(m)
+	}
+	c, err := with(nil)
+	if err != nil || strings.Join(c.Subtitles.Sources, ",") != "podnapisi,gestdown" {
+		t.Fatalf("no keys: %v %v", c.Subtitles.Sources, err)
+	}
+	c, err = with(map[string]string{"OPENSUBTITLES_API_KEY": "k", "JIMAKU_API_KEY": "j"})
+	if err != nil || strings.Join(c.Subtitles.Sources, ",") != "opensubtitles,jimaku,podnapisi,gestdown" {
+		t.Fatalf("keys: %v %v", c.Subtitles.Sources, err)
+	}
+	c, err = with(map[string]string{"SUBTITLE_SOURCES": "Gestdown, opensubtitles", "OPENSUBTITLES_API_KEY": "k"})
+	if err != nil || strings.Join(c.Subtitles.Sources, ",") != "opensubtitles,gestdown" || c.Subtitles.On("podnapisi") {
+		t.Fatalf("listed: %v %v", c.Subtitles.Sources, err)
+	}
+	c, err = with(map[string]string{"SUBTITLE_SOURCES": "none", "SUBDL_API_KEY": "k"})
+	if err != nil || len(c.Subtitles.Sources) != 0 {
+		t.Fatalf("none: %v %v", c.Subtitles.Sources, err)
+	}
+	for name, extra := range map[string]map[string]string{
+		"unknown source":       {"SUBTITLE_SOURCES": "addic7ed"},
+		"listed without a key": {"SUBTITLE_SOURCES": "subdl"},
+		"username alone":       {"OPENSUBTITLES_API_KEY": "k", "OPENSUBTITLES_USERNAME": "u"},
+		"login without a key":  {"OPENSUBTITLES_USERNAME": "u", "OPENSUBTITLES_PASSWORD": "p"},
+	} {
+		if _, err := with(extra); err == nil {
+			t.Errorf("%s loaded", name)
+		}
 	}
 }

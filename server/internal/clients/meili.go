@@ -17,7 +17,11 @@ import (
 // words together.
 const (
 	LibraryIndex = "library"
-	CatalogIndex = "catalog"
+	// LibraryOwnPrefix starts the ids of the library index's documents for
+	// Movie Night's own media libraries ("mn-movie-603"); the rest are
+	// Jellyfin's item ids. Each sync removes only its own.
+	LibraryOwnPrefix = "mn-"
+	CatalogIndex     = "catalog"
 )
 
 // Meili is the Meilisearch client.

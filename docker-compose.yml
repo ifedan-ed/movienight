@@ -10,6 +10,11 @@
 # and the work queues, with no persistence (sessions are in Postgres).
 # api and worker run as uid 1000 and see the movienight-data volume
 # read-only at /data, for a file such as SMTP2GO_API_KEY_FILE.
+#
+# The media service (the libraries' scans and playback) is in
+# docker-compose.media.yml, added by COMPOSE_FILE in .env when it runs on
+# this machine. When it runs where the files are instead, leave that file
+# out and set MEDIA_URL (docs/self-hosting.md).
 
 # The project name pins the volumes and the network to the existing ones
 # (movienight_movienight-pg, movienight_default, ...) whatever folder this

@@ -21,6 +21,20 @@ func TestServeForBrowserTests(t *testing.T) {
 	}
 	env := testbase.BaseEnv(t)
 	env["PUBLIC_URL"] = "http://127.0.0.1:" + os.Getenv("E2E_PORT")
+	if lib := os.Getenv("E2E_LIBRARIES"); lib != "" {
+		// A fresh install with no Jellyfin: Movie Night's own libraries on
+		// the clips e2e/run.sh made, a real media service, and the scan
+		// queue served here as a worker would.
+		testenv.NoJellyfin(env)
+		testenv.StartMedia(t, env, lib)
+		s, _ := testenv.StartFaked(t, env)
+		go s.App.RW.Libraries.RunQueued(t.Context())
+		t.Log("serving on", env["PUBLIC_URL"], "with libraries in", lib)
+		if err := http.ListenAndServe("127.0.0.1:"+os.Getenv("E2E_PORT"), s.App.Handler); err != nil {
+			t.Fatal(err)
+		}
+		return
+	}
 	s, f := testenv.StartFaked(t, env)
 	f.Jellyfin.QCReady = true
 	// The in-browser player's clip, made by e2e/run.sh with ffmpeg.

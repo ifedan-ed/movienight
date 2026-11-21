@@ -46,7 +46,9 @@ import (
 	"movienight/server/internal/history"
 	"movienight/server/internal/jfplay"
 	"movienight/server/internal/jfsync"
+	"movienight/server/internal/libraries"
 	"movienight/server/internal/mail"
+	"movienight/server/internal/media/mediaclient"
 	"movienight/server/internal/playback"
 	"movienight/server/internal/players"
 	"movienight/server/internal/scrobble"
@@ -54,6 +56,7 @@ import (
 	"movienight/server/internal/status"
 	"movienight/server/internal/store"
 	"movienight/server/internal/stream"
+	"movienight/server/internal/subtitles"
 	"movienight/server/internal/titles"
 	"movienight/server/internal/users"
 	"movienight/server/internal/userstate"
@@ -87,6 +90,11 @@ type Deps struct {
 	Tickets  *stream.Signer    // the in-browser player's stream tickets (the proxy checks them too)
 	AIRows   *airows.Service   // "Picked for you": served here, built by the worker
 	Digests  *digest.Service   // digest emails asked for by a person (the schedule's are the worker's)
+	// Libraries are Movie Night's own media libraries (off without MEDIA_URL).
+	Libraries *libraries.Service
+	// Subtitles is the player's "Search online". server.go gives it the
+	// stream proxy (UseFiles) for the file's name and moviehash.
+	Subtitles *subtitles.Service
 
 	limits []limit
 }
@@ -111,12 +119,29 @@ func NewDeps(cfg *config.Config, pool *pgxpool.Pool, kv valkey.Client, cl *clien
 	if keys != nil {
 		d.Tickets = stream.NewSigner(keys.StreamMAC, nil)
 	}
+	d.Libraries = NewLibraries(cfg, pool, kv, cl, d.Titles, log)
 	d.Playback = playback.New(cfg, pool, cl, keys, playback.Deps{Titles: d.Titles, Cache: d.Cache, Players: d.Players,
-		History: d.History, Tickets: d.Tickets,
+		History: d.History, Tickets: d.Tickets, Library: d.Libraries,
 		JFPlay: jfplay.New(cl.Upstream(), cfg.JellyfinBaseURL, cfg.JellyfinAPIKey, cfg.DryRun)}, log)
 	d.AIRows = airows.New(cfg, pool, kv, cl, d.Titles, log)
 	d.Digests = digest.New(cfg, pool, cl, mail.New(cfg), log)
+	d.Subtitles = subtitles.New(cfg, q, kv, d.Cache,
+		subtitles.Sources(cfg.Subtitles, cl.Upstream(), api.Title+" v"+api.Version, kv), log)
 	return d
+}
+
+// NewLibraries builds the media libraries service the API and the worker
+// share: with the media service's client when MEDIA_URL is set, off
+// otherwise. TMDB and Meilisearch are read from cl per call.
+func NewLibraries(cfg *config.Config, pool *pgxpool.Pool, kv valkey.Client, cl *clients.Set, t *titles.Service,
+	log *slog.Logger) *libraries.Service {
+	var media *mediaclient.Client
+	if cfg.Media.Enabled() {
+		// The settings were checked at load: the address parses.
+		media, _ = mediaclient.New(cfg.Media.URL, cfg.Media.Secret)
+	}
+	return libraries.New(pool, kv, media, func() libraries.Finder { return cl.TMDB },
+		func() *clients.Meili { return cl.Meili }, t, log)
 }
 
 // Huma is the API to register operations on.

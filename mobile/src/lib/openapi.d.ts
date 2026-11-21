@@ -1170,6 +1170,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/subtitles/languages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Subtitle Languages
+         * @description The languages Search online offers, and the person's own (Profile → Players).
+         */
+        get: operations["subtitle_languages_api_v1_subtitles_languages_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/subtitles/{subtitle_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Subtitle Delete
+         * @description Remove a stored subtitle for everyone: the person who added it, or an admin.
+         */
+        delete: operations["subtitle_delete_api_v1_subtitles__subtitle_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/subtitles/{subtitle_id}/delay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Subtitle Delay
+         * @description Set a stored subtitle's delay for every device.
+         */
+        put: operations["subtitle_delay_api_v1_subtitles__subtitle_id__delay_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/subtitles/{subtitle_id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Subtitle File
+         * @description A stored subtitle's text: WebVTT, or ASS for a styled one.
+         */
+        get: operations["subtitle_file_api_v1_subtitles__subtitle_id__file_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/sync/plays": {
         parameters: {
             query?: never;
@@ -1504,6 +1584,50 @@ export interface paths {
          *     by every poller for a few seconds (one call per title per window).
          */
         get: operations["get_status_api_v1_title__media___tmdb_id__status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/title/{media}/{tmdb_id}/subtitles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Subtitles
+         * @description The subtitles added online for the file a play is showing, for everyone in the household.
+         */
+        get: operations["subtitles_api_v1_title__media___tmdb_id__subtitles_get"];
+        put?: never;
+        /**
+         * Subtitle Add
+         * @description Download a search result and keep it as a track of the playing file. 20 downloads an hour per person.
+         */
+        post: operations["subtitle_add_api_v1_title__media___tmdb_id__subtitles_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/title/{media}/{tmdb_id}/subtitles/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Subtitle Search
+         * @description Search every subtitle source at once for the file a play is showing: made for this file first, then the release closest to its name, then the most downloaded. Machine-translated ones are left out unless machine=true. 30 searches an hour per person.
+         */
+        get: operations["subtitle_search_api_v1_title__media___tmdb_id__subtitles_search_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2264,6 +2388,29 @@ export interface components {
             /** @default true */
             ok: boolean;
         };
+        OnlineSubtitle: {
+            /** @description the person who added it, or an admin */
+            can_remove: boolean;
+            /**
+             * Format: double
+             * @description seconds; positive shows the lines later
+             */
+            delay_s: number;
+            hearing_impaired: boolean;
+            /** Format: int64 */
+            id: number;
+            /** @description text (WebVTT) or ass, as the Watch tracks */
+            kind: string;
+            /** @description the language and the source */
+            label: string;
+            language: string;
+            release: string;
+            source: string;
+            url: string;
+        };
+        OnlineSubtitlesOut: {
+            tracks: components["schemas"]["OnlineSubtitle"][];
+        };
         /** OpenSessionOut */
         OpenSessionOut: {
             session?: components["schemas"]["PlaySessionOut"] | null;
@@ -2769,6 +2916,62 @@ export interface components {
             id?: number | null;
             logo?: string | null;
             name?: string | null;
+        };
+        SubtitleAddIn: {
+            id: string;
+            source: string;
+            /** @description the play's stream ticket: which file the subtitle is for */
+            ticket: string;
+        } & {
+            [key: string]: unknown;
+        };
+        SubtitleDelayIn: {
+            /** Format: double */
+            delay_s: number;
+        } & {
+            [key: string]: unknown;
+        };
+        SubtitleLanguage: {
+            /** @description ISO 639-1, or pt-br / zh-tw */
+            code: string;
+            name: string;
+        };
+        SubtitleLanguagesOut: {
+            /** @description the person's subtitle language (Profile → Players), else en */
+            default: string;
+            /** @description false: no subtitle source is set up, and the player hides Search online */
+            enabled: boolean;
+            languages: components["schemas"]["SubtitleLanguage"][];
+        };
+        SubtitleResult: {
+            /** @description false while the source's download allowance is used up */
+            available: boolean;
+            /** Format: int64 */
+            downloads: number;
+            /** @description made for this very file (OpenSubtitles' moviehash) */
+            hash_match: boolean;
+            hearing_impaired: boolean;
+            /** @description the source's id; POST it back with source to add the subtitle */
+            id: string;
+            language: string;
+            machine_translated: boolean;
+            /** Format: double */
+            rating: number;
+            /** @description the release(s) it was made for, one per line */
+            release: string;
+            /** @description opensubtitles, subdl, subsource, jimaku, podnapisi or gestdown */
+            source: string;
+            source_label: string;
+        };
+        SubtitleSearchOut: {
+            /**
+             * Format: int64
+             * @description machine-translated results left out (ask again with machine=true)
+             */
+            hidden: number;
+            /** @description sources that failed or are out of downloads, in plain words */
+            notes: string[];
+            results: components["schemas"]["SubtitleResult"][];
         };
         SubtitleTrack: {
             default: boolean;
@@ -5323,6 +5526,130 @@ export interface operations {
             };
         };
     };
+    subtitle_languages_api_v1_subtitles_languages_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubtitleLanguagesOut"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    subtitle_delete_api_v1_subtitles__subtitle_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                subtitle_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Ok"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    subtitle_delay_api_v1_subtitles__subtitle_id__delay_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                subtitle_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubtitleDelayIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Ok"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    subtitle_file_api_v1_subtitles__subtitle_id__file_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                subtitle_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     sync_plays_api_v1_sync_plays_post: {
         parameters: {
             query?: never;
@@ -6039,6 +6366,113 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TitleState"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    subtitles_api_v1_title__media___tmdb_id__subtitles_get: {
+        parameters: {
+            query: {
+                ticket: string;
+            };
+            header?: never;
+            path: {
+                media: "movie" | "tv";
+                tmdb_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OnlineSubtitlesOut"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    subtitle_add_api_v1_title__media___tmdb_id__subtitles_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                media: "movie" | "tv";
+                tmdb_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubtitleAddIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OnlineSubtitle"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    subtitle_search_api_v1_title__media___tmdb_id__subtitles_search_get: {
+        parameters: {
+            query: {
+                ticket: string;
+                language: string;
+                /** @description include machine-translated subtitles */
+                machine?: boolean;
+            };
+            header?: never;
+            path: {
+                media: "movie" | "tv";
+                tmdb_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubtitleSearchOut"];
                 };
             };
             /** @description Error */

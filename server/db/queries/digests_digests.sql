@@ -89,16 +89,20 @@ ORDER BY watched_at, id;
 SELECT media_type, tmdb_id, rating, review, rated_at FROM user_ratings
 WHERE user_id = $1 ORDER BY rated_at, id;
 
--- The newest twelve library additions of the period, and how many in all.
+-- The newest twelve library additions of the period (Jellyfin's and Movie
+-- Night's own, one row per title), and how many in all.
 -- name: DigestLibraryAdded :many
-SELECT media_type, tmdb_id::int AS tmdb_id FROM library_items
-WHERE date_added >= sqlc.arg(start)::timestamptz AND date_added < sqlc.arg(period_end)::timestamptz AND tmdb_id IS NOT NULL
-ORDER BY date_added DESC, jellyfin_id
+SELECT media_type, tmdb_id::int AS tmdb_id FROM (
+    SELECT media_type, tmdb_id, max(added_at) AS added FROM library_titles
+    WHERE added_at >= sqlc.arg(start)::timestamptz AND added_at < sqlc.arg(period_end)::timestamptz
+    GROUP BY media_type, tmdb_id
+) lib
+ORDER BY added DESC, media_type, tmdb_id
 LIMIT 12;
 
 -- name: DigestLibraryAddedCount :one
-SELECT count(*) FROM library_items
-WHERE date_added >= sqlc.arg(start)::timestamptz AND date_added < sqlc.arg(period_end)::timestamptz AND tmdb_id IS NOT NULL;
+SELECT count(DISTINCT (media_type, tmdb_id)) FROM library_titles
+WHERE added_at >= sqlc.arg(start)::timestamptz AND added_at < sqlc.arg(period_end)::timestamptz;
 
 -- The person's watchlist, newest first.
 -- name: DigestWatchlist :many
@@ -119,7 +123,7 @@ FROM history
 WHERE user_id = $1 AND tmdb_id = ANY(sqlc.arg(ids)::int[]);
 
 -- name: DigestInLibraryAmong :many
-SELECT DISTINCT media_type, tmdb_id::int AS tmdb_id FROM library_items
+SELECT DISTINCT media_type, tmdb_id::int AS tmdb_id FROM library_titles
 WHERE tmdb_id = ANY(sqlc.arg(ids)::int[]);
 
 -- The person's latest AI rows ("Picked for you"), for "Up next".

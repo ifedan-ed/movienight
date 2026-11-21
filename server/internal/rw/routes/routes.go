@@ -9,9 +9,11 @@ import (
 	"movienight/server/internal/rw/devices"
 	"movienight/server/internal/rw/digests"
 	"movienight/server/internal/rw/home"
+	media "movienight/server/internal/rw/libraries"
 	"movienight/server/internal/rw/lists"
 	"movienight/server/internal/rw/profile"
 	"movienight/server/internal/rw/search"
+	"movienight/server/internal/rw/subtitles"
 	"movienight/server/internal/rw/title"
 )
 
@@ -24,5 +26,7 @@ func RegisterAll(d *rw.Deps) error {
 	profile.Register(d)
 	devices.Register(d)
 	digests.Register(d)
+	media.Register(d)
+	subtitles.Register(d)
 	return d.ApplyLimits()
 }

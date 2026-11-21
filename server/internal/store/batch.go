@@ -17,6 +17,149 @@ var (
 	ErrBatchAlreadyClosed = errors.New("batch already closed")
 )
 
+const mediaFileUpsert = `-- name: MediaFileUpsert :batchexec
+INSERT INTO media_files (library_id, path, size, mtime, subs_sig, probe, problem, media_type, parsed_title,
+                         parsed_year, season, episode, episode_end, tmdb_id, matched_by)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9,
+        $10, $11, $12, $13, $14, $15)
+ON CONFLICT (library_id, path) DO UPDATE SET
+    size = EXCLUDED.size, mtime = EXCLUDED.mtime, subs_sig = EXCLUDED.subs_sig, probe = EXCLUDED.probe,
+    media_type = EXCLUDED.media_type, parsed_title = EXCLUDED.parsed_title, parsed_year = EXCLUDED.parsed_year,
+    season = EXCLUDED.season, episode = EXCLUDED.episode, episode_end = EXCLUDED.episode_end,
+    tmdb_id = CASE WHEN media_files.matched_by = 'hand' THEN media_files.tmdb_id ELSE EXCLUDED.tmdb_id END,
+    matched_by = CASE WHEN media_files.matched_by = 'hand' THEN 'hand' ELSE EXCLUDED.matched_by END,
+    problem = CASE WHEN media_files.matched_by = 'hand' AND EXCLUDED.probe IS NOT NULL THEN NULL ELSE EXCLUDED.problem END,
+    updated_at = now()
+`
+
+type MediaFileUpsertBatchResults struct {
+	br     pgx.BatchResults
+	tot    int
+	closed bool
+}
+
+type MediaFileUpsertParams struct {
+	LibraryID   int32
+	Path        string
+	Size        int64
+	Mtime       int64
+	SubsSig     string
+	Probe       []byte
+	Problem     *string
+	MediaType   string
+	ParsedTitle string
+	ParsedYear  *int32
+	Season      *int32
+	Episode     *int32
+	EpisodeEnd  *int32
+	TmdbID      *int32
+	MatchedBy   *string
+}
+
+// MediaFileUpsert writes one scanned file (a batch, one round trip per
+// few hundred files). A match made by hand stays over every rescan.
+func (q *Queries) MediaFileUpsert(ctx context.Context, arg []MediaFileUpsertParams) *MediaFileUpsertBatchResults {
+	batch := &pgx.Batch{}
+	for _, a := range arg {
+		vals := []interface{}{
+			a.LibraryID,
+			a.Path,
+			a.Size,
+			a.Mtime,
+			a.SubsSig,
+			a.Probe,
+			a.Problem,
+			a.MediaType,
+			a.ParsedTitle,
+			a.ParsedYear,
+			a.Season,
+			a.Episode,
+			a.EpisodeEnd,
+			a.TmdbID,
+			a.MatchedBy,
+		}
+		batch.Queue(mediaFileUpsert, vals...)
+	}
+	br := q.db.SendBatch(ctx, batch)
+	return &MediaFileUpsertBatchResults{br, len(arg), false}
+}
+
+func (b *MediaFileUpsertBatchResults) Exec(f func(int, error)) {
+	defer b.br.Close()
+	for t := 0; t < b.tot; t++ {
+		if b.closed {
+			if f != nil {
+				f(t, ErrBatchAlreadyClosed)
+			}
+			continue
+		}
+		_, err := b.br.Exec()
+		if f != nil {
+			f(t, err)
+		}
+	}
+}
+
+func (b *MediaFileUpsertBatchResults) Close() error {
+	b.closed = true
+	return b.br.Close()
+}
+
+const mediaSetMatch = `-- name: MediaSetMatch :batchexec
+UPDATE media_files SET tmdb_id = $1::integer, matched_by = $2::text,
+    problem = $3::text, updated_at = now()
+WHERE id = $4 AND matched_by IS DISTINCT FROM 'hand'
+`
+
+type MediaSetMatchBatchResults struct {
+	br     pgx.BatchResults
+	tot    int
+	closed bool
+}
+
+type MediaSetMatchParams struct {
+	TmdbID    *int32
+	MatchedBy *string
+	Problem   *string
+	ID        int64
+}
+
+func (q *Queries) MediaSetMatch(ctx context.Context, arg []MediaSetMatchParams) *MediaSetMatchBatchResults {
+	batch := &pgx.Batch{}
+	for _, a := range arg {
+		vals := []interface{}{
+			a.TmdbID,
+			a.MatchedBy,
+			a.Problem,
+			a.ID,
+		}
+		batch.Queue(mediaSetMatch, vals...)
+	}
+	br := q.db.SendBatch(ctx, batch)
+	return &MediaSetMatchBatchResults{br, len(arg), false}
+}
+
+func (b *MediaSetMatchBatchResults) Exec(f func(int, error)) {
+	defer b.br.Close()
+	for t := 0; t < b.tot; t++ {
+		if b.closed {
+			if f != nil {
+				f(t, ErrBatchAlreadyClosed)
+			}
+			continue
+		}
+		_, err := b.br.Exec()
+		if f != nil {
+			f(t, err)
+		}
+	}
+}
+
+func (b *MediaSetMatchBatchResults) Close() error {
+	b.closed = true
+	return b.br.Close()
+}
+
 const syncAddPlay = `-- name: SyncAddPlay :batchexec
 INSERT INTO history (user_id, media_type, tmdb_id, season, episode, episode_title, title, watched_at, source, source_ref)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'jellyfin', $9)

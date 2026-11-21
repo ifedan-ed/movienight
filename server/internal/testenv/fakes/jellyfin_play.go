@@ -24,6 +24,10 @@ import (
 // ClipSeconds is the clip's length.
 const ClipSeconds = 60
 
+// ClipFileName is the clip's file name as the fake Jellyfin reports it:
+// the release the hash-matched online subtitle names (SubsRelease).
+const ClipFileName = SubsRelease + ".mp4"
+
 func ticks(s float64) int64 { return int64(s * 10_000_000) }
 
 // clipSource is the clip's media source, as PlaybackInfo describes it.
@@ -114,6 +118,11 @@ func (j *Jellyfin) play(w http.ResponseWriter, r *http.Request) bool {
 	case subtitleURL.MatchString(p):
 		m := subtitleURL.FindStringSubmatch(p)
 		http.ServeFile(w, r, filepath.Join(dir, "subs-"+m[1]+"."+m[2]))
+	case p == "/Items" && r.URL.Query().Get("Ids") != "":
+		// The file's name, for Search online's ranking (stream.FileName).
+		id := r.URL.Query().Get("Ids")
+		Reply(w, JSON{"Items": []JSON{{"Id": id, "Path": "/media/Movie 603/" + ClipFileName,
+			"MediaSources": []JSON{{"Id": id, "Path": "/media/Movie 603/" + ClipFileName}}}}})
 	case len(parts) == 2 && parts[0] == "MediaSegments":
 		Reply(w, JSON{"Items": []JSON{{"Type": "Intro", "StartTicks": 0, "EndTicks": ticks(10)}}})
 	case strings.HasPrefix(p, "/Sessions/Playing"), p == "/Videos/ActiveEncodings":

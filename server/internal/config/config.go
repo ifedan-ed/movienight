@@ -174,11 +174,15 @@ type Config struct {
 
 	// ---- Outside services ----
 
-	// Jellyfin is required: Movie Night is a companion to one Jellyfin server.
+	// Jellyfin is optional: all four settings or none. Movie Night plays
+	// its own media libraries (Media) with or without it.
 	JellyfinBaseURL   string
 	JellyfinPublicURL string
 	JellyfinAPIKey    string
 	JellyfinUserID    string
+
+	// The media libraries (config/media.go): MEDIA_URL and MEDIA_SECRET.
+	Media Media
 
 	// Seerr: optional, both or neither. DRY_RUN: requests are simulated.
 	SeerrBaseURL string
@@ -218,6 +222,9 @@ type Config struct {
 	// ---- Error reports (config/errreports.go) ----
 	ErrorReports ErrorReports
 
+	// ---- Online subtitle sources (config/subtitles.go) ----
+	Subtitles Subtitles
+
 	// The worker's schedule, digests and AI rows (jobs.go).
 	JobSettings
 }
@@ -227,6 +234,9 @@ func (c *Config) OIDCEnabled() bool { return c.OIDCIssuer != "" && c.OIDCClientI
 
 // SigninEnabled reports whether a browser has any way to sign in.
 func (c *Config) SigninEnabled() bool { return c.PasswordSignin || c.OIDCEnabled() }
+
+// JellyfinEnabled reports whether a Jellyfin server is set up.
+func (c *Config) JellyfinEnabled() bool { return c.JellyfinBaseURL != "" }
 
 // SeerrEnabled, MDBListEnabled and AIEnabled report the optional services.
 func (c *Config) SeerrEnabled() bool   { return c.SeerrBaseURL != "" }
@@ -326,12 +336,18 @@ func LoadFrom(lookup func(string) (string, bool)) (*Config, error) {
 	c.ReportedMaxChars = r.positive("REPORTED_MAX_CHARS", 500)
 	c.JellyfinWebhookSecret = r.optional("JELLYFIN_WEBHOOK_SECRET")
 
-	c.JellyfinBaseURL = strings.TrimRight(r.required("JELLYFIN_BASE_URL"), "/")
+	// Jellyfin: optional, all four or none. Without it the media libraries
+	// are the only source of films and shows.
+	c.JellyfinBaseURL = strings.TrimRight(r.optional("JELLYFIN_BASE_URL"), "/")
 	r.absoluteURL("JELLYFIN_BASE_URL", c.JellyfinBaseURL)
-	c.JellyfinPublicURL = strings.TrimRight(r.required("JELLYFIN_PUBLIC_URL"), "/")
+	c.JellyfinPublicURL = strings.TrimRight(r.optional("JELLYFIN_PUBLIC_URL"), "/")
 	r.absoluteURL("JELLYFIN_PUBLIC_URL", c.JellyfinPublicURL)
-	c.JellyfinAPIKey = r.required("JELLYFIN_API_KEY")
-	c.JellyfinUserID = r.required("JELLYFIN_USER_ID")
+	c.JellyfinAPIKey = r.optional("JELLYFIN_API_KEY")
+	c.JellyfinUserID = r.optional("JELLYFIN_USER_ID")
+	if set := countSet(c.JellyfinBaseURL, c.JellyfinPublicURL, c.JellyfinAPIKey, c.JellyfinUserID); set != 0 && set != 4 {
+		r.fail("JELLYFIN_BASE_URL, JELLYFIN_PUBLIC_URL, JELLYFIN_API_KEY and JELLYFIN_USER_ID must be set together (or all left out for no Jellyfin)")
+	}
+	c.Media = r.media()
 
 	c.SeerrBaseURL = strings.TrimRight(r.optional("SEERR_BASE_URL"), "/")
 	c.SeerrAPIKey = r.optional("SEERR_API_KEY")
@@ -373,6 +389,7 @@ func LoadFrom(lookup func(string) (string, bool)) (*Config, error) {
 	c.SearchMaxHits = r.positive("SEARCH_MAX_HITS", 1000)
 	c.RW = r.readWrite()
 	c.ErrorReports = r.errorReports()
+	c.Subtitles = r.subtitles()
 
 	c.JobSettings = r.jobSettings()
 
@@ -380,6 +397,16 @@ func LoadFrom(lookup func(string) (string, bool)) (*Config, error) {
 		return nil, errors.New("settings are not usable:\n  - " + strings.Join(r.problems, "\n  - "))
 	}
 	return c, nil
+}
+
+func countSet(vals ...string) int {
+	n := 0
+	for _, v := range vals {
+		if v != "" {
+			n++
+		}
+	}
+	return n
 }
 
 // SessionLifetime is how long a browser session lasts (OIDC_SESSION_DAYS).

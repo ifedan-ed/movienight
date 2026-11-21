@@ -81,7 +81,14 @@ type response struct {
 
 // do runs one request within timeout and reads its body (capped). A
 // transport failure or a timeout is an error; any HTTP status is a response.
+// errNotSetUp is a call to an optional service this install does not have.
+var errNotSetUp = errors.New("not set up on this install")
+
 func do(ctx context.Context, c *http.Client, req *http.Request, timeout time.Duration, limit int64) (*response, error) {
+	if req == nil {
+		// A request that could not be made (a service that is not set up).
+		return nil, errNotSetUp
+	}
 	if timeout <= 0 {
 		timeout = DefaultTimeout
 	}

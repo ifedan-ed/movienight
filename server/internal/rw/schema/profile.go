@@ -96,6 +96,10 @@ type Features struct {
 	AI       bool `json:"ai"`
 	Email    bool `json:"email"`
 	DryRun   bool `json:"dry_run"`
+	// Jellyfin is set up on this install (JELLYFIN_*), and Movie Night's own
+	// media libraries are (MEDIA_URL).
+	Jellyfin  bool `json:"jellyfin" required:"false"`
+	Libraries bool `json:"libraries" required:"false"`
 }
 
 // TextLimits are the install's request limits, so the apps count down to

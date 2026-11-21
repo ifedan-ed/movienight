@@ -57,13 +57,17 @@ func TestStateIsReadForThePagesTitlesOnly(t *testing.T) {
 func TestTheStateQueryUsesItsIndexes(t *testing.T) {
 	s, _ := testenv.StartFaked(t, testbase.BaseEnv(t))
 	plan := s.Explain(t, store.StateForTitlesSQL, []string{"movie", "tv"}, []int32{603, 1399}, int32(1), "America/New_York")
-	for _, table := range []string{"history", "watchlist", "user_ratings", "favorites", "library_items"} {
+	for _, table := range []string{"history", "watchlist", "user_ratings", "favorites", "library_items", "media_files"} {
 		if strings.Contains(plan, "Seq Scan on "+table) {
 			t.Errorf("%s is scanned whole:\n%s", table, plan)
 		}
 	}
 	if !strings.Contains(plan, "ix_history_user_tmdb") {
 		t.Errorf("history is not read by person and title:\n%s", plan)
+	}
+	// The libraries are looked up by title, not read whole.
+	if !strings.Contains(plan, "ix_media_files_title") || strings.Contains(plan, "(tmdb_id IS NOT NULL)") {
+		t.Errorf("the library is not read by title:\n%s", plan)
 	}
 }
 

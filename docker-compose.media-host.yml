@@ -1,0 +1,55 @@
+# The media service alone, on the machine that holds the films and shows,
+# for a Movie Night that runs elsewhere (docs/self-hosting.md). Its .env
+# (next to this file) needs only:
+#
+#   MEDIA_SECRET=...          the same value as Movie Night's
+#   MEDIA_FOLDER=/srv/media   the folder with the films and shows
+#   MEDIA_BIND=100.64.0.7     the address to listen on: a private one, such
+#                             as this machine's Tailscale address
+#
+#   docker compose -f docker-compose.media-host.yml up -d
+#
+# Movie Night's .env then has MEDIA_URL=http://<MEDIA_BIND>:8100 and the
+# same MEDIA_SECRET, and leaves docker-compose.media.yml out of COMPOSE_FILE.
+# Library folders are written as /media/... in the website.
+#
+# The image is the server image Movie Night builds (movienight-server):
+# copy it over with `docker save movienight-server:latest | ssh HOST docker
+# load`, or build it here from the repository (server/Dockerfile).
+
+name: movienight-media
+
+services:
+  media:
+    image: movienight-server:latest
+    entrypoint: ["/usr/local/bin/media"]
+    restart: unless-stopped
+    user: "1000:1000"
+    environment:
+      MEDIA_SECRET: ${MEDIA_SECRET:?set MEDIA_SECRET in .env, the same as Movie Night's}
+      MEDIA_LIBRARIES: /media
+      MEDIA_CACHE_DIR: /cache
+      MEDIA_MAX_TRANSCODES: ${MEDIA_MAX_TRANSCODES:-2}
+      MEDIA_HWACCEL: ${MEDIA_HWACCEL:-none}
+    volumes:
+      - ${MEDIA_FOLDER:?set MEDIA_FOLDER in .env to the folder that holds your films and shows}:/media:ro
+      - movienight-media-cache:/cache
+    # Only on the private address: the secret guards every call, but the
+    # traffic is plain HTTP.
+    ports:
+      - "${MEDIA_BIND:?set MEDIA_BIND in .env to this machine's private address, e.g. its Tailscale one}:8100:8100"
+    stop_grace_period: 15s
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/media", "-healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+volumes:
+  movienight-media-cache:

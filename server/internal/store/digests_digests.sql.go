@@ -185,7 +185,7 @@ func (q *Queries) DigestHistory(ctx context.Context, arg DigestHistoryParams) ([
 }
 
 const digestInLibraryAmong = `-- name: DigestInLibraryAmong :many
-SELECT DISTINCT media_type, tmdb_id::int AS tmdb_id FROM library_items
+SELECT DISTINCT media_type, tmdb_id::int AS tmdb_id FROM library_titles
 WHERE tmdb_id = ANY($1::int[])
 `
 
@@ -279,9 +279,12 @@ func (q *Queries) DigestLatestAIRows(ctx context.Context, userID int32) (string,
 }
 
 const digestLibraryAdded = `-- name: DigestLibraryAdded :many
-SELECT media_type, tmdb_id::int AS tmdb_id FROM library_items
-WHERE date_added >= $1::timestamptz AND date_added < $2::timestamptz AND tmdb_id IS NOT NULL
-ORDER BY date_added DESC, jellyfin_id
+SELECT media_type, tmdb_id::int AS tmdb_id FROM (
+    SELECT media_type, tmdb_id, max(added_at) AS added FROM library_titles
+    WHERE added_at >= $1::timestamptz AND added_at < $2::timestamptz
+    GROUP BY media_type, tmdb_id
+) lib
+ORDER BY added DESC, media_type, tmdb_id
 LIMIT 12
 `
 
@@ -295,7 +298,8 @@ type DigestLibraryAddedRow struct {
 	TmdbID    int32
 }
 
-// The newest twelve library additions of the period, and how many in all.
+// The newest twelve library additions of the period (Jellyfin's and Movie
+// Night's own, one row per title), and how many in all.
 func (q *Queries) DigestLibraryAdded(ctx context.Context, arg DigestLibraryAddedParams) ([]DigestLibraryAddedRow, error) {
 	rows, err := q.db.Query(ctx, digestLibraryAdded, arg.Start, arg.PeriodEnd)
 	if err != nil {
@@ -317,8 +321,8 @@ func (q *Queries) DigestLibraryAdded(ctx context.Context, arg DigestLibraryAdded
 }
 
 const digestLibraryAddedCount = `-- name: DigestLibraryAddedCount :one
-SELECT count(*) FROM library_items
-WHERE date_added >= $1::timestamptz AND date_added < $2::timestamptz AND tmdb_id IS NOT NULL
+SELECT count(DISTINCT (media_type, tmdb_id)) FROM library_titles
+WHERE added_at >= $1::timestamptz AND added_at < $2::timestamptz
 `
 
 type DigestLibraryAddedCountParams struct {

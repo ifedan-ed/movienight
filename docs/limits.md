@@ -206,14 +206,30 @@ queues. `server/internal/cache`.
 | Upstream timeouts | 25 s for a call that names no other; 10 s to connect; at most 40 connections to one service; answers read up to 64 MB | `server/internal/clients/http.go` (`DefaultTimeout`, `Upstream`, `maxBody`) | Longer where set: Jellyfin's library read 120 s a page; MDBList 10 s, 30 s for list items, 6 s for search (`server/internal/clients/mdblist.go`); the AI 180 s; Meilisearch uploads 120 s and reads 60 s (`server/internal/clients/meili.go`); SMTP and SMTP2GO 30 s (`server/internal/mail`, `Timeout`); IMDb's file 10 minutes in all (`server/internal/imdb`, `downloadTimeout`) |
 | TMDB rate limit (429) | retried twice, after the wait TMDB asks for (at most 10 s) | `server/internal/clients/tmdb.go` (`maxRetryAfter`) | Then the call fails and the page shows what it has |
 
+### Subtitles online
+
+| What | Value | Where it's set | Why it exists / what happens when it's hit |
+|---|---|---|---|
+| Searches | 30 an hour per person | hard-coded, `server/internal/subtitles/service.go` (`SearchesPerHour`), counted in Valkey (`rl:subtitle-search:*`) | 429 "That's a lot of subtitle searches. Try again in an hour." Keeps one account from using up a site's allowance for everyone |
+| Downloads | 20 an hour per person; picking a subtitle the file already has costs none | hard-coded, `server/internal/subtitles/service.go` (`DownloadsPerHour`), `rl:subtitle-download:*` | 429 with the same wording |
+| OpenSubtitles' own quota | whatever the account allows a day (20 on a free one) | OpenSubtitles | Its results stay listed but can't be picked, and the player says when downloads come back (the time OpenSubtitles names). Kept in Valkey until then (`subs:os:quota`) |
+| SubDL busy or out of downloads | a "rate_limit" or "service_busy" answer is waited out once (its Retry-After, 5 to 10 s), then said as busy; a daily limit is said as one | hard-coded, `server/internal/subtitles/subdl.go` (`subdlWait`, `subdlWaitMax`) | Only a 429 is ever called busy. The log line has the site's status and its error code |
+| One source's search | 8 s | hard-coded, `server/internal/subtitles/service.go` (`sourceTimeout`) | Sources are asked at once; a slow one is left out and named in the answer |
+| A search's answer | kept an hour; 2 minutes when a source failed | hard-coded, `server/internal/subtitles/service.go` (`searchTTL`, `problemTTL`) | Asking again costs the sites nothing. A pick must come within the hour (410 "Search again") |
+| A download | 30 s, at most 16 MB, at most 8 MB of text once unpacked | hard-coded, `server/internal/subtitles` (`downloadTimeout`, `maxFile`, `maxText`) | A bigger one is refused rather than read; a zip is read through the limit, never trusting its own sizes |
+| The file's name and hash | two 64 KB Range reads through the stream proxy, kept a day per file (`subs:file:*`) | hard-coded, `server/internal/subtitles/service.go` (`fileTTL`) | The whole file is never fetched |
+| OpenSubtitles login | kept until a minute before its token expires (`subs:os:login`); a refused one is not tried again for 15 minutes | hard-coded, `server/internal/subtitles/opensubtitles.go` (`refusedFor`) | OpenSubtitles asks clients not to log in more than needed, and to stop after a refusal |
+| A track's delay | at most 10 minutes either way | hard-coded, `server/internal/subtitles/service.go` (`maxDelay`) | 422 |
+
 ## Background jobs
 
 They run in the `worker` (never in the API), at times in `TIMEZONE`
 (`server/cmd/worker/jobs.go`, `server/internal/jobs`). `RUN_JOBS=false`
 turns the schedule off; the queued work (webhook plays syncs, Jellyfin
-marks, AI rows) still runs. A job whose feature is off (no
-`MDBLIST_API_KEY`, email not set up, `IMDB_RATINGS_ENABLED=false`,
-`CATALOG_ENABLED=false`) is not scheduled, and the log says so at start.
+marks, AI rows, library scans) still runs. A job whose feature is off (no
+`MEDIA_URL`, no Jellyfin, no `MDBLIST_API_KEY`, email not set up,
+`IMDB_RATINGS_ENABLED=false`, `CATALOG_ENABLED=false`) is not scheduled,
+and the log says so at start.
 
 How runs are kept honest:
 
@@ -241,6 +257,7 @@ So a person may, rarely, miss a digest, but never gets one twice.
 
 | Job | When | Catch-up at start | What it does |
 |---|---|---|---|
+| `media-scan` | every 30 min, at :02 and :32 | the missed slot | Every media library rescanned, one after another. Only new and changed files are read with ffprobe (`MEDIA_PROBE_WORKERS` at once); files gone from a folder that was read leave the library; a folder that can't be read, or is empty where files were, keeps its files. Unmatched files are matched again. Scan now (Profile, Libraries) and adding or changing a library queue one library's scan for a worker |
 | `plays` | every 5 min | the missed slot | Each person linked to Jellyfin: all their plays. Catches whatever the webhook or plugin missed. Profile, Jellyfin, "Get my Jellyfin plays now" does it at once for one person. A read that fails is shown to that person and to admins in Profile until a read is complete (see Watches) |
 | `library` | every 30 min | the missed slot | Updates the library table and the search index from a complete read of the whole library; removes titles Jellyfin no longer lists only after such a read; a failed, incomplete or empty read changes nothing and admins see why in Profile (see Watches). An admin can run it now: Profile, "Rescan Jellyfin library" |
 | Jellyfin webhook and plugin | that one person's plays synced 5 s after the event, by a worker | — | Events arriving together are merged into one sync (`server/internal/jfsync/webhook.go`, `WebhookDelay`). Needs `JELLYFIN_WEBHOOK_SECRET` (empty: 503) |
@@ -284,7 +301,7 @@ About the digests:
 | "Finished it?" | checked 1.5 s after the page loads and each time you come back to the tab | hard-coded, `web/static/js/app.js:50` | |
 | Play here: reports | start, every 10 s while playing, pause, stop (also as the tab closes) | hard-coded, `web/static/js/player/player.js` (`REPORT_EVERY`) | |
 | Play here: resume prompt | only for a place past 30 s and before 95% of the runtime | hard-coded, `web/static/js/player/player.js` (`RESUME_MIN`, `RESUME_MAX_SHARE`) | |
-| Play here: subtitle delay and size | the delay per title, the size for every title, the volume, in this browser's localStorage (`mn:subdelay:<media>:<id>`, `mn:subsize`, `mn:volume`) | `web/static/js/player/player.js` | |
+| Play here: subtitle delay and size | the delay of the file's own tracks per title, the size for every title, the volume, in this browser's localStorage (`mn:subdelay:<media>:<id>`, `mn:subsize`, `mn:volume`). A track added online keeps its delay on the server, for every device | `web/static/js/player/player.js`, `web/static/js/player/online.js` | The server's copy is saved 0.6 s after the last change |
 | MDBList list preview | draws the first 120 titles, then "…and N more once it's added" | hard-coded, `web/static/js/views/mdblist.js:71` | Following keeps every title |
 | Offline copy (service worker) | the app shell and static files, network first; never `/api` | `web/static/sw.js:29` | The site opens without a connection but shows no data |
 | Signed out (session ran out) | the page reloads and goes to sign-in (the sign-in page, or your OIDC provider when passwords are off) | `web/static/js/api.js:33` | |
@@ -336,10 +353,10 @@ About the digests:
 
 | What | Value | Where it's set | Why it exists / what happens when it's hit |
 |---|---|---|---|
-| Kept for good | history, ratings and comments, watchlist and favourites (removed ones are marked, not deleted), own lists, digests with their HTML, `ai_row_cache` (each person's newest rows only), Play sessions, request records, unfinished watch progress, the titles and scores cache, MDBList copies | the schema, `server/db/schema.sql` and `server/db/migrations` | Nothing is purged on a schedule. Copies stay in your backups until they expire (see Backups) |
+| Kept for good | history, ratings and comments, watchlist and favourites (removed ones are marked, not deleted), own lists, digests with their HTML, `ai_row_cache` (each person's newest rows only), Play sessions, request records, unfinished watch progress, the titles and scores cache, MDBList copies, subtitles added online (`online_subtitles`, until someone removes them) | the schema, `server/db/schema.sql` and `server/db/migrations` | Nothing is purged on a schedule. Copies stay in your backups until they expire (see Backups) |
 | Deleted by the app | expired browser sessions, phone codes and TV codes (the hourly clean-up), a session at sign-out, library rows Jellyfin no longer lists (only after a complete read), a person's older "Picked for you" rows (each good rebuild), finished watch progress, a liked episode's row when it is unliked, an episode's rating when it is removed, job run records after 30 days | see the rows above | |
-| Lost when Valkey restarts | every server cache, the wrong-password and pairing counters, the AI answer cache, the "Picked for you" back-off, the MDBList refusal notice for admins, the OIDC sign-ins under way, and work queued for the worker (webhook syncs, which the 5-minute sync catches up; episode marks not yet sent to Jellyfin) | Valkey runs without persistence (the compose file) | Nothing people did is in Valkey: sessions, tokens and records are in Postgres |
-| Deleting a person | no self-service button; an admin deletes the person's `users` row | Postgres | Deleting their `users` row deletes everything of theirs (every per-person table cascades). Their data stays in your backups until those expire. The logs never had their name, only their numeric id |
+| Lost when Valkey restarts | every server cache, the wrong-password and pairing counters, the AI answer cache, the "Picked for you" back-off, the MDBList refusal notice for admins, the OIDC sign-ins under way, the subtitle searches, picks, OpenSubtitles login and quota notice, and work queued for the worker (webhook syncs, which the 5-minute sync catches up; episode marks not yet sent to Jellyfin) | Valkey runs without persistence (the compose file) | Nothing people did is in Valkey: sessions, tokens and records are in Postgres |
+| Deleting a person | no self-service button; an admin deletes the person's `users` row | Postgres | Deleting their `users` row deletes everything of theirs (every per-person table cascades). Subtitles they added online stay for the household, no longer naming anyone. Their data stays in your backups until those expire. The logs never had their name, only their numeric id |
 | Logs | Docker's json-file driver, rotated by size: at most 5 files of 10 MB per container, the oldest dropped first; all of it goes when the container is replaced (each deploy) | `LOG_MAX_SIZE`, `LOG_MAX_FILES` in `.env` (read by `docker-compose.yml`, the `x-logging` block); what is written: `server/internal/logging` | JSON lines. One access line per request, with its request id (also sent back as the `X-Request-ID` header), the method, the route's pattern (`/api/v1/title/{media}/{id}`: no ids, no query string), the status, the time it took and the person's numeric id; warnings and errors with their message, internal ids (person, list, digest, history row) and status codes; and what the background jobs did, in counts. Never search text, titles watched, names, usernames or email addresses. As a safety net every string of every line has query strings, email addresses and the row values a database error quotes cut out before it is written (`Redact`), and Postgres runs with `log_error_verbosity=terse` and `log_min_error_statement=panic`. Logs are not in the database backups (Docker keeps them under `/var/lib/docker/containers`) |
 | Backups | the host's job, not this repository's | your backup tool | Back up the `movienight-pg` volume (or a nightly `pg_dump`); the Meilisearch volume needs none. Whatever you keep, deleted data stays in it until those copies expire |
 | On the phone | the token (Keychain / Keystore), a week of answers, the outbox | phone app | All wiped on sign-out (the poster images the app caches on disk are not); changes still waiting in the outbox are counted first and the person is told (see Phone app, Outbox) |

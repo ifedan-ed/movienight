@@ -9,12 +9,13 @@
 --   watchlist, user_ratings, favorites: their (user_id, media_type, tmdb_id)
 --     unique indexes;
 --   history: ix_history_user_tmdb (migration 0019);
---   library_items: ix_library_items_tmdb_id.
+--   library_items: ix_library_items_tmdb_id; media_files: ix_media_files_title.
 --
 -- kind: w watchlist, r rating (n), f favourite, h watched (n: plays of a
 -- film on distinct days in the person's zone (@tz), or distinct episodes of a
 -- show seen: the same watch arriving twice on one day, a manual mark and a
--- Jellyfin play, counts once), l library (jf: the Jellyfin item id).
+-- Jellyfin play, counts once), l library (jf: the Jellyfin item id, '' when
+-- only Movie Night's own library has it).
 -- name: StateForTitles :many
 WITH k AS (
     -- Two arrays of the same length, zipped (sqlc's parser does not know the
@@ -41,6 +42,12 @@ FROM history h JOIN k ON k.tmdb_id = h.tmdb_id
 WHERE h.user_id = @user_id
 GROUP BY k.media_type, k.tmdb_id
 UNION ALL
-SELECT 'l', k.media_type, k.tmdb_id, 0, min(li.jellyfin_id)::text
-FROM library_items li JOIN k ON k.media_type = li.media_type AND k.tmdb_id = li.tmdb_id
-GROUP BY k.media_type, k.tmdb_id;
+SELECT 'l', k.media_type, k.tmdb_id, 0,
+       coalesce((SELECT min(li.jellyfin_id) FROM library_items li
+                 WHERE li.media_type = k.media_type AND li.tmdb_id = k.tmdb_id), '')::text
+FROM k
+-- Each table on its own, by title (not through the library_titles view,
+-- which the planner reads whole before joining).
+WHERE EXISTS (SELECT 1 FROM library_items li WHERE li.media_type = k.media_type AND li.tmdb_id = k.tmdb_id)
+   OR EXISTS (SELECT 1 FROM media_files f WHERE f.media_type = k.media_type AND f.tmdb_id = k.tmdb_id
+                                           AND f.probe IS NOT NULL);

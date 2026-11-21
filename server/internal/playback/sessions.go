@@ -36,6 +36,7 @@ import (
 	"movienight/server/internal/crypto"
 	"movienight/server/internal/history"
 	"movienight/server/internal/jfplay"
+	"movienight/server/internal/libraries"
 	"movienight/server/internal/players"
 	"movienight/server/internal/store"
 	"movienight/server/internal/stream"
@@ -69,6 +70,7 @@ type Service struct {
 	history *history.Service
 	jf      *jfplay.Client
 	tickets *stream.Signer
+	library *libraries.Service
 	log     *slog.Logger
 	now     func() time.Time
 }
@@ -79,8 +81,9 @@ type Service struct {
 // watched"), so a Play's watch is recorded exactly as one marked by hand.
 //
 // The in-browser player ("Play here", browser.go) also needs Jellyfin's
-// playback calls (package jfplay) and the stream tickets the proxy checks
-// (package stream).
+// playback calls (package jfplay), Movie Night's own libraries (package
+// libraries, played through the media service) and the stream tickets the
+// proxy checks (package stream).
 type Deps struct {
 	Titles  *titles.Service
 	Cache   *cache.Cache
@@ -88,12 +91,13 @@ type Deps struct {
 	History *history.Service
 	JFPlay  *jfplay.Client
 	Tickets *stream.Signer
+	Library *libraries.Service
 }
 
 // New makes the service.
 func New(cfg *config.Config, pool *pgxpool.Pool, cl *clients.Set, keys *crypto.Keys, d Deps, log *slog.Logger) *Service {
 	return &Service{cfg: cfg, q: store.New(pool), clients: cl, keys: keys, titles: d.Titles, cache: d.Cache,
-		players: d.Players, history: d.History, jf: d.JFPlay, tickets: d.Tickets, log: log, now: time.Now}
+		players: d.Players, history: d.History, jf: d.JFPlay, tickets: d.Tickets, library: d.Library, log: log, now: time.Now}
 }
 
 // Session is a Play as the API shows it.
@@ -284,9 +288,10 @@ func (s *Service) Finish(ctx context.Context, u store.User, id, outcome string) 
 	if _, err := s.history.MarkWatched(ctx, u.ID, mark); err != nil {
 		return err
 	}
-	if u.JellyfinUserID != nil {
+	if u.JellyfinUserID != nil && ps.JellyfinItemID != "" {
 		// The watch is recorded here either way; Jellyfin's played mark is a
-		// courtesy (its Next Up), so its failure is logged, not returned.
+		// courtesy (its Next Up), so its failure is logged, not returned. A
+		// play from Movie Night's own library has no Jellyfin item.
 		if err := s.clients.Jellyfin.MarkPlayed(ctx, *u.JellyfinUserID, ps.JellyfinItemID, now); err != nil {
 			s.log.WarnContext(ctx, "marking a finished Play played in Jellyfin failed", "user", u.ID, "err", err)
 		}

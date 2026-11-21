@@ -70,7 +70,7 @@ func tvOnly(media string) error {
 
 // Register adds the routes.
 func Register(d *rw.Deps) {
-	t := &Title{d: d, history: d.History, episodes: episodes.New(d.Q, d.Cfg, d.Cache, d.Clients, d.History, d.Titles, d.JFSync, d.Log)}
+	t := &Title{d: d, history: d.History, episodes: episodes.New(d.Q, d.Cfg, d.Cache, d.Clients, d.History, d.Titles, d.JFSync, d.Libraries, d.Log)}
 	t.register()
 	d.Limit("RatingIn", "review", rw.TextChars)
 	d.Limit("IdsIn", "ids", rw.BatchItems)

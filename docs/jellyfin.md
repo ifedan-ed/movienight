@@ -44,6 +44,14 @@ The player tells Jellyfin where it is, as the person's own Jellyfin user when th
 
 Skip intro and Skip credits appear when Jellyfin has media segments for the item. A segment plugin such as Intro Skipper makes them.
 
+### Subtitles online
+
+The subtitle menu's Search online asks every subtitle site the install has set up at once. The language starts as the one picked in Profile → Players and subtitles, else English. The subtitle made for this very file comes first, marked Match: OpenSubtitles knows it by the file's hash. Then come the ones whose release name is closest to the file's name, then the most downloaded. Machine-translated ones are left out until asked for.
+
+A picked subtitle shows at once while the film plays on. It stays as a track of that file for everyone in the household. Its delay, set with [ and ] or in the menu, is kept with it, so every device gets the same. The person who added it, or an admin, can remove it.
+
+Podnapisi and Addic7ed (through Gestdown, TV only) need no key. OpenSubtitles, SubDL, SubSource and Jimaku (anime, in Japanese) are used once their keys are set ([configuration](configuration.md#subtitles-online)). These sites hold subtitles their users uploaded, and each has its own terms. OpenSubtitles limits downloads a day. When they are used up, the player says until when.
+
 The keys: Space or K plays and pauses, ← and → jump 10 seconds, ↑ and ↓ change the volume, F is fullscreen, M mutes, C changes the subtitles, [ and ] move the subtitles half a second earlier or later, and < and > change the speed.
 
 ## Players

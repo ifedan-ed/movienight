@@ -53,7 +53,14 @@ type Service struct {
 	history *history.Service
 	titles  *titles.Service
 	marks   Marker
+	library Library
 	log     *slog.Logger
+}
+
+// Library is the episodes Movie Night's own libraries hold
+// (libraries.Service.Episodes).
+type Library interface {
+	Episodes(ctx context.Context, showID int) ([][2]int, error)
 }
 
 // Marker records Jellyfin played marks for a worker to make
@@ -64,8 +71,8 @@ type Marker interface {
 
 // New makes the service.
 func New(q *store.Queries, cfg *config.Config, c *cache.Cache, cl *clients.Set, h *history.Service,
-	t *titles.Service, m Marker, log *slog.Logger) *Service {
-	return &Service{q: q, cfg: cfg, cache: c, clients: cl, history: h, titles: t, marks: m, log: log}
+	t *titles.Service, m Marker, lib Library, log *slog.Logger) *Service {
+	return &Service{q: q, cfg: cfg, cache: c, clients: cl, history: h, titles: t, marks: m, library: lib, log: log}
 }
 
 // zone is the person's own time zone (users.Location): their watches are
@@ -152,6 +159,17 @@ func (s *Service) SeasonPage(ctx context.Context, u store.User, showID, number i
 		return nil, nil
 	}
 	jfEps := s.jellyfinEpisodes(ctx, u, showID, number)
+	libEps := map[[2]int]bool{}
+	if s.library != nil {
+		eps, err := s.library.Episodes(ctx, showID)
+		if err != nil {
+			// As with Jellyfin: the page shows, without the library marks.
+			s.log.WarnContext(ctx, "library episodes failed", "err", err)
+		}
+		for _, e := range eps {
+			libEps[e] = true
+		}
+	}
 	watched, err := s.history.EpisodeWatches(ctx, u.ID, s.zone(u), showID)
 	if err != nil {
 		return nil, err
@@ -203,6 +221,7 @@ func (s *Service) SeasonPage(ctx context.Context, u store.User, showID, number i
 			at := seen[0].WatchedAt
 			ep.LastWatchedAt = &at
 		}
+		ep.InLibrary = libEps[[2]int{number, n}]
 		if jf, ok := jfEps[[2]int{number, n}]; ok {
 			ep.InLibrary = true
 			if id, _ := jf["Id"].(string); id != "" {

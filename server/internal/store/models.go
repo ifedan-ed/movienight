@@ -135,6 +135,13 @@ type LibraryItem struct {
 	SyncedAt   time.Time
 }
 
+type LibraryTitle struct {
+	MediaType  string
+	TmdbID     *int32
+	AddedAt    *time.Time
+	JellyfinID string
+}
+
 type List struct {
 	ID          int32
 	Name        string
@@ -166,6 +173,58 @@ type ListItem struct {
 	TmdbID    int32
 	Position  int32
 	AddedAt   time.Time
+}
+
+type MediaFile struct {
+	ID          int64
+	LibraryID   int32
+	Path        string
+	Size        int64
+	Mtime       int64
+	SubsSig     string
+	Probe       []byte
+	Problem     *string
+	MediaType   string
+	ParsedTitle string
+	ParsedYear  *int32
+	Season      *int32
+	Episode     *int32
+	EpisodeEnd  *int32
+	TmdbID      *int32
+	MatchedBy   *string
+	AddedAt     time.Time
+	UpdatedAt   time.Time
+}
+
+type MediaLibrary struct {
+	ID           int32
+	Name         string
+	Kind         string
+	Paths        []string
+	CreatedAt    time.Time
+	ScannedAt    *time.Time
+	ScanError    *string
+	ScanProblems []byte
+}
+
+type OnlineSubtitle struct {
+	ID              int64
+	MediaType       string
+	TmdbID          int32
+	Season          *int32
+	Episode         *int32
+	ItemID          string
+	MediaSourceID   string
+	Language        string
+	Source          string
+	SourceRef       string
+	Release         string
+	HearingImpaired bool
+	Format          string
+	Body            string
+	DelayMs         int32
+	AddedBy         *int32
+	AddedAt         time.Time
 }
 
 type PairCode struct {

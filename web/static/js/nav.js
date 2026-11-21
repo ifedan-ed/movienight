@@ -30,6 +30,7 @@ const ROUTES = [
   [/^\/settings\/players$/, "players"],
   [/^\/settings\/emails$/, "emails"],
   [/^\/settings\/kodi$/, "kodi"],
+  [/^\/settings\/libraries$/, "libraries"],
 ];
 
 // [tab id, root URL, label, icon, views that belong to the tab, root view]
@@ -38,7 +39,7 @@ const TABS = [
   ["discover", "/discover", "Discover", "compass", ["discover"], "discover"],
   ["search", "/search", "Search", "search", ["search"], "search"],
   ["lists", "/lists", "Lists", "lists", ["lists", "list", "collection", "mdblist"], "lists"],
-  ["profile", "/profile", "Profile", "user", ["profile", "history", "requests", "jellyfin", "players", "emails", "kodi"], "profile"],
+  ["profile", "/profile", "Profile", "user", ["profile", "history", "requests", "jellyfin", "players", "emails", "kodi", "libraries"], "profile"],
 ];
 
 const MAX_PAGES = 16; // rendered pages kept for an instant Back; the oldest unprotected ones go first

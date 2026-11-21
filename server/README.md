@@ -21,6 +21,8 @@ One image holds every command:
 | `api -healthcheck` | Asks the API in the same container for `/healthz` and exits 0 on a 200. The compose healthcheck uses it, since the image has no shell or curl. |
 | `worker` | Runs the scheduled jobs and the work the API queues. One or more can run (see [The worker](#the-worker)). |
 | `worker -run plays,library` | Runs the named jobs once, in that order, and exits. It logs each one's time and the peak memory, and records nothing in `job_runs`. |
+| `media` | The media service, on :8100: scans library folders and plays their files with ffmpeg (see [The media service](#the-media-service)). It needs no database and runs next to the files. |
+| `media -healthcheck` | Asks the media service in the same container for `/healthz`, as `api -healthcheck` does. |
 | `migrate` | Brings the schema up to date. It runs as its own step before `api` and `worker`. |
 | `admin` | Accounts and devices: `admin user add NAME`, `admin user password NAME`, `admin user nopassword NAME`, `admin user list`, `admin devices signout NAME`. |
 
@@ -34,7 +36,12 @@ docker run --env-file .env --entrypoint /usr/local/bin/migrate movienight-go
 docker run --env-file .env movienight-go                    # api
 docker run --env-file .env --entrypoint /usr/local/bin/worker movienight-go
 docker run --env-file .env --entrypoint /usr/local/bin/worker movienight-go -run catalog
+docker run -e MEDIA_SECRET=... -e MEDIA_LIBRARIES=/media -v /srv/media:/media:ro \
+  --entrypoint /usr/local/bin/media movienight-go
 ```
+
+The image is Debian slim with a pinned ffmpeg (`server/Dockerfile`), which
+only `media` runs.
 
 In a running stack, `docker compose exec api admin user list`
 reaches `admin` the same way.
@@ -51,8 +58,10 @@ reaches `admin` the same way.
 | Profile | `/me`, `/me/time-zone`, `/me/time-zone/choice`, `/time-zones`, `/history`, `/requests`, `/rate-prompt` and its dismiss, `/export` | `internal/rw/profile` |
 | Account | `/me/jellyfin` (status, Quick Connect, password, unlink), `/me/players`, `/me/scrobble-token` | `internal/rw/profile` |
 | Play | `/title/{media}/{id}/play` (GET is the Play sheet, POST the player's link), `/play/open`, `/play/{id}` with `/back` and `/finish` | `internal/rw/devices`, `internal/playback` |
-| Play here | `/title/{media}/{id}/watch` (a stream ticket, tracks, chapters, segments), `/watch/report` (start, progress, pause, stop) | `internal/rw/devices`, `internal/playback`, `internal/jfplay` |
-| Stream proxy | `/stream/{ticket}/...`: the file with Range, Jellyfin's HLS playlists (rewritten to point back here, keys removed) and segments, subtitles as WebVTT or ASS, and embedded fonts. Not in the API description: it serves bytes | `internal/stream` |
+| Play here | `/title/{media}/{id}/watch` (a stream ticket, tracks, chapters, segments, `source`), `/watch/report` (start, progress, pause, stop) | `internal/rw/devices`, `internal/playback`, `internal/jfplay` |
+| Subtitles online | `/subtitles/languages`, `/title/{media}/{id}/subtitles` (GET the file's stored tracks, POST to add a search result) and its `/search`, `/subtitles/{id}/file`, `/subtitles/{id}/delay` (PUT), `/subtitles/{id}` (DELETE, by the person who added it or an admin). Each route about a file takes the play's stream ticket | `internal/rw/subtitles`, `internal/subtitles` |
+| Stream proxy | `/stream/{ticket}/...`: the file with Range, HLS playlists and segments, subtitles as WebVTT or ASS, and embedded fonts, from Jellyfin (its playlists rewritten to point back here, keys removed) or from the media service. Not in the API description: it serves bytes | `internal/stream` |
+| Libraries (admins) | `/libraries` (list, add), `/libraries/{id}` (change, remove), `/libraries/{id}/scan`, `/libraries/{id}/problems`, `/libraries/files/{id}/match` | `internal/rw/libraries`, `internal/libraries` |
 | Scrobbles | `/scrobble` for Kodi and other players, `/scrobble/jellyfin` for the Webhook plugin, `/scrobble/jellyfin/events` for the Movie Night plugin | `internal/rw/devices`, `internal/scrobble` |
 | Manual syncs | `/sync/plays`, and `/sync/library` and `/sync/lists` for admins | `internal/rw/devices` |
 | Digest emails | `/me/emails`, `/me/digests/{kind}`, `/me/digests/{id}/html`, `/me/digests/{id}/send` | `internal/rw/digests`, `internal/digest` |
@@ -117,6 +126,15 @@ alike:
   watch. It also runs Play here: a play session with the player
   `in-browser`, which is never asked "Finished it?" because a stop past
   90 % or into the credits records the watch through the same `Finish`.
+- `internal/playback/library.go` is Play here from a library: the plan,
+  the tracks from the probe (external subtitle files after the file's own
+  streams), chapters named Intro, Credits, Recap or Preview as Skip
+  segments, and the next episode the library holds. A title in a library
+  plays from there; otherwise from Jellyfin when it is set up. Reports,
+  resume and the watch at the end are the same code for both; a library
+  play sends Jellyfin no playback reports, and its stop ends its ffmpeg at
+  once. When Jellyfin has the same film or episode, the watch recorded at
+  the end marks it played there too.
 - `internal/jfplay` is Jellyfin's side of Play here: PlaybackInfo with a
   device profile made from what the browser says it decodes, chapters,
   media segments, the next episode, and the playback reports. It runs as
@@ -129,6 +147,38 @@ alike:
   with `io.Copy` on its own keep-alive pool to Jellyfin, passes Range
   through, and moves the write deadline forward chunk by chunk, so the
   server's five-minute `WriteTimeout` never cuts a film.
+- `internal/libraries` is the API's and the worker's side of the media
+  libraries: the libraries, scans through the media service (a Valkey
+  queue for Scan now, the `media-scan` job every 30 minutes), naming and
+  TMDB matching (an id in the name, else TMDB's search with the year, each
+  name asked once per scan), hand matches that stay over rescans, the
+  library search documents (`mn-*` ids in the `library` index), and the
+  lookups playback needs. Files are `media_files`; the view
+  `library_titles` puts the matched, readable ones next to Jellyfin's
+  `library_items`, and the library rows, the cards' in-library mark and the
+  digests read the view.
+- `internal/media/...` is the media service and what it shares with the
+  API. `naming` reads a film or episode from a path, `sidecar` finds
+  subtitle files and normalises languages, `probe` runs and reads ffprobe,
+  `scan` walks folders incrementally with a bounded probe pool, `plan`
+  decides direct, remux or transcode, `engine` runs ffmpeg, `mediasrv` is
+  its HTTP side, `mediaclient` the API's client, and `protocol` the routes
+  both use.
+- `internal/subtitles` is the player's Search online. Each site is one
+  `Source` (OpenSubtitles, SubDL, SubSource, Jimaku, Podnapisi, Gestdown)
+  that knows only its own requests and answers. The service asks every
+  source at once with an 8 s timeout each, ranks the merged answer (the
+  file's moviehash match, then the release name closest to the file's
+  name, then downloads and rating) and keeps it in the cache for an hour.
+  The moviehash is two 64 KB Range reads through the stream proxy
+  (`stream.Proxy.ReadRange`), from Jellyfin or from the media service for a
+  library file, kept a day per file. Each result's download
+  address stays in Valkey, so a client names a result by source and id
+  and can never point a download elsewhere. A pick is unzipped, turned
+  into UTF-8 (the language picks the charset of an old file), and stored
+  in `online_subtitles` as WebVTT, or as ASS for JASSUB, under the file
+  it was picked for: Jellyfin's media source, or `lib-<media_files.id>`
+  for a library file. The delay is stored with it.
 - `internal/jfsync` has the library sync, the plays sync, the webhook queue
   and the Jellyfin marks queue. Only a complete read changes
   `library_items`. Each person's plays are one transaction with batched
@@ -213,8 +263,65 @@ person joined.
 | `task:jf-plays`, `task:jf-plays:pending:<id>` | The webhook and the plugin, asking for a person's plays soon | The worker |
 | `task:jf-marks`, `task:jf-marks:items:<id>` | Episode ticks: item id to the latest played or unplayed | The worker, which marks them in Jellyfin |
 | `task:ai-rows`, `task:ai-rows:pending:<id>` | Home, when "Picked for you" is missing or stale | The worker, which rebuilds them. Home says "being made" meanwhile |
+| `task:media-scan`, `task:media-scan:pending:<id>`, `task:media-scan:running:<id>` | Scan now and a library's add or change | The worker, which scans; the running key keeps two workers off one library |
+| `media:scan:<id>` | The worker, while a scan runs (state, files seen, to read, read) | The Libraries page |
 | `ai-rows:fail:<id>` | The worker, after a failed rebuild (back-off from 10 min, doubling to 6 h) | Home, which asks for nothing and says why |
 | `seerr:media` (hash), `seerr:media:at` | `internal/userstate` | Every card |
+| `c:subs:search:*`, `subs:pick:*`, `subs:file:*` | `internal/subtitles`: a search's answer (an hour), each result's download address (an hour), a file's name and moviehash (a day) | The next search, the pick that follows it |
+| `subs:os:login`, `subs:os:quota`, `subs:os:refused` | OpenSubtitles: the shared login until its token expires, a used-up download quota until it resets, a refused login for 15 minutes | Every replica's searches and downloads |
+
+## The media service
+
+`media` runs next to the files: on this machine with
+`docker-compose.media.yml` (`MEDIA_FOLDER` mounted read-only at `/media`),
+or alone on the machine that holds them with
+`docker-compose.media-host.yml`. Only the
+api and the worker call it, at `MEDIA_URL`, with
+`Authorization: Bearer <MEDIA_SECRET>`. It opens nothing outside
+`MEDIA_LIBRARIES`, whatever it is asked. Its routes
+(`internal/media/protocol`):
+
+| Route | What it does |
+| --- | --- |
+| `POST /v1/scan` | Walks a library's folders and answers JSON lines as it goes: progress, each new or changed video with its probe and subtitle files, a folder it couldn't read, and at the end the known files that are gone. The worker sends what it has on record (size, time, subtitle signature), so an unchanged file costs one stat. An empty folder where files were, or one that can't be read, removes nothing |
+| `GET /v1/file` | The file itself, with Range |
+| `GET /v1/hls/main.m3u8`, `/v1/hls/init.mp4`, `/v1/hls/<n>.m4s` | HLS in fragmented MP4, 6-second segments, every segment listed from the start |
+| `GET /v1/subtitles/<index>.<vtt or ass>` | An embedded subtitle as WebVTT, or ASS kept as ASS; with `?name=`, a subtitle file beside the video |
+| `GET /v1/attachments/<index>` | An attached font |
+| `POST /v1/stop?play=` | Ends a play's ffmpeg and removes its segments |
+| `GET /v1/status` | Running jobs and transcodes, the encoder, and the media folders |
+
+The browser never sees it. The api's stream proxy forwards a library
+ticket's requests, adding the file, the plan and the play from the ticket,
+which is HMAC-signed as for Jellyfin; the browser's query is dropped but
+for an external subtitle's name, which the media service checks is one of
+that video's own.
+
+How a play is sent (`internal/media/plan`): the file as it is when the
+browser plays its container, picture and default audio; a remux (the
+picture copied into HLS, the sound copied or made AAC) when the browser
+takes the picture's codec but not the container or the sound, or another
+audio track is chosen; a transcode to H.264 otherwise, or to burn in a
+picture subtitle. A transcode mixes the sound down to stereo AAC, or keeps
+5.1 when the browser's output has six channels or more, tone-maps HDR,
+scales 4K to 1080p, and uses x264 `veryfast` or the GPU (`MEDIA_HWACCEL`).
+
+An HLS play is one ffmpeg per play and plan (`internal/media/engine`). It
+starts at the first segment asked for and is restarted at a segment more
+than four past what it has made, so a seek far ahead never waits for
+everything before it. A transcode forces a keyframe every 6 seconds and
+keeps the file's timestamps (`-copyts`), so runs started anywhere line up.
+ffmpeg is paused (SIGSTOP) three minutes ahead of the player and carried
+on when the player is within 90 seconds. A play ends when the player
+reports a stop, moves to another audio track, or asks for nothing for two
+minutes; its folder goes with it. `MEDIA_MAX_TRANSCODES` caps transcodes;
+Play here says "try again in a moment" when they are all taken. Extracted
+subtitles (all of a file's text tracks in one read) and fonts are kept in
+`MEDIA_CACHE_DIR` and removed after three days unused.
+
+Intro and credits come from chapters named for them. Finding an intro by
+matching the audio of a show's episodes, as Jellyfin's Intro Skipper does,
+is a later step.
 
 ## The worker
 
@@ -230,8 +337,8 @@ How several workers share the work:
 - Every run is claimed in `job_runs` under its job and due time before it
   starts, so no due run is made twice, even during a leader change. The
   table also records how each run ended.
-- The queues (webhook plays syncs, Jellyfin marks, AI rows) run on every
-  worker. Exactly one worker takes each request.
+- The queues (webhook plays syncs, Jellyfin marks, AI rows, library scans)
+  run on every worker. Exactly one worker takes each request.
 
 ## Performance
 
@@ -279,7 +386,8 @@ server/scripts/sqlc.sh            # after changing db/queries or adding a migrat
 SQL lives in `db/queries/*.sql`, and sqlc generates `internal/store` from
 it. Schema changes are numbered files in `db/migrations`: 0017 sessions,
 0018 job runs, 0019 and 0020 indexes, 0021 time zones and per-person
-digest markers, 0022 a time zone picked by hand.
+digest markers, 0022 a time zone picked by hand, 0023 subtitles added
+online, 0024 the media libraries.
 
 ## Testing
 
@@ -289,6 +397,12 @@ server/scripts/test.sh ./internal/rw/...    # go test arguments pass through
 TEST_PG_PORT=55450 TEST_VALKEY_PORT=55451 server/scripts/test.sh   # other ports
 ```
 
+The tests run in `golang:1.27.3-trixie` with ffmpeg added
+(`scripts/dev.Dockerfile`, built by `go.sh` the first time). The media
+tests make their own small clips with ffmpeg (`internal/media/mediatest`)
+and run the real ffmpeg on them: direct play, remux, transcode, seeking,
+the transcode limit, subtitles and fonts. Nothing binary is committed.
+
 `test.sh` starts a throwaway Postgres (`pgvector/pgvector:pg17`, the
 production image) and an in-memory Valkey. It runs the packages one at a
 time with GOMAXPROCS=4 and removes both at the end.
@@ -296,7 +410,9 @@ time with GOMAXPROCS=4 and removes both at the end.
 The tests are behaviour tests over real HTTP against the real database.
 `internal/testenv` builds the app exactly as `cmd/api` does.
 `internal/testenv/fakes` stands in for TMDB, Seerr, Meilisearch, MDBList,
-Jellyfin and the AI model over HTTP (`testenv.StartFaked`). A service's own
+Jellyfin, the subtitle sites and the AI model over HTTP
+(`testenv.StartFaked`). `internal/subtitles` tests each site's client
+against a fake of its own answers. A service's own
 tests use `internal/testbase`, which gives the database, Valkey and
 settings without the API. SMTP is a Go SMTP server. Hot queries have
 EXPLAIN checks (`Server.Explain`) that fail when a table would be scanned
@@ -315,15 +431,25 @@ zone picked in Profile sticks until Automatic is chosen again.
 All three play a title with Play here. `e2e/run.sh` makes a 60-second clip
 with ffmpeg (two audio tracks, two SRT subtitles, an ASS one) and the fake
 Jellyfin serves it as the file and as HLS (`fakes/jellyfin_play.go`). The
-flows check direct play, Skip intro, the subtitle delay, speed, switching
-audio onto HLS, JASSUB, chapters, resume and the watch recorded at the end.
+flows check direct play, Skip intro, the subtitle delay, Search online
+against the fake subtitle sites (`fakes/subtitles.go`: the hash match first,
+the picked subtitle shown at once, its delay kept on the server and back
+after a reload, then removed), speed, switching audio onto HLS, JASSUB,
+chapters, resume and the watch recorded at the end.
 Linux WebKit's GStreamer stalls when a file is played again after a seek
 made while paused, so the flows seek while playing and start a fresh play
 after their paused seeks. Safari and Chromium do not do this.
 
 ```sh
 PLAYWRIGHT_DIR=/path/to/node_modules e2e/run.sh
+E2E_SUITE=libraries PLAYWRIGHT_DIR=/path/to/node_modules e2e/run.sh
 ```
+
+The libraries suite (`e2e/libraries.mjs`) is a fresh install with no
+Jellyfin and a real media service on clips run.sh makes: an admin adds the
+libraries, the scan finds the files, and Chromium on a desktop and as a
+phone plays them direct, remuxed and transcoded, switches audio, shows
+subtitles, seeks, resumes and records the watch at the end.
 
 `e2e/run.sh` starts Postgres and Valkey as `test.sh` does. It serves the
 app with the fakes and a seeded library through

@@ -123,7 +123,7 @@ func run(base *slog.Logger, once string) (err error) {
 	// Queued work runs on every worker, leader or not; tracked, so the
 	// shutdown waits for a sync or an AI build under way.
 	var work sync.WaitGroup
-	for _, run := range []func(context.Context){svc.sync.RunQueued, svc.ai.RunQueued} {
+	for _, run := range []func(context.Context){svc.sync.RunQueued, svc.ai.RunQueued, svc.libs.RunQueued} {
 		work.Add(1)
 		go func(run func(context.Context)) {
 			defer work.Done()

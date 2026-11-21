@@ -150,7 +150,7 @@ func registerPlay(d *rw.Deps) {
 		for i, s := range info.Subtitles {
 			subs[i] = schema.SubtitleTrack{Index: s.Index, Label: s.Label, Language: s.Language, External: s.External, Text: s.Text, Default: s.Default}
 		}
-		return rw.Out(schema.PlayInfo{Available: info.Available, Linked: info.Linked, JellyfinItemID: info.JellyfinItemID,
+		return rw.Out(schema.PlayInfo{Available: info.Available, InJellyfin: info.InJellyfin, InLibrary: info.InLibrary, Linked: info.Linked, JellyfinItemID: info.JellyfinItemID,
 			WebURL: info.WebURL, Title: info.Title, Season: info.Season, Episode: info.Episode, Subtitles: subs,
 			ChosenSubtitle: info.ChosenSubtitle, ResumeSeconds: info.ResumeSeconds, Players: info.Players,
 			DefaultPlayer: info.DefaultPlayer, SubtitleLanguage: info.SubtitleLanguage}), nil

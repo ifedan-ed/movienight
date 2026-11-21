@@ -6,7 +6,6 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 
-	"movienight/server/internal/jfplay"
 	"movienight/server/internal/playback"
 	"movienight/server/internal/rw"
 	"movienight/server/internal/rw/schema"
@@ -33,8 +32,8 @@ func registerWatch(d *rw.Deps) {
 		c := b.Caps
 		w, err := d.Playback.Watch(ctx, id.User, in.Media, in.TMDBID, playback.WatchRequest{
 			Season: b.Season, Episode: b.Episode, Audio: b.Audio, Burn: b.BurnSubtitle, Replace: deref(b.Replace),
-			Caps: jfplay.Caps{DirectContainers: c.DirectContainers, DirectVideo: c.DirectVideo, DirectAudio: c.DirectAudio,
-				HLSVideo: c.HLSVideo, HLSAudio: c.HLSAudio}})
+			Caps: playback.BrowserCaps{DirectContainers: c.DirectContainers, DirectVideo: c.DirectVideo, DirectAudio: c.DirectAudio,
+				HLSVideo: c.HLSVideo, HLSAudio: c.HLSAudio, AudioChannels: c.AudioChannels}})
 		if err != nil {
 			return nil, d.Fail(ctx, err)
 		}
@@ -76,7 +75,7 @@ func watchOut(w playback.Watch) schema.WatchOut {
 		Key: w.Key, ItemID: w.ItemID, Backdrop: w.Backdrop, Audio: watchTracks(w.Audio), AudioIndex: w.AudioIdx,
 		Subtitles: watchTracks(w.Subs), Subtitle: w.Subtitle, BurntIndex: w.Burnt,
 		Chapters: make([]schema.WatchChapter, len(w.Chapters)), Segments: make([]schema.WatchSegment, len(w.Segments)),
-		Fonts: w.Fonts}
+		Fonts: w.Fonts, Source: w.Source}
 	for i, c := range w.Chapters {
 		out.Chapters[i] = schema.WatchChapter{Start: c.Start, Name: c.Name}
 	}

@@ -20,6 +20,12 @@ export async function playSheet(c, { season = null, episode = null } = {}) {
   }
   const title = info.title || c.title;
   const sn = info.season ?? season, en = info.episode ?? episode;
+  // Only Movie Night's own library has it: the outside players play
+  // Jellyfin's file, so Play here is the one way, and it starts at once.
+  if (info.in_jellyfin === false) {
+    go(`/watch/${c.media_type}/${c.tmdb_id}` + (sn != null && en != null ? `?season=${sn}&episode=${en}` : ""));
+    return;
+  }
   const here = (close) => h("button.btn.btn-request", { onclick: () => {
     close();
     go(`/watch/${c.media_type}/${c.tmdb_id}` + (sn != null && en != null ? `?season=${sn}&episode=${en}` : ""));

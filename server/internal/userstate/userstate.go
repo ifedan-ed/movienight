@@ -54,7 +54,7 @@ func (k Key) String() string { return titles.Key(k.Media, k.ID) }
 // State is one person's state for a set of titles.
 type State struct {
 	UserID    int32
-	Library   map[Key]string // -> Jellyfin item id
+	Library   map[Key]string // in the library -> its Jellyfin item id ("" when only Movie Night's own library has it)
 	Watchlist map[Key]bool
 	Watched   map[Key]int // film: plays on distinct days; show: distinct episodes seen
 	Ratings   map[Key]int
@@ -146,7 +146,7 @@ func (s *Service) LoadKeys(ctx context.Context, u store.User, keys []Key) (*Stat
 
 // JellyfinURL is the Jellyfin web page of an item.
 func JellyfinURL(public, itemID string) *string {
-	if itemID == "" {
+	if itemID == "" || public == "" {
 		return nil
 	}
 	u := strings.TrimRight(public, "/") + "/web/#/details?id=" + itemID
@@ -178,14 +178,15 @@ func (st *State) Of(media string, id int) schema.TitleState {
 		k.Media = "movie"
 	}
 	sm := st.Seerr[k]
-	jf := st.Library[k]
+	jf, inLib := st.Library[k]
 	status := StatusLabel(sm.Status)
-	if jf == "" && status != nil && *status == "available" && sm.JellyfinID != "" {
+	if jf == "" && status != nil && *status == "available" && sm.JellyfinID != "" && st.jfPublic != "" {
 		// Seerr says it is in Jellyfin before the next library sync does.
 		jf = sm.JellyfinID
 	}
+	inLib = inLib || jf != ""
 	out := schema.TitleState{
-		InLibrary: jf != "", JellyfinURL: JellyfinURL(st.jfPublic, jf), Progress: sm.Progress,
+		InLibrary: inLib, JellyfinURL: JellyfinURL(st.jfPublic, jf), Progress: sm.Progress,
 		Watchlist: st.Watchlist[k], Watched: st.Watched[k], Favorite: st.Favorites[k],
 	}
 	if jf != "" {
@@ -193,7 +194,7 @@ func (st *State) Of(media string, id int) schema.TitleState {
 	}
 	// What the request button shows when not in the library: nothing once
 	// it is there and Seerr has no download running.
-	if !(jf != "" && (status == nil || *status == "available")) {
+	if !(inLib && (status == nil || *status == "available")) {
 		out.Request = status
 	}
 	if r, ok := st.Ratings[k]; ok {

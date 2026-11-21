@@ -10,6 +10,9 @@
 // subtitles are drawn here (subs.js); styled ASS/SSA by JASSUB, loaded only
 // when such a track is chosen.
 //
+// Subtitles found online (online.js) join the file's own tracks in the
+// subtitle menu, with their delay kept on the server for every device.
+//
 // Reports: start, every 10 s, pause and stop (POST /api/v1/watch/report).
 // The server keeps Jellyfin's resume point and Movie Night's own, and a
 // stop near the end records the watch.
@@ -18,6 +21,7 @@ import { back, go } from "../nav.js";
 import { setState, states, toast } from "../ui.js";
 import { h, icon, store, swap, unstore } from "../util.js";
 import { caps, nativeHls } from "./caps.js";
+import { isOnline, OnlineSubs } from "./online.js";
 import { TextSubs } from "./subs.js";
 
 const HLS_JS = "/static/vendor/hls-1.7.4/hls.light.min.mjs";
@@ -71,6 +75,9 @@ export class Player {
       this.fail(e.message);
       return;
     }
+    if (this.destroyed) return;
+    this.online = new OnlineSubs(this);
+    await this.online.load();
     if (this.destroyed) return;
     this.build();
     const r = this.info.resume_s;
@@ -255,6 +262,7 @@ export class Player {
     }
     if (this.destroyed) return false;
     this.info = info;
+    this.online.merge(info);
     this.audio = info.audio_index;
     this.startedTicket = null; // the new stream is a new Jellyfin play session
     await this.load(at, playing);
@@ -498,6 +506,7 @@ export class Player {
     const t = this.info.subtitles.find((s) => s.index === index) || null;
     const burnt = this.info.burnt_subtitle;
     this.sub = t ? t.index : null;
+    this.useDelay(t);
     if (t && t.kind === "image") {
       // A picture subtitle can only be burnt into the video by Jellyfin.
       this.clearSubs();
@@ -553,11 +562,21 @@ export class Player {
     this.osd(t ? t.label : "Subtitles off");
   }
 
+  // A track found online keeps its own delay, on the server (every device
+  // gets it); the file's own tracks share one per title, in this browser.
+  useDelay(t) {
+    const d = isOnline(t) ? t.online.delay : store(this.delayKey) || 0;
+    this.subs.setDelay(d);
+    if (this.ass) this.ass.timeOffset = -d;
+  }
+
   setDelay(d) {
     d = Math.round(d * 10) / 10;
     this.subs.setDelay(d);
     if (this.ass) this.ass.timeOffset = -d;
-    if (d) store(this.delayKey, d); else unstore(this.delayKey);
+    const t = this.info.subtitles.find((s) => s.index === this.sub);
+    if (isOnline(t)) this.online.saveDelay(t, d);
+    else if (d) store(this.delayKey, d); else unstore(this.delayKey);
     if (this.delayEl) this.delayEl.textContent = signed(d);
   }
 
@@ -592,7 +611,7 @@ export class Player {
     this.paintMenu();
     this.menuEl.hidden = false;
     this.el.classList.add("menu-open");
-    (this.menuEl.querySelector('[aria-checked="true"]') || this.menuEl.querySelector("button"))?.focus();
+    (this.menuEl.querySelector('[aria-checked="true"], select') || this.menuEl.querySelector("button"))?.focus();
   }
 
   paintMenu() {
@@ -604,8 +623,17 @@ export class Player {
       body = [
         h("div.pl-mh", "Subtitles"),
         this.item("Off", this.sub == null, redo(() => this.chooseSub(null))),
-        subs.map((s) => this.item(s.label.replace(/ - (Default|SUBRIP|SRT|ASS|SSA|WEBVTT|PGSSUB)\b/gi, ""), this.sub === s.index,
-          redo(() => this.chooseSub(s.index)), s.kind === "image" ? "burnt in" : s.external ? "file" : null)),
+        subs.map((s) => {
+          const it = this.item(s.label.replace(/ - (Default|SUBRIP|SRT|ASS|SSA|WEBVTT|PGSSUB)\b/gi, ""), this.sub === s.index,
+            redo(() => this.chooseSub(s.index)), s.kind === "image" ? "burnt in" : s.external ? "file" : null);
+          // A track added online has a bin beside it (a button can't
+          // hold another).
+          return isOnline(s) ? h("div.pl-mirow", it, this.online.removeButton(s)) : it;
+        }),
+        this.online.enabled ? h("button.pl-mi.pl-find", { type: "button", onclick: () => {
+          this.menu("online", this.menuAnchor);
+          if (!this.online.found) this.online.search();
+        } }, icon("search"), h("span", "Search online")) : null,
         h("div.pl-mh", "Delay"),
         h("div.pl-step",
           h("button.pl-sb", { type: "button", "aria-label": "Subtitles earlier", onclick: () => this.setDelay(this.subs.delay - DELAY_STEP) }, "−"),
@@ -618,6 +646,8 @@ export class Player {
           this.sizeEl = h("output.pl-val", `${Math.round(this.size * 100)}%`),
           h("button.pl-sb", { type: "button", "aria-label": "Larger subtitles", onclick: () => this.sizeBy(1) }, "+")),
       ];
+    } else if (name === "online") {
+      body = this.online.panel();
     } else if (name === "audio") {
       body = [h("div.pl-mh", "Audio"), this.info.audio.map((a) => this.item(a.label, this.audio === a.index,
         redo(() => (this.audio === a.index ? null : this.restart({ audio: a.index })))))];
@@ -657,7 +687,7 @@ export class Player {
     const onRange = t instanceof HTMLInputElement && t.type === "range";
     if (!this.menuEl.hidden) {
       if (e.key === "Escape") { e.preventDefault(); this.closeMenu(); return; }
-      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      if ((e.key === "ArrowDown" || e.key === "ArrowUp") && !(t instanceof HTMLSelectElement)) {
         e.preventDefault();
         const items = [...this.menuEl.querySelectorAll("button")];
         const i = items.indexOf(document.activeElement);
@@ -698,7 +728,8 @@ export class Player {
     return {
       ticket: this.info.ticket, event, position_s: Math.max(0, position ?? this.v.currentTime ?? 0),
       duration_s: this.duration() || 0, paused: this.v.paused, transcoded: this.info.mode === "hls",
-      ...(this.audio != null ? { audio: this.audio } : {}), ...(this.sub != null ? { subtitle: this.sub } : {}),
+      // A track added online is Movie Night's, not one of Jellyfin's.
+      ...(this.audio != null ? { audio: this.audio } : {}), ...(typeof this.sub === "number" ? { subtitle: this.sub } : {}),
     };
   }
 

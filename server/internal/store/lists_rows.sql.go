@@ -126,9 +126,9 @@ func (q *Queries) RatingsPage(ctx context.Context, arg RatingsPageParams) ([]Rat
 
 const recentLibraryPage = `-- name: RecentLibraryPage :many
 SELECT media_type, tmdb_id, count(*) OVER ()::integer AS total FROM (
-    SELECT media_type::text AS media_type, tmdb_id::integer AS tmdb_id, max(date_added) AS added
-    FROM library_items
-    WHERE tmdb_id IS NOT NULL AND ($1::text = '' OR media_type = $1::text)
+    SELECT media_type::text AS media_type, tmdb_id::integer AS tmdb_id, max(added_at) AS added
+    FROM library_titles
+    WHERE ($1::text = '' OR media_type = $1::text)
     GROUP BY media_type, tmdb_id
 ) lib
 ORDER BY added DESC NULLS LAST, media_type, tmdb_id
@@ -147,8 +147,9 @@ type RecentLibraryPageRow struct {
 	Total     int32
 }
 
-// RecentLibraryPage: the library, newest additions first, one row per title
-// (Jellyfin may hold two copies of one film).
+// RecentLibraryPage: the library (Jellyfin's and Movie Night's own,
+// library_titles), newest additions first, one row per title (both may
+// hold a copy of one film, Jellyfin two).
 func (q *Queries) RecentLibraryPage(ctx context.Context, arg RecentLibraryPageParams) ([]RecentLibraryPageRow, error) {
 	rows, err := q.db.Query(ctx, recentLibraryPage, arg.Media, arg.Off, arg.Lim)
 	if err != nil {
@@ -266,8 +267,8 @@ func (q *Queries) SeriesTMDBIDs(ctx context.Context, ids []string) ([]SeriesTMDB
 const unwatchedLibraryPage = `-- name: UnwatchedLibraryPage :many
 SELECT media_type, tmdb_id, count(*) OVER ()::integer AS total FROM (
     SELECT DISTINCT li.media_type::text AS media_type, li.tmdb_id::integer AS tmdb_id
-    FROM library_items li
-    WHERE li.tmdb_id IS NOT NULL AND ($1::text = '' OR li.media_type = $1::text)
+    FROM library_titles li
+    WHERE ($1::text = '' OR li.media_type = $1::text)
       AND NOT EXISTS (
         SELECT 1 FROM history h
         WHERE h.user_id = $2 AND h.tmdb_id = li.tmdb_id

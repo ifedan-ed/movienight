@@ -439,6 +439,52 @@ async function playerFlow(page, name) {
     await page.keyboard.press("Escape");
   });
 
+  // Search online against the fake subtitle sites (fakes/subtitles.go):
+  // the result made for this file comes first, picking it shows its lines
+  // at once, its delay is kept on the server, and it is a track of the
+  // file after a reload. It is removed at the end, so each browser starts
+  // from none.
+  await step("Search online finds the file's subtitle, shows it, and keeps it with its delay", async () => {
+    await wake();
+    await page.locator(`.pl-btn[aria-label="Subtitles"]`).click();
+    await page.locator(".pl-find").click();
+    await page.waitForSelector(".pl-res", { timeout: 10000 });
+    expect(await page.locator(".pl-select").inputValue() === "en", "the language is not English");
+    expect(await page.locator(".pl-res").first().locator(".pl-tag.match").count() === 1, "the file's own subtitle is not first");
+    expect(await page.locator(".pl-more", { hasText: "Machine translated (1)" }).count() === 1, "machine translations are not hidden");
+    if (SHOTS) await page.screenshot({ path: `${SHOTS}/${name}-player-search-online.png` });
+    await video(page, (v) => v.pause());
+    await page.locator(".pl-res").first().click();
+    await page.waitForSelector(".pl-menu", { state: "hidden" });
+    await seekTo(page, 2);
+    await page.waitForSelector(".pl-cue:has-text('Online hello')", { timeout: 5000 });
+    await seekTo(page, 3.5);
+    await page.waitForTimeout(300);
+    expect(await page.locator(".pl-cue").count() === 0, "a line shows after the first one ends");
+    const saved = page.waitForRequest((r) => /\/api\/v1\/subtitles\/\d+\/delay$/.test(r.url()) && r.method() === "PUT");
+    await page.keyboard.press("]");
+    await page.keyboard.press("]"); // +1.0 s: "Online hello" (1-3 s) now shows 2-4 s
+    await page.waitForSelector(".pl-cue:has-text('Online hello')", { timeout: 3000 });
+    expect(JSON.parse((await saved).postData()).delay_s === 1, "the delay was not saved on the server");
+    expect(await page.evaluate(() => localStorage.getItem("mn:subdelay:movie:603")) === null, "an online track's delay went to this browser");
+    if (SHOTS) await page.screenshot({ path: `${SHOTS}/${name}-player-online-cue.png` });
+
+    await page.reload({ waitUntil: "networkidle" });
+    await page.waitForSelector("video.pl-video");
+    await video(page, (v) => v.pause());
+    await pick(page, "Subtitles", "English · OpenSubtitles");
+    await page.keyboard.press("Escape");
+    await seekTo(page, 3.5);
+    await page.waitForSelector(".pl-cue:has-text('Online hello')", { timeout: 5000 }); // the delay came back
+    await wake();
+    await page.locator(`.pl-btn[aria-label="Subtitles"]`).click();
+    if (SHOTS) await page.screenshot({ path: `${SHOTS}/${name}-player-online-track.png` });
+    await page.locator(`.pl-x[aria-label="Remove English · OpenSubtitles"]`).click();
+    await until(page, "the track removed", async () => (await page.locator(".pl-mi", { hasText: "OpenSubtitles" }).count()) === 0, 5000);
+    expect(await page.locator(".pl-cue").count() === 0, "the removed track still shows");
+    await page.keyboard.press("Escape");
+  });
+
   // A fresh play after the paused seeks above: Linux WebKit's GStreamer
   // does not start again after them (see seekTo).
   await step("the player starts again on a reload", async () => {

@@ -17,7 +17,7 @@ func Register(d *rw.Deps) {
 	a := &account{d: d, players: d.Players, status: d.Status}
 	a.register()
 	m := &me{account: a, history: d.History, users: users.New(d.Q, d.Cfg),
-		episodes: episodes.New(d.Q, d.Cfg, d.Cache, d.Clients, d.History, d.Titles, d.JFSync, d.Log)}
+		episodes: episodes.New(d.Q, d.Cfg, d.Cache, d.Clients, d.History, d.Titles, d.JFSync, d.Libraries, d.Log)}
 	m.register()
 	registerExport(d)
 }
