@@ -342,7 +342,9 @@ button.trow { width: 100%; text-align: left; }
 .switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; border-radius: 50%; background: #d5d9e1; transition: transform .2s; }
 .switch.on { background: #3b82f6; }
 .switch.on::after { transform: translateX(22px); background: #fff; }
-.note { margin: 6px var(--gutter) 16px; padding: 12px 14px; border-radius: 14px; background: rgba(245, 183, 59, .08); border: 1px solid rgba(245, 183, 59, .25); color: #f3d79a; font-size: 14.5px; }
+/* display: block, as a note is often a link (an inline <a>): inline, its
+   padding and margins took no room and it lay over the stats below. */
+.note { display: block; margin: 6px var(--gutter) 16px; padding: 12px 14px; border-radius: 14px; background: rgba(245, 183, 59, .08); border: 1px solid rgba(245, 183, 59, .25); color: #f3d79a; font-size: 14.5px; }
 .section-label { display: flex; align-items: center; gap: 10px; font-size: 19px; font-weight: 780; margin: 22px var(--gutter) 12px; }
 .section-label::before { content: ""; width: 4px; height: 22px; border-radius: 2px; background: var(--accent); }
 
@@ -560,6 +562,20 @@ pre.code { font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; backgr
 .radio.on { border-color: var(--accent); }
 .radio.on::after { content: ""; position: absolute; inset: 4px; border-radius: 50%; background: var(--accent); }
 textarea.input.tpl { height: auto; padding: 12px 14px; font: 14px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; resize: vertical; }
+/* Profile: plays Jellyfin has without a date, each with its two answers. */
+.note.undated > b { display: block; color: var(--accent); font-weight: 750; }
+.un-list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; }
+.un-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid rgba(245, 183, 59, .14); }
+.un-row:first-child { border-top: 0; }
+.un-name { flex: 1; min-width: 0; color: var(--text); font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+a.un-name:hover { text-decoration: underline; text-underline-offset: 3px; }
+.un-acts { display: flex; gap: 6px; flex: none; }
+.un-acts .btn { height: 36px; font-size: 14px; padding: 0 12px; border-radius: 10px; }
+.un-more { margin: 6px 0 0; color: var(--text-3); font-size: 13.5px; }
+@media (max-width: 520px) {
+  .un-row { flex-wrap: wrap; gap: 8px; }
+  .un-name { flex-basis: 100%; white-space: normal; }
+}
 a.note.cta { display: flex; gap: 12px; align-items: center; color: #f3d79a; text-decoration: none; }
 a.note.cta b { color: var(--accent); }
 .digest-frame { width: 100%; height: 72vh; border: 0; border-radius: 12px; background: #f4f1ec; }

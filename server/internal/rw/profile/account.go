@@ -153,6 +153,26 @@ func (a *account) register() {
 			return rw.Out(schema.Ok{Ok: true}), nil
 		})
 
+	huma.Register(h, rw.Op("hide_undated_play_api_v1_me_jellyfin_undated__item_id__hide_post", http.MethodPost,
+		"/api/v1/me/jellyfin/undated/{item_id}/hide", "Hide Undated Play", "account",
+		"Stop listing one play Jellyfin has without a date: it was added here with a date, or it wasn't watched."),
+		func(ctx context.Context, in *struct {
+			ItemID string `path:"item_id" pattern:"^[A-Za-z0-9-]{1,64}$"`
+		}) (*rw.Body[schema.Ok], error) {
+			id, err := d.User(ctx)
+			if err != nil {
+				return nil, err
+			}
+			found, err := a.status.HideUndated(ctx, id.User.ID, in.ItemID)
+			if err != nil {
+				return nil, d.Fail(ctx, err)
+			}
+			if !found {
+				return nil, apierr.NotFound()
+			}
+			return rw.Out(schema.Ok{Ok: true}), nil
+		})
+
 	// ---- Players ----
 
 	huma.Register(h, rw.Op("get_players_api_v1_me_players_get", http.MethodGet, "/api/v1/me/players", "Get Players", "account"),
@@ -237,6 +257,18 @@ func (a *account) link(ctx context.Context, u store.User) (schema.JellyfinLink, 
 	if notice != "" {
 		out.PlaysNotice = &notice
 	}
+	out.PlaysUndated = []schema.UndatedPlay{}
+	if !linked {
+		return out, nil
+	}
+	items, total, err := a.status.Undated(ctx, u.ID)
+	if err != nil {
+		return out, err
+	}
+	for _, it := range items {
+		out.PlaysUndated = append(out.PlaysUndated, schema.UndatedPlay(it))
+	}
+	out.PlaysUndatedMore = total - len(items)
 	return out, nil
 }
 

@@ -320,7 +320,17 @@ func TestEveryPlayComesInOnceAndPythonRecordedPlaysStay(t *testing.T) {
 	}
 	// The person is told about the undated play (the manual sync's note).
 	r := want(t, s.Client("alice", true).Do(t, "POST", "/api/v1/sync/plays", nil), 200)
-	if !strings.Contains(r.Body, `"plays":0`) || !strings.Contains(r.Body, "1 of your Jellyfin plays has no date") {
+	if !strings.Contains(r.Body, `"plays":0`) || !strings.Contains(r.Body, "1 play has no date in Jellyfin") {
+		t.Fatal(r.Body)
+	}
+	// Profile lists it by name; once hidden, a sync no longer counts it.
+	me := want(t, s.Client("alice", true).Do(t, "GET", "/api/v1/me/jellyfin", nil), 200)
+	if !strings.Contains(me.Body, `"plays_undated":[{"id":"`+strings.Repeat("d", 32)+`","media_type":"movie","tmdb_id":9,`) {
+		t.Fatal(me.Body)
+	}
+	want(t, s.Client("alice", true).Do(t, "POST", "/api/v1/me/jellyfin/undated/"+strings.Repeat("d", 32)+"/hide", nil), 200)
+	r = want(t, s.Client("alice", true).Do(t, "POST", "/api/v1/sync/plays", nil), 200)
+	if strings.Contains(r.Body, "no date") {
 		t.Fatal(r.Body)
 	}
 }
@@ -407,11 +417,18 @@ func TestTheLibraryChangesOnlyAfterACompleteRead(t *testing.T) {
 		}
 	})
 	// A failed read and an empty answer leave it as it was, and say why.
-	for name, f := range map[string]func(u *up){
-		"failed": func(u *up) { u.libraryErr = 500 },
-		"empty":  func(u *up) { u.libraryErr = 0; u.library = nil },
+	// In this order: "empty" clears the error "failed" sets, and the
+	// rescan below needs the empty answer (a map ran them in random order,
+	// so the test failed about half the time).
+	for _, c := range []struct {
+		name string
+		f    func(u *up)
+	}{
+		{"failed", func(u *up) { u.libraryErr = 500 }},
+		{"empty", func(u *up) { u.libraryErr = 0; u.library = nil }},
 	} {
-		u.set(f)
+		name := c.name
+		u.set(c.f)
 		_, err := sync.Library(context.Background())
 		var nr *jfsync.NotRead
 		if !errors.As(err, &nr) || !strings.Contains(nr.Msg, "Nothing was removed") || !strings.Contains(nr.Msg, "1,200 titles") {

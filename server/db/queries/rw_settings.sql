@@ -11,6 +11,13 @@ SELECT value FROM user_settings WHERE user_id = $1 AND key = $2;
 INSERT INTO user_settings (user_id, key, value) VALUES ($1, $2, $3)
 ON CONFLICT (user_id, key) DO UPDATE SET value = excluded.value;
 
+-- MergeUserSetting is MergeAppSetting for one person's setting.
+-- name: MergeUserSetting :exec
+INSERT INTO user_settings (user_id, key, value) VALUES (sqlc.arg(user_id), sqlc.arg(key), sqlc.arg(patch)::text)
+ON CONFLICT (user_id, key) DO UPDATE
+SET value = (CASE WHEN user_settings.value IS JSON OBJECT THEN user_settings.value::jsonb ELSE '{}'::jsonb END
+             || EXCLUDED.value::jsonb)::text;
+
 -- name: DeleteUserSetting :exec
 DELETE FROM user_settings WHERE user_id = $1 AND key = $2;
 

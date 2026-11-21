@@ -1363,6 +1363,17 @@
        "null"
       ]
      },
+     "plays_undated": {
+      "items": {
+       "$ref": "#/components/schemas/UndatedPlay"
+      },
+      "type": "array"
+     },
+     "plays_undated_more": {
+      "default": 0,
+      "format": "int64",
+      "type": "integer"
+     },
      "quick_connect": {
       "type": [
        "boolean",
@@ -5116,6 +5127,49 @@
     ],
     "type": "object"
    },
+   "UndatedPlay": {
+    "additionalProperties": false,
+    "properties": {
+     "episode": {
+      "format": "int32",
+      "type": "integer"
+     },
+     "episode_title": {
+      "type": "string"
+     },
+     "id": {
+      "type": "string"
+     },
+     "media_type": {
+      "enum": [
+       "movie",
+       "tv"
+      ],
+      "type": "string"
+     },
+     "season": {
+      "format": "int32",
+      "type": "integer"
+     },
+     "title": {
+      "type": "string"
+     },
+     "tmdb_id": {
+      "format": "int32",
+      "type": [
+       "integer",
+       "null"
+      ]
+     }
+    },
+    "required": [
+     "id",
+     "media_type",
+     "tmdb_id",
+     "title"
+    ],
+    "type": "object"
+   },
    "UpNextItem": {
     "additionalProperties": false,
     "properties": {
@@ -8268,6 +8322,49 @@
      }
     },
     "summary": "Quick Connect Check",
+    "tags": [
+     "account"
+    ]
+   }
+  },
+  "/api/v1/me/jellyfin/undated/{item_id}/hide": {
+   "post": {
+    "description": "Stop listing one play Jellyfin has without a date: it was added here with a date, or it wasn't watched.",
+    "operationId": "hide_undated_play_api_v1_me_jellyfin_undated__item_id__hide_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "item_id",
+      "required": true,
+      "schema": {
+       "pattern": "^[A-Za-z0-9-]{1,64}$",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Ok"
+        }
+       }
+      },
+      "description": "OK"
+     },
+     "default": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      },
+      "description": "Error"
+     }
+    },
+    "summary": "Hide Undated Play",
     "tags": [
      "account"
     ]

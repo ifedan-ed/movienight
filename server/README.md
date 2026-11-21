@@ -56,7 +56,7 @@ reaches `admin` the same way.
 | Search | `/search`, `/search/ai`, `/person/{id}`, `/titles/fill`, `/img/jf/{item}` | `internal/rw/search` |
 | Lists | `/lists` and `/lists/smart`, `/lists/{id}` with its items, copy and sync, `/collection/{kind}`, `/mdblist/lists`, `/mdblist/lists/{id}`, `/mdblist/follow` | `internal/rw/lists` |
 | Profile | `/me`, `/me/time-zone`, `/me/time-zone/choice`, `/time-zones`, `/history`, `/requests`, `/rate-prompt` and its dismiss, `/export` | `internal/rw/profile` |
-| Account | `/me/jellyfin` (status, Quick Connect, password, unlink), `/me/players`, `/me/scrobble-token` | `internal/rw/profile` |
+| Account | `/me/jellyfin` (status, Quick Connect, password, unlink, plays without a date and hiding one), `/me/players`, `/me/scrobble-token` | `internal/rw/profile` |
 | Play | `/title/{media}/{id}/play` (GET is the Play sheet, POST the player's link), `/play/open`, `/play/{id}` with `/back` and `/finish` | `internal/rw/devices`, `internal/playback` |
 | Play here | `/title/{media}/{id}/watch` (a stream ticket, tracks, chapters, segments, `source`), `/watch/report` (start, progress, pause, stop) | `internal/rw/devices`, `internal/playback`, `internal/jfplay` |
 | Subtitles online | `/subtitles/languages`, `/title/{media}/{id}/subtitles` (GET the file's stored tracks, POST to add a search result) and its `/search`, `/subtitles/{id}/file`, `/subtitles/{id}/delay` (PUT), `/subtitles/{id}` (DELETE, by the person who added it or an admin). Each route about a file takes the play's stream ticket | `internal/rw/subtitles`, `internal/subtitles` |
@@ -311,8 +311,12 @@ starts at the first segment asked for and is restarted at a segment more
 than four past what it has made, so a seek far ahead never waits for
 everything before it. A transcode forces a keyframe every 6 seconds and
 keeps the file's timestamps (`-copyts`), so runs started anywhere line up.
-ffmpeg is paused (SIGSTOP) three minutes ahead of the player and carried
-on when the player is within 90 seconds. A play ends when the player
+ffmpeg is paused (SIGSTOP) ten minutes past the last segment the player
+asked for and carried on when the player is within six minutes. The
+player reads two and a half minutes ahead of what it shows, so it never
+waits on ffmpeg, and a seek within the next ten minutes finds its
+segment made. A player reading segment after segment is never taken for
+a seek, however far ahead of the picture it is. A play ends when the player
 reports a stop, moves to another audio track, or asks for nothing for two
 minutes; its folder goes with it. `MEDIA_MAX_TRANSCODES` caps transcodes;
 Play here says "try again in a moment" when they are all taken. Extracted

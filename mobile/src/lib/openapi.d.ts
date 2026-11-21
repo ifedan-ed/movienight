@@ -358,6 +358,114 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/libraries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Libraries
+         * @description Movie Night's own media libraries, each with its counts and any scan under way.
+         */
+        get: operations["libraries_api_v1_libraries_get"];
+        put?: never;
+        /**
+         * Add Library
+         * @description Adds a library and asks for its first scan.
+         */
+        post: operations["library_add_api_v1_libraries_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/libraries/files/{file_id}/match": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Match File
+         * @description Matches a file to a TMDB title by hand, with every file named like it (a show's episodes). It stays over rescans.
+         */
+        put: operations["library_match_api_v1_libraries_files__file_id__match_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/libraries/{library_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Change Library
+         * @description Renames a library or changes its folders, and asks for a scan.
+         */
+        put: operations["library_update_api_v1_libraries__library_id__put"];
+        post?: never;
+        /**
+         * Remove Library
+         * @description Removes a library from Movie Night. The files stay where they are.
+         */
+        delete: operations["library_delete_api_v1_libraries__library_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/libraries/{library_id}/problems": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Library Problems
+         * @description Files that can't be read, or whose name matched no film or show.
+         */
+        get: operations["library_problems_api_v1_libraries__library_id__problems_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/libraries/{library_id}/scan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Scan Library
+         * @description Scan now: a worker scans the library (only new and changed files are read).
+         */
+        post: operations["library_scan_api_v1_libraries__library_id__scan_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/lists": {
         parameters: {
             query?: never;
@@ -762,6 +870,26 @@ export interface paths {
         put?: never;
         /** Quick Connect Check */
         post: operations["quick_connect_check_api_v1_me_jellyfin_quick_connect_check_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/jellyfin/undated/{item_id}/hide": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Hide Undated Play
+         * @description Stop listing one play Jellyfin has without a date: it was added here with a date, or it wasn't watched.
+         */
+        post: operations["hide_undated_play_api_v1_me_jellyfin_undated__item_id__hide_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2010,6 +2138,8 @@ export interface components {
             ai: boolean;
             dry_run: boolean;
             email: boolean;
+            jellyfin?: boolean;
+            libraries?: boolean;
             mdblist: boolean;
             requests: boolean;
         };
@@ -2032,6 +2162,10 @@ export interface components {
             outcome: "watched" | "not_finished" | "dismissed";
         } & {
             [key: string]: unknown;
+        };
+        FolderProblem: {
+            error: string;
+            path: string;
         };
         FollowIn: {
             /** @description MDBList list id or mdblist.com/lists/<user>/<slug> link */
@@ -2121,6 +2255,12 @@ export interface components {
             linked: boolean;
             linked_at?: string | null;
             plays_notice?: string | null;
+            plays_undated?: components["schemas"]["UndatedPlay"][];
+            /**
+             * Format: int64
+             * @default 0
+             */
+            plays_undated_more: number;
             quick_connect?: boolean | null;
             server: string;
             user_name?: string | null;
@@ -2187,6 +2327,96 @@ export interface components {
             style: "landscape";
             subtitle?: string | null;
             title: string;
+        };
+        LibrariesOut: {
+            /** @description media libraries are set up on this install (MEDIA_URL) */
+            enabled: boolean;
+            folders: string[];
+            libraries: components["schemas"]["Library"][];
+            media_error?: string | null;
+        };
+        Library: {
+            /** Format: int64 */
+            files: number;
+            folder_problems: components["schemas"]["FolderProblem"][];
+            /** Format: int32 */
+            id: number;
+            /** @enum {string} */
+            kind: "movies" | "shows";
+            name: string;
+            paths: string[];
+            /**
+             * Format: int64
+             * @description files that can't be read or matched
+             */
+            problems: number;
+            /** @description the scan under way or asked for; left out when none */
+            scan?: components["schemas"]["LibraryScan"];
+            scan_error?: string | null;
+            scanned_at?: string | null;
+            /**
+             * Format: int64
+             * @description films or shows found and matched
+             */
+            titles: number;
+        };
+        LibraryCreated: {
+            /** Format: int32 */
+            id: number;
+        };
+        LibraryIn: {
+            /** @description movies or shows; left out when changing a library */
+            kind?: string;
+            name: string;
+            paths: string[];
+        } & {
+            [key: string]: unknown;
+        };
+        LibraryMatchIn: {
+            /** Format: int64 */
+            tmdb_id: number;
+        } & {
+            [key: string]: unknown;
+        };
+        LibraryMatchOut: {
+            /** Format: int64 */
+            files: number;
+        };
+        LibraryProblem: {
+            /** Format: int32 */
+            episode?: number | null;
+            /** Format: int64 */
+            file_id: number;
+            /** @description inside the library's folder */
+            path: string;
+            problem: string;
+            /** @description false: the file itself can't be read */
+            readable: boolean;
+            /** Format: int32 */
+            season?: number | null;
+            /** @description the title the name gave */
+            title: string;
+            /** Format: int32 */
+            year?: number | null;
+        };
+        LibraryProblemsOut: {
+            items: components["schemas"]["LibraryProblem"][];
+        };
+        LibraryScan: {
+            /** Format: int64 */
+            probed: number;
+            /**
+             * Format: int64
+             * @description videos found so far
+             */
+            seen: number;
+            /** @enum {string} */
+            state: "queued" | "scanning";
+            /**
+             * Format: int64
+             * @description new or changed among them
+             */
+            to_probe: number;
         };
         ListFlagsOut: {
             /** @default true */
@@ -2522,6 +2752,10 @@ export interface components {
             default_player: string;
             /** Format: int64 */
             episode?: number | null;
+            /** @description Jellyfin has it: the outside players can play it */
+            in_jellyfin?: boolean;
+            /** @description Movie Night's own library has it: Play here plays that copy */
+            in_library?: boolean;
             jellyfin_item_id?: string | null;
             linked: boolean;
             players: components["schemas"]["Player"][];
@@ -3131,6 +3365,19 @@ export interface components {
             ok: boolean;
             token: string;
         };
+        UndatedPlay: {
+            /** Format: int32 */
+            episode?: number;
+            episode_title?: string;
+            id: string;
+            /** @enum {string} */
+            media_type: "movie" | "tv";
+            /** Format: int32 */
+            season?: number;
+            title: string;
+            /** Format: int32 */
+            tmdb_id: number | null;
+        };
         UpNextItem: {
             backdrop?: string | null;
             /** Format: int64 */
@@ -3179,6 +3426,11 @@ export interface components {
             watched_at: string;
         };
         WatchCaps: {
+            /**
+             * Format: int64
+             * @description the audio output's channels (AudioContext maxChannelCount); 6 or more keeps surround sound in a library transcode
+             */
+            audio_channels?: number;
             direct_audio: ("aac" | "mp3" | "opus" | "flac" | "ac3" | "eac3" | "vorbis" | "alac")[];
             /** @description containers the video element plays as a file */
             direct_containers: ("mp4" | "webm")[];
@@ -3250,6 +3502,11 @@ export interface components {
             season?: number | null;
             segments: components["schemas"]["WatchSegment"][];
             /**
+             * @description where the file comes from: Movie Night's own library or Jellyfin
+             * @enum {string}
+             */
+            source?: "library" | "jellyfin";
+            /**
              * Format: int64
              * @description the subtitle to show at the start
              */
@@ -3267,7 +3524,7 @@ export interface components {
             audio?: number | null;
             /**
              * Format: double
-             * @description the player's own length, used when Jellyfin names none
+             * @description the player's own length, used when the file's is unknown
              */
             duration_s?: number;
             /** @enum {string} */
@@ -3935,6 +4192,229 @@ export interface operations {
                 };
                 content: {
                     "application/json": string;
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    libraries_api_v1_libraries_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibrariesOut"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    library_add_api_v1_libraries_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LibraryIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibraryCreated"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    library_match_api_v1_libraries_files__file_id__match_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                file_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LibraryMatchIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibraryMatchOut"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    library_update_api_v1_libraries__library_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LibraryIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Ok"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    library_delete_api_v1_libraries__library_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                library_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Ok"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    library_problems_api_v1_libraries__library_id__problems_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                library_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibraryProblemsOut"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    library_scan_api_v1_libraries__library_id__scan_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                library_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Ok"];
                 };
             };
             /** @description Error */
@@ -4784,6 +5264,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["QuickConnectStateOut"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    hide_undated_play_api_v1_me_jellyfin_undated__item_id__hide_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Ok"];
                 };
             };
             /** @description Error */

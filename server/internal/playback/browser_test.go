@@ -14,10 +14,10 @@ func TestWatchedAtEnd(t *testing.T) {
 		{89.9, 100, 0, false},
 		{90, 100, 0, true}, // 90 % of the runtime
 		{100, 100, 0, true},
-		{80, 100, 80, true},   // the credits marker
+		{80, 100, 80, true}, // the credits marker
 		{79.9, 100, 80, false},
 		{0, 100, 0, false},
-		{50, 0, 0, false},     // no runtime and no marker: never by guess
+		{50, 0, 0, false}, // no runtime and no marker: never by guess
 		{50, 0, 45, true},
 	} {
 		if got := WatchedAtEnd(c.pos, c.runtime, c.credits); got != c.want {

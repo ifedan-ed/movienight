@@ -42,11 +42,58 @@ const PICTURES = [
 ];
 const SKIP_LABEL = { intro: "Skip intro", credits: "Skip credits", recap: "Skip recap", preview: "Skip preview", commercial: "Skip" };
 
+// How far ahead hls.js reads, and how patiently. Its defaults (30 s
+// ahead) left a film one network hiccup from a stall even on a fast line:
+// here it reads minutes ahead while the connection allows, bounded in
+// bytes as well as seconds so a phone's memory is not filled with video.
+// The media service keeps its ffmpeg further ahead still (engine/jobs.go),
+// so these reads find their segments made.
+const BUFFER_AHEAD = 150;      // s hls.js aims to hold ahead of what plays
+const BUFFER_AHEAD_MAX = 600;  // s it may hold when the bitrate is low
+const BUFFER_BEHIND = 30;      // s kept behind, for a quick step back
+const BUFFER_MB_PHONE = 90;    // MB ahead on a phone or a small device
+const BUFFER_MB = 220;         // MB ahead elsewhere (Chrome's MSE quota is near this)
+// A transcode's first segment is made when it is asked for: the media
+// service waits up to 90 s for it (segmentWait), so hls.js waits as long
+// before it calls the request lost and asks again.
+const FIRST_BYTE_WAIT = 90_000;
+
+function hlsBuffering() {
+  // deviceMemory is in GB, and only Chromium says; a touch screen narrower
+  // than a tablet stands in elsewhere.
+  const small = (navigator.deviceMemory && navigator.deviceMemory <= 4) ||
+    (matchMedia("(pointer: coarse)").matches && Math.min(screen.width, screen.height) < 600);
+  const load = { maxTimeToFirstByteMs: FIRST_BYTE_WAIT, maxLoadTimeMs: 120_000,
+    timeoutRetry: { maxNumRetry: 2, retryDelayMs: 0, maxRetryDelayMs: 0 },
+    errorRetry: { maxNumRetry: 4, retryDelayMs: 1000, maxRetryDelayMs: 8000 } };
+  return {
+    autoStartLoad: true,
+    // -1: the first variant is picked from a measured bandwidth (Jellyfin
+    // can offer several); the media service's playlist has just one.
+    startLevel: -1,
+    maxBufferLength: BUFFER_AHEAD,
+    maxMaxBufferLength: BUFFER_AHEAD_MAX,
+    maxBufferSize: (small ? BUFFER_MB_PHONE : BUFFER_MB) * 1000 * 1000,
+    backBufferLength: BUFFER_BEHIND,
+    fragLoadPolicy: { default: load },
+  };
+}
+
 export function clock(s) {
   s = Math.max(0, Math.floor(s || 0));
   const hr = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
   const two = (n) => String(n).padStart(2, "0");
   return hr ? `${hr}:${two(m)}:${two(sec)}` : `${m}:${two(sec)}`;
+}
+
+// heading splits the watch answer's title for the top of the player: an
+// episode comes as "Show · S01E02 · Name", shown as the show with
+// "S1·E2 · Name" under it; a film is its title alone.
+function heading(info) {
+  const parts = info.title.split(" · ");
+  if (info.season == null || parts.length < 2) return { title: info.title, sub: null };
+  const sub = parts.slice(1).join(" · ").replace(/^S0*(\d+)E0*(\d+)/, "S$1·E$2");
+  return { title: parts[0], sub };
 }
 
 const signed = (d) => (d > 0 ? "+" : d < 0 ? "−" : "") + Math.abs(d).toFixed(1) + " s";
@@ -122,6 +169,12 @@ export class Player {
     this.seek = h("input.pl-seek", { type: "range", min: 0, max: info.duration_s || 0, step: 0.1, value: 0, "aria-label": "Seek" });
     this.buf = h("div.pl-buf");
     this.ticks = h("div.pl-ticks");
+    this.tip = h("div.pl-tip", { hidden: true, "aria-hidden": "true" });
+    // The rail, what is read ahead, what has played and the knob are drawn
+    // here; the range input lies over them, unseen, for the pointer and the
+    // keyboard (its own thumb would not line up with the drawn track).
+    this.seekWrap = h("div.pl-seekwrap",
+      h("div.pl-rail", this.buf, h("div.pl-played")), this.ticks, h("div.pl-knob"), this.seek, this.tip);
     this.timeEl = h("span.pl-time", "0:00");
     this.playBtn = this.button("play", "Play", () => this.toggle());
     this.bigPlay = this.button("play", "Play", () => this.toggle(), "pl-big");
@@ -133,34 +186,39 @@ export class Player {
     this.audioBtn = info.audio.length > 1 ? this.button("audio", "Audio", (e) => this.menu("audio", e.currentTarget)) : null;
     this.skipBtn = h("button.pl-skip", { type: "button", hidden: true, onclick: () => this.skip() });
     this.nextBox = info.next ? h("div.pl-next", { hidden: true },
-      h("button.pl-next-btn", { type: "button", onclick: () => this.next() }, icon("skipNext"),
-        h("span", h("b", "Next episode"), h("small", `S${info.next.season}E${info.next.episode} · ${info.next.title}`)))) : null;
+      h("button.pl-next-btn", { type: "button", onclick: () => this.next() }, h("span.pl-next-ic", icon("skipNext")),
+        h("span", h("b", "Next episode"), h("small", `S${info.next.season}·E${info.next.episode} · ${info.next.title}`)))) : null;
     this.menuEl = h("div.pl-menu", { hidden: true, role: "menu" });
-    this.spinner = h("div.spin.pl-spin", { hidden: true });
+    // Behind an open menu: a tap outside closes it (and only that); on a
+    // phone it also dims the picture under the sheet.
+    this.menuScrim = h("div.pl-menu-scrim", { hidden: true });
+    this.spinner = h("div.pl-spin", { hidden: true, role: "status", "aria-label": "Loading" });
     this.osdEl = h("div.pl-osd", { hidden: true, role: "status" });
 
     const bar = h("div.pl-bar",
-      h("div.pl-seekwrap", this.buf, this.ticks, this.seek),
+      this.seekWrap,
       h("div.pl-row",
-        h("div.pl-desk", this.playBtn, this.button("back10", "Back 10 seconds", () => this.jump(-10)),
-          this.button("fwd10", "Forward 10 seconds", () => this.jump(10))),
-        h("div.pl-volbox", this.muteBtn, this.vol),
-        this.timeEl,
-        h("span.pl-gap"),
-        this.ccBtn, this.audioBtn,
-        this.button("gear", "Settings", (e) => this.menu("settings", e.currentTarget)),
-        this.pipBtn, this.fsBtn));
+        h("div.pl-group",
+          h("div.pl-desk", this.playBtn, this.button("back10", "Back 10 seconds", () => this.jump(-10)),
+            this.button("fwd10", "Forward 10 seconds", () => this.jump(10))),
+          h("div.pl-volbox", this.muteBtn, h("div.pl-volwrap", this.vol)),
+          this.timeEl),
+        h("div.pl-group",
+          this.ccBtn, this.audioBtn,
+          this.button("gear", "Settings", (e) => this.menu("settings", e.currentTarget)),
+          this.pipBtn, this.fsBtn)));
+    const head = heading(info);
     this.el = h("div.pl", { tabindex: "-1" },
       this.v, this.subLayer,
-      h("div.pl-shade"),
+      h("div.pl-scrim.top"), h("div.pl-scrim.bottom"),
       h("div.pl-top",
         this.button("left", "Back", () => this.exit()),
-        h("div.pl-title", info.title)),
+        h("div.pl-heading", h("div.pl-title", head.title), head.sub ? h("div.pl-sub", head.sub) : null)),
       h("div.pl-center",
         this.button("back10", "Back 10 seconds", () => this.jump(-10), "pl-mid"),
-        this.bigPlay, this.spinner,
+        this.bigPlay,
         this.button("fwd10", "Forward 10 seconds", () => this.jump(10), "pl-mid")),
-      this.skipBtn, this.nextBox, this.osdEl, bar, this.menuEl);
+      this.spinner, this.skipBtn, this.nextBox, this.osdEl, bar, this.menuScrim, this.menuEl);
     swap(this.root, this.el);
     this.applySize();
     this.v.volume = Number(this.vol.value);
@@ -207,12 +265,14 @@ export class Player {
     const info = this.info;
     const v = this.v;
     this.loadedAt = at;
+    // Shown until the picture can play (canplay or playing hides it).
+    this.spinner.hidden = false;
     if (info.mode === "hls" && !nativeHls(v)) {
       let Hls;
       try { ({ default: Hls } = await import(HLS_JS)); } catch { this.fail("The player didn't load"); return; }
       if (this.destroyed) return;
       if (!Hls.isSupported()) { this.fail("This browser can't play this file"); return; }
-      const hls = new Hls({ workerPath: HLS_WORKER, startPosition: at, maxBufferLength: 30, backBufferLength: 90 });
+      const hls = new Hls({ workerPath: HLS_WORKER, startPosition: at, ...hlsBuffering() });
       this.hls = hls;
       let recovered = false;
       hls.on(Hls.Events.ERROR, (_, d) => {
@@ -311,20 +371,42 @@ export class Player {
     this.on(v, "volumechange", () => this.paintVolume());
     this.on(v, "ended", () => this.ended());
     this.on(v, "error", () => { if (!this.hls && v.error) this.streamFailed(); });
-    this.on(v, "click", () => this.toggle());
+    // A click on the picture plays or pauses. A tap (a finger) shows the
+    // controls when they are hidden and hides them when they show, as
+    // phone players do; the centre button is the one that plays.
+    this.on(v, "click", () => {
+      if (this.pointer !== "touch") { this.toggle(); return; }
+      if (!this.wasIdle && !v.paused) this.sleep();
+    });
     // An iPhone's fullscreen is the system player: subtitles go to a native track.
     this.on(v, "webkitbeginfullscreen", () => this.subs.nativeOn(true));
     this.on(v, "webkitendfullscreen", () => this.subs.nativeOn(false));
 
-    this.on(this.seek, "input", () => { this.dragging = true; this.paintTime(Number(this.seek.value)); });
-    this.on(this.seek, "change", () => { this.dragging = false; v.currentTime = Number(this.seek.value); });
+    this.on(this.seek, "input", () => {
+      this.dragging = true;
+      this.el.classList.add("seeking");
+      this.paintTime(Number(this.seek.value));
+      this.paintTip(Number(this.seek.value));
+    });
+    this.on(this.seek, "change", () => {
+      this.dragging = false;
+      this.el.classList.remove("seeking");
+      this.tip.hidden = true;
+      v.currentTime = Number(this.seek.value);
+    });
+    this.on(this.seekWrap, "pointermove", (e) => { if (!this.dragging && e.pointerType !== "touch") this.tipAt(e); });
+    this.on(this.seekWrap, "pointerleave", () => { if (!this.dragging) this.tip.hidden = true; });
     this.on(this.vol, "input", () => { v.muted = false; v.volume = Number(this.vol.value); store("volume", v.volume); });
 
+    // Noted before wake() shows the controls: the click that follows a
+    // tap needs to know whether they were hidden.
+    this.on(this.el, "pointerdown", (e) => { this.pointer = e.pointerType; this.wasIdle = this.el.classList.contains("idle"); }, { capture: true });
     for (const type of ["pointermove", "pointerdown", "keydown"]) this.on(this.el, type, () => this.wake());
     this.on(document, "keydown", (e) => this.key(e));
     this.on(document, "fullscreenchange", () => this.paintFullscreen());
     this.on(document, "webkitfullscreenchange", () => this.paintFullscreen());
     this.on(document, "pointerdown", (e) => { if (!this.menuEl.hidden && !this.menuEl.contains(e.target) && !e.target.closest(".pl-btn")) this.closeMenu(); });
+    this.on(window, "resize", () => { if (!this.menuEl.hidden) this.placeMenu(); });
     // A closing tab still sends its last report (keepalive).
     this.on(window, "pagehide", () => this.stop());
 
@@ -355,7 +437,7 @@ export class Player {
   paintTime(t) {
     const d = this.duration();
     this.timeEl.textContent = d ? `${clock(t)} / ${clock(d)}` : clock(t);
-    this.seek.style.setProperty("--p", d ? `${(t / d) * 100}%` : "0%");
+    this.seekWrap.style.setProperty("--p", d ? `${Math.min(100, (t / d) * 100)}%` : "0%");
   }
 
   paintBuffer() {
@@ -365,6 +447,25 @@ export class Player {
       if (v.buffered.start(i) <= v.currentTime + 1) end = Math.max(end, v.buffered.end(i));
     }
     this.buf.style.width = d ? `${Math.min(100, (end / d) * 100)}%` : "0";
+  }
+
+  // paintTip shows the time (and the chapter) at a point of the seek bar,
+  // under the pointer while hovering, over the knob while dragging.
+  paintTip(t) {
+    const d = this.duration();
+    if (!d) return;
+    t = Math.max(0, Math.min(d, t));
+    const ch = this.info.chapters.reduce((cur, c) => (c.start_s <= t ? c : cur), null);
+    swap(this.tip, ch && ch.name ? h("span", ch.name) : null, h("b", clock(t)));
+    this.tip.hidden = false;
+    const w = this.seekWrap.clientWidth, half = this.tip.offsetWidth / 2;
+    // Kept inside the bar at both ends.
+    this.tip.style.left = `${Math.max(half, Math.min(w - half, (t / d) * w))}px`;
+  }
+
+  tipAt(e) {
+    const r = this.seekWrap.getBoundingClientRect();
+    this.paintTip(((e.clientX - r.left) / r.width) * this.duration());
   }
 
   paintPlay() {
@@ -402,12 +503,18 @@ export class Player {
     }
   }
 
+  // wake shows the controls, and hides them again after IDLE_AFTER without
+  // a move, a touch or a key, unless paused, a menu is open or the seek bar
+  // is held. The cursor goes with them (CSS: .pl.idle).
   wake() {
     this.el.classList.remove("idle");
     clearTimeout(this.idleTimer);
-    this.idleTimer = setTimeout(() => {
-      if (!this.v.paused && this.menuEl.hidden) this.el.classList.add("idle");
-    }, IDLE_AFTER);
+    this.idleTimer = setTimeout(() => this.sleep(), IDLE_AFTER);
+  }
+
+  sleep() {
+    clearTimeout(this.idleTimer);
+    if (!this.v.paused && this.menuEl.hidden && !this.dragging) this.el.classList.add("idle");
   }
 
   // ---------------------------------------------------------------- actions
@@ -606,10 +713,14 @@ export class Player {
 
   menu(name, anchor) {
     if (!this.menuEl.hidden && this.menuName === name) { this.closeMenu(); return; }
+    if (this.menuAnchor && this.menuAnchor !== anchor) this.menuAnchor.removeAttribute("aria-expanded");
     this.menuName = name;
     this.menuAnchor = anchor;
+    anchor?.setAttribute("aria-expanded", "true");
     this.paintMenu();
     this.menuEl.hidden = false;
+    this.menuScrim.hidden = false;
+    this.placeMenu();
     this.el.classList.add("menu-open");
     (this.menuEl.querySelector('[aria-checked="true"], select') || this.menuEl.querySelector("button"))?.focus();
   }
@@ -669,10 +780,22 @@ export class Player {
     swap(this.menuEl, body);
   }
 
+  // placeMenu puts a desktop popover above the button that opened it, kept
+  // inside the window; a phone's sheet is placed by CSS alone.
+  placeMenu() {
+    const a = this.menuAnchor;
+    if (!a || !a.isConnected) return;
+    const box = this.el.getBoundingClientRect(), r = a.getBoundingClientRect();
+    const right = box.right - (r.left + r.width / 2) - this.menuEl.offsetWidth / 2;
+    this.menuEl.style.setProperty("--menu-right", `${Math.max(16, right)}px`);
+  }
+
   closeMenu() {
     this.menuEl.hidden = true;
+    this.menuScrim.hidden = true;
     this.el.classList.remove("menu-open");
     this.delayEl = this.sizeEl = null;
+    this.menuAnchor?.removeAttribute("aria-expanded");
     if (this.menuAnchor && this.menuAnchor.isConnected) this.menuAnchor.focus({ preventScroll: true });
     this.wake();
   }

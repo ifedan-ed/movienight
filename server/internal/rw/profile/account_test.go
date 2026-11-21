@@ -1,6 +1,7 @@
 package profile_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -187,7 +188,7 @@ func TestPlaysNoticesFollowTheLink(t *testing.T) {
 	alice.Do(t, "POST", "/api/v1/me/jellyfin/password", `{"username": "alice", "password": "right"}`)
 	s.Exec(t, `INSERT INTO app_settings (key, value) SELECT 'status:plays:' || id, '{"ok": false, "status": 404, "problem": "HTTP 404", "at": "2026-10-09T18:30:00+00:00", "undated": 2}' FROM users WHERE username = 'alice'`)
 	n, _ := alice.Do(t, "GET", "/api/v1/me/jellyfin", nil).Map(t)["plays_notice"].(string)
-	if !strings.Contains(n, "connect it again") || !strings.Contains(n, "Oct 9, 14:30") || !strings.Contains(n, "2 of your Jellyfin plays have no date") {
+	if !strings.Contains(n, "connect it again") || !strings.Contains(n, "Oct 9, 14:30") || strings.Contains(n, "no date") {
 		t.Fatal(n)
 	}
 	alice.Do(t, "DELETE", "/api/v1/me/jellyfin", nil)
@@ -195,6 +196,72 @@ func TestPlaysNoticesFollowTheLink(t *testing.T) {
 	_ = s.Pool.QueryRow(t.Context(), `SELECT count(*) FROM app_settings WHERE key LIKE 'status:plays:%'`).Scan(&left)
 	if left != 0 {
 		t.Fatal("an unlinked person's plays status stays")
+	}
+}
+
+// Plays Jellyfin has without a date are listed by name, with the title to
+// link to. Each one hidden (added here with a date, or not watched) stays
+// hidden through later reads; only a listed play can be hidden.
+func TestUndatedPlaysAreListedUntilEachIsDealtWith(t *testing.T) {
+	s, _ := testenv.StartFaked(t, testbase.BaseEnv(t))
+	alice := s.Client("alice", true)
+	alice.Do(t, "POST", "/api/v1/me/jellyfin/password", `{"username": "alice", "password": "right"}`)
+	read := `{"ok": true, "at": "2026-11-20T18:30:00+00:00", "undated": 3, "undated_items": [
+		{"id": "aa11", "media_type": "movie", "tmdb_id": 345, "title": "Eyes Wide Shut"},
+		{"id": "bb22", "media_type": "movie", "tmdb_id": 1003, "title": "In Your Absence"},
+		{"id": "cc33", "media_type": "tv", "tmdb_id": 1399, "title": "Show", "season": 1, "episode": 2, "episode_title": "Two"}]}`
+	s.Exec(t, `INSERT INTO app_settings (key, value) SELECT 'status:plays:' || id, $1 FROM users WHERE username = 'alice'`, read)
+	listed := func() []string {
+		t.Helper()
+		var out struct {
+			Notice  *string          `json:"plays_notice"`
+			Undated []map[string]any `json:"plays_undated"`
+			More    int              `json:"plays_undated_more"`
+		}
+		r := alice.Do(t, "GET", "/api/v1/me/jellyfin", nil)
+		if err := json.Unmarshal([]byte(r.Body), &out); err != nil {
+			t.Fatal(err)
+		}
+		if out.Notice != nil || out.More != 0 {
+			t.Fatalf("a good read with undated plays: %s", r.Body)
+		}
+		var ids []string
+		for _, u := range out.Undated {
+			ids = append(ids, fmt.Sprint(u["id"], " ", u["media_type"], " ", u["tmdb_id"], " ", u["title"]))
+		}
+		return ids
+	}
+	if got := strings.Join(listed(), ", "); got != "aa11 movie 345 Eyes Wide Shut, bb22 movie 1003 In Your Absence, cc33 tv 1399 Show" {
+		t.Fatal(got)
+	}
+	// Profile reads the same list from /me.
+	if me := alice.Do(t, "GET", "/api/v1/me", nil).Map(t); len(me["jellyfin"].(map[string]any)["plays_undated"].([]any)) != 3 {
+		t.Fatal(me["jellyfin"])
+	}
+	hide := func(id string) {
+		t.Helper()
+		if r := alice.Do(t, "POST", "/api/v1/me/jellyfin/undated/"+id+"/hide", nil); r.StatusCode != 200 {
+			t.Fatalf("%d %s", r.StatusCode, r.Body)
+		}
+	}
+	hide("aa11")
+	hide("cc33")
+	if r := alice.Do(t, "POST", "/api/v1/me/jellyfin/undated/zz99/hide", nil); r.StatusCode != 404 {
+		t.Fatal("a play that isn't listed was hidden", r.StatusCode)
+	}
+	// The next read writes the status again, with the same plays.
+	s.Exec(t, `UPDATE app_settings SET value = $1 WHERE key LIKE 'status:plays:%'`, read)
+	if got := strings.Join(listed(), ", "); got != "bb22 movie 1003 In Your Absence" {
+		t.Fatal(got)
+	}
+	hide("bb22")
+	if got := listed(); len(got) != 0 {
+		t.Fatal(got)
+	}
+	// Someone else's hidden plays are their own.
+	bob := s.Client("bob", true)
+	if r := bob.Do(t, "POST", "/api/v1/me/jellyfin/undated/bb22/hide", nil); r.StatusCode != 404 {
+		t.Fatal(r.StatusCode)
 	}
 }
 

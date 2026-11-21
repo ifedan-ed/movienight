@@ -19,7 +19,7 @@ The library syncs when the worker starts and then every 30 minutes; admins can a
 
 Everyone links their own Jellyfin account once in Profile → Jellyfin (Quick Connect or password; only an encrypted token is kept). From then on:
 
-- their Jellyfin plays are added to their history every 5 minutes,
+- their Jellyfin plays are added to their history every 5 minutes. A play marked played in Jellyfin without a date can't go on the timeline, so Profile lists it by name, with "Add to history" (on a day they pick) and "Not watched". Either answer clears it for good,
 - ticking an episode in Movie Night marks it played in Jellyfin,
 - Play opens the title in the player they choose.
 
@@ -52,7 +52,7 @@ A picked subtitle shows at once while the film plays on. It stays as a track of 
 
 Podnapisi and Addic7ed (through Gestdown, TV only) need no key. OpenSubtitles, SubDL, SubSource and Jimaku (anime, in Japanese) are used once their keys are set ([configuration](configuration.md#subtitles-online)). These sites hold subtitles their users uploaded, and each has its own terms. OpenSubtitles limits downloads a day. When they are used up, the player says until when.
 
-The keys: Space or K plays and pauses, ← and → jump 10 seconds, ↑ and ↓ change the volume, F is fullscreen, M mutes, C changes the subtitles, [ and ] move the subtitles half a second earlier or later, and < and > change the speed.
+On a phone, a tap shows or hides the controls. The keys: Space or K plays and pauses, ← and → jump 10 seconds, ↑ and ↓ change the volume, F is fullscreen, M mutes, C changes the subtitles, [ and ] move the subtitles half a second earlier or later, and < and > change the speed.
 
 ## Players
 

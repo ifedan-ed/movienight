@@ -403,4 +403,3 @@ func Seconds(ticks int64) int { return int(ticks / TicksPerSecond) }
 
 // Ticks turns seconds into ticks.
 func Ticks(s float64) int64 { return int64(s * TicksPerSecond) }
-

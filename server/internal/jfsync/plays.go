@@ -131,7 +131,8 @@ func (s *Service) RecordPlay(ctx context.Context, userID int32, when time.Time, 
 	return added, err
 }
 
-// PlaysResult is one person's sync.
+// PlaysResult is one person's sync. Undated counts the plays without a
+// date the person hasn't dealt with yet (status.HideUndated).
 type PlaysResult struct {
 	Added, Undated int
 }
@@ -143,7 +144,8 @@ type PlaysResult struct {
 // again). The outcome is kept per person (status "plays:<id>"): a failed
 // read is shown to admins and to the person until a later read is complete,
 // and so is how many plays Jellyfin lists without a date (they cannot go on
-// a timeline, so they are not added).
+// a timeline, so they are not added). Those are kept by name, up to
+// status.MaxUndated, so Profile can list them.
 func (s *Service) Plays(ctx context.Context, userID int32, jellyfinUser string) (PlaysResult, error) {
 	var res PlaysResult
 	if jellyfinUser == "" {
@@ -169,6 +171,14 @@ func (s *Service) Plays(ctx context.Context, userID int32, jellyfinUser string) 
 		}
 		return res, err
 	}
+	// The ones the person already dealt with are left out from the start,
+	// so the list of MaxUndated is always the next ones to answer.
+	hidden, err := s.status.HiddenUndated(ctx, userID)
+	if err != nil {
+		return res, err
+	}
+	undated := []status.UndatedItem{}
+	var undatedCount int
 	err = pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
 		q := s.q.WithTx(tx)
 		series := map[string]int32{}
@@ -192,13 +202,23 @@ func (s *Service) Plays(ctx context.Context, userID int32, jellyfinUser string) 
 			return err
 		}
 		var p placement
+		undated = undated[:0]
+		undatedCount = 0
 		for _, it := range played {
 			id := jsonx.Str(it, "Id")
 			when, ok := ParseTime(jsonx.Str(jsonx.Child(it, "UserData"), "LastPlayedDate"))
 			if id == "" || !ok {
 				// Marked played without a date (or sent without an id):
-				// nothing to put on a timeline. Counted; the person is told.
-				res.Undated++
+				// nothing to put on a timeline. Kept by name; the person
+				// is told and decides.
+				// One without an id can't be listed or hidden, so it isn't
+				// counted either: it would be a notice nobody can clear.
+				if id != "" && !hidden[id] {
+					undatedCount++
+					if len(undated) < status.MaxUndated {
+						undated = append(undated, undatedItem(id, entryOf(it, series)))
+					}
+				}
 				continue
 			}
 			ref := PlayRef(id, when)
@@ -220,8 +240,23 @@ func (s *Service) Plays(ctx context.Context, userID int32, jellyfinUser string) 
 		s.cache.Forget(ctx, cache.ContinueKey(userID))
 	}
 	at := status.Now()
-	return res, s.status.Record(ctx, name, status.Value{"ok": true, "at": at, "last_good_at": at, "problem": nil,
-		"status": nil, "undated": res.Undated})
+	if err := s.status.Record(ctx, name, status.Value{"ok": true, "at": at, "last_good_at": at, "problem": nil,
+		"status": nil, "undated": undatedCount, "undated_items": undated}); err != nil {
+		return res, err
+	}
+	// The count the person is told: what they haven't dealt with.
+	_, res.Undated, err = s.status.Undated(ctx, userID)
+	return res, err
+}
+
+// undatedItem is how an undated play is listed: an episode under its show,
+// which is the title page it links to.
+func undatedItem(id string, e Entry) status.UndatedItem {
+	it := status.UndatedItem{ID: id, MediaType: "movie", TMDBID: e.TMDBID, Title: e.Title}
+	if e.MediaType == "episode" {
+		it.MediaType, it.Season, it.Episode, it.EpisodeTitle = "tv", e.Season, e.Episode, e.EpisodeTitle
+	}
+	return it
 }
 
 // entryOf is what a played Jellyfin item records.
@@ -282,18 +317,17 @@ func (s *Service) AllPlays(ctx context.Context, lock func(ctx context.Context, u
 func UserIDString(id int32) string { return strconv.Itoa(int(id)) }
 
 // UndatedNote is the sentence for plays Jellyfin lists without a date
-// (nil when there are none): a play needs its date to go into the history.
+// (nil when there are none): a play needs its date to go into the history,
+// so Profile lists them to add with a date or to hide.
 func UndatedNote(n int) *string {
 	var s string
 	switch {
 	case n <= 0:
 		return nil
 	case n == 1:
-		s = "1 of your Jellyfin plays has no date in Jellyfin (it was marked played without one), so it isn't in " +
-			"your history here. Mark it watched here, with a date, to add it."
+		s = "1 play has no date in Jellyfin. Profile lists it."
 	default:
-		s = thousands(n) + " of your Jellyfin plays have no date in Jellyfin (they were marked played without one), so they " +
-			"aren't in your history here. Mark them watched here, with a date, to add them."
+		s = thousands(n) + " plays have no date in Jellyfin. Profile lists them."
 	}
 	return &s
 }

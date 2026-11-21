@@ -68,6 +68,17 @@ func (s *Service) UserString(ctx context.Context, userID int32, key string) (str
 	return *v, nil
 }
 
+// MergeUser merges fields into the JSON object kept as one person's
+// setting (or stores them as a new one), in one statement, as MergeApp
+// does for the install's.
+func (s *Service) MergeUser(ctx context.Context, userID int32, key string, fields map[string]any) error {
+	patch, err := json.Marshal(fields)
+	if err != nil {
+		return err
+	}
+	return s.q.MergeUserSetting(ctx, store.MergeUserSettingParams{UserID: userID, Key: key, Patch: string(patch)})
+}
+
 // DeleteUser removes one person's setting.
 func (s *Service) DeleteUser(ctx context.Context, userID int32, key string) error {
 	return s.q.DeleteUserSetting(ctx, store.DeleteUserSettingParams{UserID: userID, Key: key})

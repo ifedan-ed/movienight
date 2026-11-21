@@ -27,10 +27,15 @@ const (
 	// further is a seek, and the job restarts there.
 	lookahead = 4
 	// pauseAhead and resumeAhead: ffmpeg is paused when it is this many
-	// segments ahead of the player (three minutes) and carries on when the
-	// player is within resumeAhead of it. A paused film costs no CPU.
-	pauseAhead  = 30
-	resumeAhead = 15
+	// segments ahead of the last one the player asked for (ten minutes)
+	// and carries on when the player is within resumeAhead of it (six
+	// minutes). The player itself reads up to a few minutes ahead of what
+	// it shows (player.js), so this keeps ffmpeg further ahead than that:
+	// the player never waits on a segment, and a seek within the next ten
+	// minutes finds its segment made. A paused film costs no CPU; its
+	// segments on disk are the price (docs/limits.md).
+	pauseAhead  = 100
+	resumeAhead = 60
 	// segmentWait is the longest a request waits for its segment (a slow
 	// first transcode segment of a 4K file).
 	segmentWait = 90 * time.Second
@@ -371,13 +376,12 @@ func (e *Engine) tend() {
 		j.mu.Lock()
 		idle := now.Sub(j.touched) > e.cfg.IdleAfter
 		if rn := j.run; !idle && rn != nil && !closed(rn.done) {
-			ahead := j.madeLocked() - j.last
-			switch {
-			case !rn.paused && ahead >= pauseAhead:
+			switch pace(rn.paused, j.madeLocked()-j.last) {
+			case pauseRun:
 				if syscall.Kill(-rn.cmd.Process.Pid, syscall.SIGSTOP) == nil {
 					rn.paused = true
 				}
-			case rn.paused && ahead < resumeAhead:
+			case resumeRun:
 				resume(rn)
 			}
 		}
@@ -391,6 +395,28 @@ func (e *Engine) tend() {
 			e.end(j)
 		}
 	}
+}
+
+// What tend does with a running ffmpeg.
+type paceAction int
+
+const (
+	keepRun paceAction = iota
+	pauseRun
+	resumeRun
+)
+
+// pace decides from how many segments the run is ahead of the player's
+// last request. The gap between pauseAhead and resumeAhead keeps it from
+// stopping and starting ffmpeg every second around one line.
+func pace(paused bool, ahead int) paceAction {
+	switch {
+	case !paused && ahead >= pauseAhead:
+		return pauseRun
+	case paused && ahead < resumeAhead:
+		return resumeRun
+	}
+	return keepRun
 }
 
 func exists(path string) bool {

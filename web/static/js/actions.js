@@ -298,7 +298,10 @@ export function episodeStars(showId, season, e, { showTitle = "", onChange = nul
 // Watched
 // ---------------------------------------------------------------------------
 
-export function watchedSheet(c, watches, onDone) {
+// save, when given, records the watch instead of the title's own
+// /watched (an episode from Profile's undated plays): it gets the time
+// picked, or null for now, and the sheet closes once it resolves.
+export function watchedSheet(c, watches, onDone, { save = null } = {}) {
   // That day's evening here, with this browser's offset. A bare date would be
   // read as the evening in the server's time zone (New York), which in Paris is
   // already the next day.
@@ -311,6 +314,13 @@ export function watchedSheet(c, watches, onDone) {
   sheet((close) => {
     const mark = async (when) => {
       try {
+        if (save) {
+          await save(when);
+          toast(`Marked ${c.title} as watched`);
+          onDone && onDone();
+          close();
+          return;
+        }
         const res = await post(`${base(c)}/watched`, { watched_at: when });
         const count = res.watches.length;
         setState(c.key, { watched: count, ...(c.media_type === "movie" ? { watchlist: false } : {}) });

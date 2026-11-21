@@ -115,6 +115,25 @@ func (q *Queries) MergeAppSetting(ctx context.Context, arg MergeAppSettingParams
 	return value, err
 }
 
+const mergeUserSetting = `-- name: MergeUserSetting :exec
+INSERT INTO user_settings (user_id, key, value) VALUES ($1, $2, $3::text)
+ON CONFLICT (user_id, key) DO UPDATE
+SET value = (CASE WHEN user_settings.value IS JSON OBJECT THEN user_settings.value::jsonb ELSE '{}'::jsonb END
+             || EXCLUDED.value::jsonb)::text
+`
+
+type MergeUserSettingParams struct {
+	UserID int32
+	Key    string
+	Patch  string
+}
+
+// MergeUserSetting is MergeAppSetting for one person's setting.
+func (q *Queries) MergeUserSetting(ctx context.Context, arg MergeUserSettingParams) error {
+	_, err := q.db.Exec(ctx, mergeUserSetting, arg.UserID, arg.Key, arg.Patch)
+	return err
+}
+
 const playsStatuses = `-- name: PlaysStatuses :many
 SELECT s.value, u.id, u.username, u.display_name
 FROM app_settings s JOIN users u ON s.key = 'status:plays:' || u.id::text

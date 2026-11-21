@@ -297,3 +297,62 @@ func TestArgsChooseTheEncoder(t *testing.T) {
 		t.Errorf("remux args %s", args)
 	}
 }
+
+// The throttle pauses ffmpeg ten minutes ahead of the player and lets it
+// go again at six, with nothing in between flapping.
+func TestPaceKeepsTenMinutesAhead(t *testing.T) {
+	if pauseAhead*plan.SegmentSeconds != 600 || resumeAhead*plan.SegmentSeconds != 360 {
+		t.Fatalf("pause at %d s, resume at %d s", pauseAhead*plan.SegmentSeconds, resumeAhead*plan.SegmentSeconds)
+	}
+	for _, c := range []struct {
+		paused bool
+		ahead  int
+		want   paceAction
+	}{
+		{false, -3, keepRun}, // the player waits on ffmpeg
+		{false, pauseAhead - 1, keepRun},
+		{false, pauseAhead, pauseRun},
+		{true, pauseAhead, keepRun},
+		{true, resumeAhead, keepRun},
+		{true, resumeAhead - 1, resumeRun},
+		{false, resumeAhead - 1, keepRun},
+	} {
+		if got := pace(c.paused, c.ahead); got != c.want {
+			t.Errorf("paused %v ahead %d: %v, want %v", c.paused, c.ahead, got, c.want)
+		}
+	}
+}
+
+// A player with a long buffer asks for segment after segment as fast as
+// they come, far ahead of what it shows. That is one run, never a seek:
+// ffmpeg is not restarted on the way.
+func TestReadingAheadIsNotASeek(t *testing.T) {
+	e := newEngine(t, 1)
+	file := filepath.Join(t.TempDir(), "long.mkv")
+	// Two minutes: 20 segments, made in well under a second.
+	out, err := exec.Command("ffmpeg", "-v", "error", "-f", "lavfi", "-i", "testsrc2=size=160x90:rate=10:duration=120",
+		"-c:v", "libx264", "-preset", "ultrafast", "-g", "10", "-an", file).CombinedOutput()
+	if err != nil {
+		t.Fatalf("%v: %s", err, out)
+	}
+	ctx := context.Background()
+	r := Request{File: file, Plan: plan.Plan{Mode: plan.Remux, Audio: -1, Burn: -1}, Play: "ahead"}
+	if _, err := e.Init(ctx, r); err != nil {
+		t.Fatal(err)
+	}
+	j := e.jobs[jobKey(r.Play, r.Plan)]
+	j.mu.Lock()
+	first := j.run
+	j.mu.Unlock()
+	for n := range 20 {
+		if _, err := e.Segment(ctx, r, n); err != nil {
+			t.Fatalf("segment %d: %v", n, err)
+		}
+	}
+	j.mu.Lock()
+	same := j.run == first
+	j.mu.Unlock()
+	if !same {
+		t.Fatal("reading ahead restarted ffmpeg")
+	}
+}

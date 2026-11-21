@@ -538,6 +538,8 @@ async function playerFlow(page, name) {
     await video(page, (v) => v.pause());
     await seekTo(page, 41);
     const stopped = page.waitForResponse((r) => r.url().endsWith("/api/v1/watch/report") && r.request().postData().includes('"stop"'));
+    // Failing a step, not the whole run, when the stop never comes.
+    stopped.catch(() => {});
     await wake();
     await page.locator(`.pl-top .pl-btn[aria-label="Back"]`).click();
     await stopped;

@@ -18,15 +18,15 @@ import (
 const caps = `"caps":{"direct_containers":["mp4"],"direct_video":["h264"],"direct_audio":["aac"],"hls_video":["h264"],"hls_audio":["aac"]}`
 
 type watchOut struct {
-	Ticket    string  `json:"ticket"`
-	PlayID    string  `json:"play_id"`
-	Mode      string  `json:"mode"`
-	URL       string  `json:"url"`
-	Duration  float64 `json:"duration_s"`
-	Resume    float64 `json:"resume_s"`
-	Title     string  `json:"title"`
-	AudioIdx  *int    `json:"audio_index"`
-	Subtitle  *int    `json:"subtitle_index"`
+	Ticket    string                `json:"ticket"`
+	PlayID    string                `json:"play_id"`
+	Mode      string                `json:"mode"`
+	URL       string                `json:"url"`
+	Duration  float64               `json:"duration_s"`
+	Resume    float64               `json:"resume_s"`
+	Title     string                `json:"title"`
+	AudioIdx  *int                  `json:"audio_index"`
+	Subtitle  *int                  `json:"subtitle_index"`
 	Audio     []struct{ Index int } `json:"audio"`
 	Subtitles []struct {
 		Index int     `json:"index"`

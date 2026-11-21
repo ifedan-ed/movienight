@@ -1,8 +1,9 @@
 // Profile: your numbers, what you watched, your requests, your connections
 // (Jellyfin, players, emails, Kodi) and settings (Home rows, time zone, ...).
+import { watchedSheet } from "../actions.js";
 import { get, post } from "../api.js";
 import { fillPosters, posterCard, rowHeader, toast } from "../ui.js";
-import { fmtDate, h, icon, initials, swap } from "../util.js";
+import { episodeHref, fmtDate, h, icon, initials, swap, titleHref } from "../util.js";
 import { requestRow } from "./requests.js";
 import { timeZoneRow } from "./timezone.js";
 
@@ -24,6 +25,52 @@ function syncButton(label, what, ic, sub = "") {
     }
   });
   return btn;
+}
+
+// Plays Jellyfin has without a date: they can't go on the timeline, so
+// each is listed for the person to add here with a date, or to say it
+// wasn't watched. Either answer hides it for good (on the server), so the
+// notice ends once each is dealt with.
+function undatedNote(items, more, reload) {
+  const box = h("div.note.undated", { role: "status" });
+  const hide = (it) => post(`/api/v1/me/jellyfin/undated/${encodeURIComponent(it.id)}/hide`);
+  const row = (it) => {
+    const ep = it.media_type === "tv" && it.season != null && it.episode != null;
+    const name = ep ? `${it.title} · S${it.season}·E${it.episode}` : it.title;
+    const href = it.tmdb_id == null ? null : ep ? episodeHref(it.tmdb_id, it.season, it.episode) : titleHref(it);
+    const done = async (btn) => {
+      btn.disabled = true;
+      try {
+        await hide(it);
+        li.remove();
+        if (!box.querySelector(".un-row")) box.remove();
+        return true;
+      } catch (e) {
+        btn.disabled = false;
+        toast(e.message, { error: true });
+        return false;
+      }
+    };
+    const add = h("button.btn.btn-small.btn-ghost", { type: "button", onclick: () => {
+      const c = { media_type: it.media_type, tmdb_id: it.tmdb_id, title: name, key: `${it.media_type}:${it.tmdb_id}` };
+      // An episode is ticked on its show (which also marks it in Jellyfin);
+      // a film takes the usual watched sheet as it is.
+      const save = ep ? (when) => post(`/api/v1/title/tv/${it.tmdb_id}/episodes`,
+        { episodes: [{ season: it.season, episode: it.episode }], watched: true, watched_at: when }) : null;
+      // The numbers above change with the watch: the page is read again.
+      watchedSheet(c, [], async () => { if (await done(add)) reload(); }, { save });
+    } }, "Add to history");
+    const not = h("button.btn.btn-small.btn-quiet", { type: "button", onclick: () => done(not) }, "Not watched");
+    const li = h("li.un-row",
+      href ? h("a.un-name", { href }, name) : h("span.un-name", name),
+      h("span.un-acts", it.tmdb_id == null ? null : add, not));
+    return li;
+  };
+  swap(box,
+    h("b", "No date in Jellyfin, so not in your history"),
+    h("ul.un-list", items.map(row)),
+    more ? h("p.un-more", `And ${more.toLocaleString()} more`) : null);
+  return box;
 }
 
 function link(href, ic, title, sub) {
@@ -67,8 +114,10 @@ export default async function render(root) {
         h("span", h("b", "Connect your Jellyfin account"), " so your plays come in, Play opens VLC or Infuse, and requests are yours.")),
       // Admins only: what Movie Night couldn't do by itself (a library sync that didn't finish, ...).
       (me.admin_notices || []).map((n) => h("div.note", { role: "status" }, h("b", "For admins: "), n)),
-      // Yours: your Jellyfin plays couldn't be read, or some have no date (not added).
+      // Yours: your Jellyfin plays couldn't be read.
       jf.plays_notice ? h("a.note", { href: "/settings/jellyfin", role: "status" }, jf.plays_notice) : null,
+      // And the ones Jellyfin has without a date, by name.
+      (jf.plays_undated || []).length ? undatedNote(jf.plays_undated, jf.plays_undated_more || 0, load) : null,
       h("div.stats",
         stat(s.movies, "Movies watched"), stat(s.hours, "Hours watched"), stat(s.episodes, "Episodes"),
         stat(s.this_year, `Movies in ${new Date().getFullYear()}`), stat(s.ratings, "Ratings"), stat(s.watchlist, "On watchlist")),

@@ -190,6 +190,8 @@ async function member(page, name) {
   await step("leaving keeps the place; the next play offers to resume", async () => {
     await video(page, (v) => v.pause());
     const stopped = page.waitForResponse((r) => r.url().endsWith("/api/v1/watch/report") && r.request().postData().includes('"stop"'));
+    // Failing a step, not the whole run, when the stop never comes.
+    stopped.catch(() => {});
     await wake();
     await page.locator(".pl-top .pl-btn[aria-label='Back']").click();
     await stopped;

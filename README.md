@@ -27,8 +27,8 @@ History, ratings, lists, requests and what to watch next, on the web, iPhone, An
 - Home rows like a media center's: Up next, new on the server, your watchlist, trending, coming soon, "Because you watched", and AI-picked rows if you set up a model.
 - Search by title, person or a described plot ("the one where a robot sings to sleeping passengers"). A model can add its best guess.
 - Media libraries: point it at your film and show folders. It matches each file to TMDB from its name, finds the subtitle files beside it, and rescans every 30 minutes.
-- Play here, in the browser: the file as it is, remuxed, or converted when the browser can't play it, with audio and subtitle tracks, styled subtitles, subtitle delay, speed, chapters, Skip intro and resume. The watch is recorded at the end.
-- Jellyfin, optional: the library syncs, plays come into each person's history, and ticks are sent back.
+- Play here, in the browser: the file as it is, remuxed, or converted when the browser can't play it, with audio and subtitle tracks, styled subtitles, subtitle delay, speed, chapters, Skip intro and resume. It reads minutes ahead on a good connection. The watch is recorded at the end.
+- Jellyfin, optional: the library syncs, plays come into each person's history, and ticks are sent back. A play Jellyfin has no date for is listed in Profile, to add with a date or to mark as not watched.
 - Subtitles from OpenSubtitles, SubDL, SubSource, Jimaku, Podnapisi and Addic7ed (through Gestdown), searched from the player. The one made for your file comes first, and a picked one stays as a track for everyone. These sites hold subtitles their users uploaded, and each has its own terms.
 - Play in VLC, Infuse, Outplayer, Swiftfin, Streamyfin or a player you add yourself, with subtitles. Afterwards Movie Night asks "Finished it?" and records the watch.
 - Requests through Seerr, followed until the title is available.

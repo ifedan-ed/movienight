@@ -6,7 +6,7 @@
 //
 // Each status is a small JSON object in app_settings under "status:<name>".
 // The worker writes them (Record); GET /me reads them (Notices for admins,
-// PlaysNotice for the person). Nothing here stops anything working.
+// PlaysNotice and Undated for the person). Nothing here stops anything working.
 //
 // Shared: the library and plays syncs (internal/jfsync, run by the worker
 // and by "Sync now") call Record; disconnecting Jellyfin calls Forget; the
@@ -18,7 +18,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
-	"strings"
 	"time"
 
 	"movienight/server/internal/clients"
@@ -37,7 +36,7 @@ const (
 func Plays(userID int32) string { return fmt.Sprintf("plays:%d", userID) }
 
 // Value is one status: free-form fields (ok, at, problem, last_good_at,
-// status, kept, undated, ...).
+// status, kept, undated, undated_items, ...).
 type Value map[string]any
 
 func (v Value) str(k string) string { s, _ := v[k].(string); return s }
@@ -124,23 +123,117 @@ func PlaysProblem(v Value, whose string, loc *time.Location) string {
 		whose, When(v.str("at"), loc), v.str("problem"), last, hint)
 }
 
-// PlaysUndated is a sentence when Jellyfin lists plays without a date (a
-// play needs its date to go into the history, so those are not added).
-func PlaysUndated(v Value) string {
-	n := v.num("undated")
-	switch {
-	case n == 0:
-		return ""
-	case n == 1:
-		return "1 of your Jellyfin plays has no date in Jellyfin (it was marked played without one), so it isn't in " +
-			"your history here. Mark it watched here, with a date, to add it."
+// UndatedItem is one play Jellyfin lists without a date: it was marked
+// played there by hand, so there is no day to put it on in the history.
+// The person sees each by name in Profile, with a way to add it with a
+// date or to say it wasn't watched.
+type UndatedItem struct {
+	ID           string  `json:"id"`         // Jellyfin's item id
+	MediaType    string  `json:"media_type"` // "movie" or "tv" (an episode is its show)
+	TMDBID       *int32  `json:"tmdb_id"`    // nil when Jellyfin has no TMDB id for it
+	Title        string  `json:"title"`      // the film, or the show
+	Season       *int32  `json:"season,omitempty"`
+	Episode      *int32  `json:"episode,omitempty"`
+	EpisodeTitle *string `json:"episode_title,omitempty"`
+}
+
+// MaxUndated is how many undated plays a status keeps by name. A library
+// marked played wholesale could list thousands; past this many, the list
+// is the first ones and Profile says how many more there are.
+const MaxUndated = 100
+
+// UndatedHidden is the person's setting (user_settings) holding the
+// undated plays they dealt with: a JSON object of Jellyfin item id to the
+// time it was hidden. It is kept apart from the plays status, which every
+// sync rewrites and a disconnect drops, so an answer holds for good.
+const UndatedHidden = "plays_undated_hidden"
+
+// Undated is what the person still has to deal with: the undated plays
+// the last read found, less the ones they hid, and how many the status
+// counted in all that are not hidden (more than the list when the read
+// found over MaxUndated).
+func (s *Service) Undated(ctx context.Context, userID int32) ([]UndatedItem, int, error) {
+	v, err := s.Get(ctx, Plays(userID))
+	if err != nil || v == nil {
+		return nil, 0, err
 	}
-	return fmt.Sprintf("%s of your Jellyfin plays have no date in Jellyfin (they were marked played without one), so they "+
-		"aren't in your history here. Mark them watched here, with a date, to add them.", thousands(n))
+	hidden, err := s.hidden(ctx, userID)
+	if err != nil {
+		return nil, 0, err
+	}
+	all := undatedItems(v)
+	out := make([]UndatedItem, 0, len(all))
+	for _, it := range all {
+		if _, gone := hidden[it.ID]; !gone {
+			out = append(out, it)
+		}
+	}
+	// Those past the list can't be told apart: they all count.
+	total := len(out) + max(0, v.num("undated")-len(all))
+	return out, total, nil
+}
+
+// HideUndated keeps that the person dealt with one undated play (added it
+// with a date, or said they didn't watch it), so it is never listed again.
+// Only a play the last read listed can be hidden, which keeps the setting
+// as small as the person's own list. found is false for any other id.
+func (s *Service) HideUndated(ctx context.Context, userID int32, itemID string) (found bool, err error) {
+	v, err := s.Get(ctx, Plays(userID))
+	if err != nil || v == nil {
+		return false, err
+	}
+	for _, it := range undatedItems(v) {
+		if it.ID == itemID {
+			// One merge statement: two quick answers can't drop each other.
+			return true, s.settings.MergeUser(ctx, userID, UndatedHidden, map[string]any{itemID: Now()})
+		}
+	}
+	return false, nil
+}
+
+// HiddenUndated is the set of Jellyfin item ids the person dealt with.
+func (s *Service) HiddenUndated(ctx context.Context, userID int32) (map[string]bool, error) {
+	h, err := s.hidden(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]bool, len(h))
+	for id := range h {
+		out[id] = true
+	}
+	return out, nil
+}
+
+func (s *Service) hidden(ctx context.Context, userID int32) (map[string]any, error) {
+	var h map[string]any
+	if _, err := s.settings.User(ctx, userID, UndatedHidden, &h); err != nil {
+		return nil, err
+	}
+	return h, nil
+}
+
+// undatedItems reads the list a plays read stored. A status written before
+// the list existed has only the count: it lists nothing until the next
+// read, five minutes on.
+func undatedItems(v Value) []UndatedItem {
+	raw, ok := v["undated_items"]
+	if !ok || raw == nil {
+		return nil
+	}
+	b, err := json.Marshal(raw)
+	if err != nil {
+		return nil
+	}
+	var out []UndatedItem
+	if json.Unmarshal(b, &out) != nil {
+		return nil
+	}
+	return out
 }
 
 // PlaysNotice is what a linked person should know about their plays
-// coming in from Jellyfin, or "".
+// coming in from Jellyfin, or "": a read that failed. Plays without a
+// date are listed by name instead (Undated).
 // Its times are in loc, the person's zone.
 func (s *Service) PlaysNotice(ctx context.Context, userID int32, linked bool, loc *time.Location) (string, error) {
 	if !linked {
@@ -150,13 +243,7 @@ func (s *Service) PlaysNotice(ctx context.Context, userID int32, linked bool, lo
 	if err != nil {
 		return "", err
 	}
-	var parts []string
-	for _, p := range []string{PlaysProblem(v, "Your", loc), PlaysUndated(v)} {
-		if p != "" {
-			parts = append(parts, p)
-		}
-	}
-	return strings.Join(parts, " "), nil
+	return PlaysProblem(v, "Your", loc), nil
 }
 
 // Notices are plain sentences for the admins: only what needs them. Their

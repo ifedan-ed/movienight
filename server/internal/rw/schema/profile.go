@@ -49,8 +49,26 @@ type JellyfinLink struct {
 	Server       string  `json:"server"`
 	QuickConnect *bool   `json:"quick_connect" required:"false" nullable:"true"`
 	// A plain sentence when the person's plays couldn't be read from
-	// Jellyfin the last time, or Jellyfin lists plays without a date.
+	// Jellyfin the last time.
 	PlaysNotice *string `json:"plays_notice" required:"false" nullable:"true"`
+	// Plays Jellyfin lists without a date (so not in the history), by
+	// name, less the ones the person already dealt with.
+	PlaysUndated []UndatedPlay `json:"plays_undated" required:"false" nullable:"false"`
+	// How many more there are past that list (a read keeps 100 by name).
+	PlaysUndatedMore int `json:"plays_undated_more" required:"false" default:"0"`
+}
+
+// UndatedPlay is one play Jellyfin lists without a date: a film, or an
+// episode under its show. tmdb_id is null when Jellyfin has none, and then
+// it can only be hidden.
+type UndatedPlay struct {
+	ID           string  `json:"id"`
+	MediaType    string  `json:"media_type" enum:"movie,tv"`
+	TMDBID       *int32  `json:"tmdb_id" nullable:"true"`
+	Title        string  `json:"title"`
+	Season       *int32  `json:"season,omitempty" required:"false"`
+	Episode      *int32  `json:"episode,omitempty" required:"false"`
+	EpisodeTitle *string `json:"episode_title,omitempty" required:"false"`
 }
 
 // QuickConnectOut is the code to type into a signed-in Jellyfin app.
