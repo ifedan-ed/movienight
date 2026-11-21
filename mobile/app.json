@@ -57,7 +57,8 @@
           "image": "./assets/splash-icon.png",
           "imageWidth": 200
         }
-      ]
+      ],
+      "@sentry/react-native"
     ],
     "scheme": "movienight",
     "backgroundColor": "#0d0f14",

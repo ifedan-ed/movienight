@@ -37,9 +37,9 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"os/signal"
 	"slices"
 	"strings"
-	"os/signal"
 	"sync"
 	"syscall"
 	"time"
@@ -48,6 +48,7 @@ import (
 
 	"movienight/server/internal/clients"
 	"movienight/server/internal/config"
+	"movienight/server/internal/errreports"
 	"movienight/server/internal/jobs"
 	"movienight/server/internal/kv"
 	"movienight/server/internal/logging"
@@ -71,16 +72,31 @@ func main() {
 		os.Exit(2)
 	}
 	if err := run(log, *once); err != nil {
-		log.Error("the worker stopped", "err", err)
-		os.Exit(1)
+		os.Exit(1) // run has logged (and reported) why
 	}
 }
 
-func run(log *slog.Logger, once string) error {
+// run works until a signal (or, with once, until those jobs are done). It
+// logs its own fatal error, so that one is reported too, then flushes the
+// reporter.
+func run(base *slog.Logger, once string) (err error) {
+	log := base
+	var reporter *errreports.Reporter
+	defer func() {
+		if err != nil {
+			log.Error("the worker stopped", "err", err)
+		}
+		reporter.Flush()
+	}()
 	cfg, err := config.Load()
 	if err != nil {
 		return err
 	}
+	er := cfg.ErrorReports
+	if reporter, err = errreports.NewReporter(er.ServerDSN, er.Environment, "worker"); err != nil {
+		return err
+	}
+	log = slog.New(errreports.LogHandler(base.Handler(), reporter))
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 	pool, err := pg.Open(ctx, cfg.DatabaseURL)

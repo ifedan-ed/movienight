@@ -34,7 +34,8 @@ export interface paths {
         /**
          * Sign In Methods
          * @description How this Movie Night lets people sign in (no sign-in needed): the phone app shows its
-         *     username and password fields only when `password` is true.
+         *     username and password fields only when `password` is true, and starts its crash reports only
+         *     when `error_reports.app` is.
          */
         get: operations["sign_in_methods_api_v1_auth_methods_get"];
         put?: never;
@@ -162,6 +163,52 @@ export interface paths {
         get: operations["discover_api_v1_discover_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/errors/app": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Error Report app
+         * @description Takes a crash report from the phone app and forwards it to the collector
+         *     (no sign-in needed; no person is attached). Needs X-Requested-With: movienight. 404 when ERROR_REPORTS_APP_DSN
+         *     is empty, 413 over 200 KB, 400 for anything but an envelope, 429 over 20 reports from one
+         *     address in 10 minutes or 300 from everyone in an hour (the report is dropped).
+         */
+        post: operations["error_report_app_api_v1_errors_app_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/errors/web": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Error Report web
+         * @description Takes a crash report from the website and forwards it to the collector
+         *     (no sign-in needed; no person is attached). Needs an Origin header naming this site. 404 when ERROR_REPORTS_WEB_DSN
+         *     is empty, 413 over 200 KB, 400 for anything but an envelope, 429 over 20 reports from one
+         *     address in 10 minutes or 300 from everyone in an hour (the report is dropped).
+         */
+        post: operations["error_report_web_api_v1_errors_web_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1784,6 +1831,12 @@ export interface components {
             detail: string;
             errors?: components["schemas"]["ValidationError"][];
         };
+        ErrorReportsOut: {
+            /** @description ERROR_REPORTS_APP_DSN is set: the phone app reports to POST /api/v1/errors/app */
+            app: boolean;
+            /** @description ERROR_REPORTS_WEB_DSN is set: the website reports to POST /api/v1/errors/web */
+            web: boolean;
+        };
         FavoriteOut: {
             favorite: boolean;
             /** @default true */
@@ -2615,6 +2668,8 @@ export interface components {
             sent_to: string;
         };
         SignInMethodsOut: {
+            /** @description Which clients may send crash reports to /api/v1/errors/{web,app} */
+            error_reports: components["schemas"]["ErrorReportsOut"];
             /** @description OIDC is set up: the sign-in page (and /app/connect) offers it */
             oidc: boolean;
             /** @description OIDC_BUTTON_LABEL, the OIDC button's words */
@@ -3150,6 +3205,70 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PageOut"];
                 };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    error_report_app_api_v1_errors_app_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description A Sentry envelope, at most 200 KB. Only its error events are forwarded. */
+        requestBody?: {
+            content: {
+                "application/x-sentry-envelope": string;
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    error_report_web_api_v1_errors_web_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description A Sentry envelope, at most 200 KB. Only its error events are forwarded. */
+        requestBody?: {
+            content: {
+                "application/x-sentry-envelope": string;
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Error */
             default: {

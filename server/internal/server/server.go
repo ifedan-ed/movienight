@@ -23,6 +23,7 @@ import (
 	"movienight/server/internal/config"
 	"movienight/server/internal/crypto"
 	"movienight/server/internal/devices"
+	"movienight/server/internal/errreports"
 	"movienight/server/internal/httpx"
 	"movienight/server/internal/oidc"
 	"movienight/server/internal/passwords"
@@ -47,6 +48,9 @@ type App struct {
 	Keys      *crypto.Keys
 	// RW is the read and write routes' services (internal/rw).
 	RW *rw.Deps
+	// Relays forward the clients' error reports; cmd/api waits for the
+	// ones under way on shutdown.
+	Relays *errreports.Relays
 }
 
 // New builds the app on open connections.
@@ -64,6 +68,10 @@ func New(cfg *config.Config, pool *pgxpool.Pool, kv valkey.Client, log *slog.Log
 	pw := passwords.NewService(passwords.NewHasher(), people,
 		ratelimit.New(kv, "signin-fail", passwords.FailLimit, passwords.FailWindow), cfg.PasswordMinLength)
 	callers := httpx.NewCallers(cfg.TrustedProxies)
+	relays, err := newRelays(cfg, callers, kv, log)
+	if err != nil {
+		return nil, err
+	}
 
 	pages, err := web.New(web.Deps{
 		Config: cfg, Keys: keys, Auth: authn, Sessions: sess, Passwords: pw, Users: people, Devices: devs,
@@ -82,7 +90,7 @@ func New(cfg *config.Config, pool *pgxpool.Pool, kv valkey.Client, log *slog.Log
 	mux := http.NewServeMux()
 	// Sign-in and the shared plumbing (package api), then every other route
 	// (internal/rw/...) on the same Huma API, so one description holds all.
-	a := api.New(mux, api.Deps{Config: cfg, Auth: authn, Devices: devs, Passwords: pw, Web: pages, Callers: callers, KV: kv, Log: log})
+	a := api.New(mux, api.Deps{Config: cfg, Auth: authn, Devices: devs, Passwords: pw, Web: pages, Callers: callers, KV: kv, Log: log, Relays: relays})
 	pages.Register(mux)
 	downloads.Register(mux)
 	rwDeps := rw.NewDeps(cfg, pool, kv, cl, keys, a, log)
@@ -108,7 +116,24 @@ func New(cfg *config.Config, pool *pgxpool.Pool, kv valkey.Client, log *slog.Log
 	})
 	h := httpx.Handler(httpx.KeepRequest(authn.Middleware(routed)), log)
 
-	return &App{Handler: h, API: a, Auth: authn, Clients: cl, Users: people, Devices: devs, Passwords: pw, Keys: keys, RW: rwDeps}, nil
+	return &App{Handler: h, API: a, Auth: authn, Clients: cl, Users: people, Devices: devs, Passwords: pw, Keys: keys, RW: rwDeps, Relays: relays}, nil
+}
+
+// newRelays builds the website's and the app's error-report relays; each is
+// off (404) while its DSN is empty.
+func newRelays(cfg *config.Config, callers *httpx.Callers, kv valkey.Client, log *slog.Logger) (*errreports.Relays, error) {
+	er := cfg.ErrorReports
+	web, err := errreports.NewRelay(errreports.RelayOptions{Kind: errreports.Web, DSN: er.WebDSN, Origin: cfg.PublicOrigin(),
+		Environment: er.Environment, Callers: callers, KV: kv, Log: log})
+	if err != nil {
+		return nil, err
+	}
+	app, err := errreports.NewRelay(errreports.RelayOptions{Kind: errreports.App, DSN: er.AppDSN,
+		Environment: er.Environment, Callers: callers, KV: kv, Log: log})
+	if err != nil {
+		return nil, err
+	}
+	return &errreports.Relays{Web: web, App: app}, nil
 }
 
 // Spec builds the whole API description without any connection: every

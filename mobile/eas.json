@@ -9,11 +9,17 @@
       "android": {
         "buildType": "apk"
       },
-      "channel": "preview"
+      "channel": "preview",
+      "env": {
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+      }
     },
     "production": {
       "autoIncrement": true,
-      "channel": "production"
+      "channel": "production",
+      "env": {
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+      }
     },
     "e2e": {
       "distribution": "internal",
@@ -27,7 +33,8 @@
       "channel": "e2e",
       "environment": "development",
       "env": {
-        "EXPO_PUBLIC_E2E": "1"
+        "EXPO_PUBLIC_E2E": "1",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     }
   }

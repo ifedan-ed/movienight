@@ -103,8 +103,24 @@ The library syncs as soon as the worker starts and then every 30 minutes. Each p
 | AI rows, digest wording, plot search guesses | `LITELLM_BASE_URL`, `LITELLM_API_KEY`, `LITELLM_MODEL`, `SEARCH_AI_MODEL` (any OpenAI-compatible endpoint) |
 | Weekly digest and month-in-review emails | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` |
 | Password autofill in your own iPhone app build | `APPLE_APP_ID` (see [Phone app and Kodi](devices.md)) |
+| Crash and error reports to GlitchTip or Sentry | `ERROR_REPORTS_SERVER_DSN`, `ERROR_REPORTS_WEB_DSN`, `ERROR_REPORTS_APP_DSN` (see below) |
 
 After changing `.env`, run `docker compose up -d` to apply it.
+
+### Error reports
+
+Make three projects in GlitchTip or Sentry, one each for the server, the
+website and the phone app, and put their DSNs in the three settings. Leave
+out any you don't want. The website and the app send their reports to
+your Movie Night, which checks them, limits how many come in and forwards
+them. They never see a DSN, so nobody can read one from the code and fill
+your collector.
+
+A report has the error message, its stack trace, the browser or OS, the
+app version and the page's path without its query string. It has no
+names, emails, tokens or request bodies, and the collector never sees a
+visitor's IP address. `ERROR_REPORTS_ENVIRONMENT` changes the environment
+reports are filed under (`production` by default).
 
 ## Next steps
 

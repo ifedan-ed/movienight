@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"movienight/server/internal/config"
+	"movienight/server/internal/errreports"
 	"movienight/server/internal/kv"
 	"movienight/server/internal/logging"
 	"movienight/server/internal/migrate"
@@ -64,8 +65,7 @@ func main() {
 		return
 	}
 	if err := run(log); err != nil {
-		log.Error("the server stopped", "err", err)
-		os.Exit(1)
+		os.Exit(1) // run has logged (and reported) why
 	}
 }
 
@@ -85,11 +85,26 @@ func healthcheck(url string) int {
 	return 0
 }
 
-func run(log *slog.Logger) error {
+// run serves until a signal. It logs its own fatal error, so that one goes
+// through the error reporter too, and the reporter is flushed after it.
+func run(base *slog.Logger) (err error) {
+	log := base
+	var reporter *errreports.Reporter
+	defer func() {
+		if err != nil {
+			log.Error("the server stopped", "err", err)
+		}
+		reporter.Flush()
+	}()
 	cfg, err := config.Load()
 	if err != nil {
 		return err
 	}
+	er := cfg.ErrorReports
+	if reporter, err = errreports.NewReporter(er.ServerDSN, er.Environment, "api"); err != nil {
+		return err
+	}
+	log = slog.New(errreports.LogHandler(base.Handler(), reporter))
 	if cfg.AuthDevAllowed {
 		log.Warn("AUTH_DEV_ALLOWED is on: any request may name its user. Development and tests only")
 	}
@@ -145,6 +160,8 @@ func run(log *slog.Logger) error {
 	if err := srv.Shutdown(shutdownCtx); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return fmt.Errorf("shutdown: %w", err)
 	}
+	// Crash reports already answered but still on their way (5 s at most).
+	app.Relays.Wait()
 	return nil
 }
 

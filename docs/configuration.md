@@ -99,6 +99,30 @@ needs to change for your server.
 | `DIGEST_SEND_TRIES` | `3` | How many times the schedule (and its hourly catch-up) tries one person's digest of one period when the mail server clearly fails (no connection, a refusal with an error code); then it is given up on for that period, with an ERROR in the log ("Send it to me now" still works). A send whose fate is unknown (the connection broke after the email was handed over, or the app stopped midway) counts as sent and is never repeated ([limits](limits.md#background-jobs)) |
 | `JELLYFIN_WEBHOOK_SECRET` | (empty) | The shared secret for the Jellyfin Webhook plugin and the Movie Night plugin for Jellyfin (sent as `X-MovieNight-Token`). Empty: both are refused with 503 |
 
+## Error reports
+
+Crashes and errors can go to a Sentry-compatible collector such as
+GlitchTip or Sentry. Each part is off while its setting is empty. Make one
+project per part in the collector and copy each project's DSN.
+
+The website and the phone app never get a DSN. They send their reports to
+Movie Night (`POST /api/v1/errors/web` and `/api/v1/errors/app`), which
+forwards them with the DSN set here. One address may send 20 reports in
+10 minutes, and everyone together 300 an hour per part. Reports over that
+are dropped.
+
+A report holds the error message, its stack trace, the browser or OS and
+the app version, and the page's path without its query string. It never
+holds a name, a username, an email address, a token, a cookie or a request
+body. The collector sees Movie Night's address, never the visitor's.
+
+| Setting | Default | What it does |
+|---|---|---|
+| `ERROR_REPORTS_SERVER_DSN` | (empty) | The api's and the worker's own errors: everything they log at ERROR, panics included |
+| `ERROR_REPORTS_WEB_DSN` | (empty) | The website's errors. While it is set, the website loads the reporter (`/static/vendor/sentry.min.js`) |
+| `ERROR_REPORTS_APP_DSN` | (empty) | The phone app's errors. The app asks `GET /api/v1/auth/methods` and reports only while this is set |
+| `ERROR_REPORTS_ENVIRONMENT` | `production` | The environment every report is filed under, the forwarded ones too. Set without any DSN, it stops startup |
+
 ## Search
 
 | Setting | Default | What it does |
@@ -147,4 +171,5 @@ now and safe to delete: `SESSION_SECRET`, `TRAKT_EXPORT_DIR`,
 | Digest emails | `SMTP_HOST`, or `SMTP2GO_API_KEY_FILE` with `MAIL_SENDER=smtp2go` | No emails |
 | Password autofill in the iPhone app | `APPLE_APP_ID` and an app build naming your host | The app signs in without autofill |
 | Expo Go sign-in | `APP_DEV_REDIRECTS=true` | Only the real app (`movienight://`) can sign in |
+| Error reports | `ERROR_REPORTS_SERVER_DSN`, `ERROR_REPORTS_WEB_DSN`, `ERROR_REPORTS_APP_DSN` | Errors go only to the log |
 | Admin buttons (library rescan, sync every MDBList list, removing a catalog list) | `OWNER_USERNAME`, `ADMIN_USERS` | Hidden |

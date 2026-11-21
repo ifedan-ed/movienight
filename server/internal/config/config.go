@@ -215,6 +215,9 @@ type Config struct {
 	// ---- The read and write routes (config/rw.go) ----
 	RW ReadWrite
 
+	// ---- Error reports (config/errreports.go) ----
+	ErrorReports ErrorReports
+
 	// The worker's schedule, digests and AI rows (jobs.go).
 	JobSettings
 }
@@ -233,6 +236,16 @@ func (c *Config) AIEnabled() bool      { return c.LiteLLMAPIKey != "" && c.LiteL
 // SecureCookies reports whether cookies get the Secure attribute: whenever
 // the public address is https (see PublicURL).
 func (c *Config) SecureCookies() bool { return strings.HasPrefix(c.PublicURL, "https://") }
+
+// PublicOrigin is PUBLIC_URL's origin (scheme://host[:port], lower case),
+// as a browser names this site in its Origin header.
+func (c *Config) PublicOrigin() string {
+	u, err := url.Parse(c.PublicURL)
+	if err != nil {
+		return ""
+	}
+	return strings.ToLower(u.Scheme + "://" + u.Host)
+}
 
 // IsAdmin reports whether a (lower-case) username holds admin rights.
 func (c *Config) IsAdmin(username string) bool {
@@ -359,6 +372,7 @@ func LoadFrom(lookup func(string) (string, bool)) (*Config, error) {
 	c.MeiliEmbedderModel = r.withDefault("MEILI_EMBEDDER_MODEL", "BAAI/bge-base-en-v1.5")
 	c.SearchMaxHits = r.positive("SEARCH_MAX_HITS", 1000)
 	c.RW = r.readWrite()
+	c.ErrorReports = r.errorReports()
 
 	c.JobSettings = r.jobSettings()
 

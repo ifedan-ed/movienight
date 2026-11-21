@@ -12,6 +12,8 @@ import { Sheet } from "@/components/Sheet";
 import { SyncBar } from "@/components/SyncBar";
 import { Button, ToastHost, useToast } from "@/components/ui";
 import { api } from "@/lib/api";
+import { signInMethods } from "@/lib/auth";
+import { resumeErrorReports, setErrorReports } from "@/lib/errorReports";
 import { holdBusy, isBusy } from "@/lib/busy";
 import { isOnline, onOnlineChange } from "@/lib/net";
 import { flush, onSynced, send } from "@/lib/outbox";
@@ -92,6 +94,24 @@ function RootNavigator() {
   );
 }
 
+/** Crash reports while signed in, if the signed-in server takes them (the
+ * sign-in screen does the same for the address typed there). On at once
+ * when they were on for this server last time, then as the server says. */
+function ErrorReports() {
+  const { ready, server, token } = useSession();
+  useEffect(() => {
+    if (!ready || !token) return;
+    resumeErrorReports(server);
+    const ctrl = new AbortController();
+    signInMethods(server, ctrl.signal).then((m) => {
+      // No answer (offline): leave reports as they are.
+      if (m && !ctrl.signal.aborted) setErrorReports(server, !!m.error_reports?.app);
+    });
+    return () => ctrl.abort();
+  }, [ready, server, token]);
+  return null;
+}
+
 /** Back from VLC / Infuse: "Finished it?" for the latest Play. */
 function FinishedPrompt() {
   const { token } = useSession();
@@ -165,6 +185,7 @@ export default function RootLayout() {
           <ThemeProvider value={theme}>
             <ToastHost>
               <StatusBar style="light" />
+              <ErrorReports />
               <RootNavigator />
               <FinishedPrompt />
               <SyncBar />

@@ -113,6 +113,11 @@ var (
 	failingRowRe = regexp.MustCompile(`(Failing row contains )\(.*\)`)
 	// `invalid input syntax for type integer: "abc"`.
 	badInputRe = regexp.MustCompile(`(invalid input (?:syntax|value) for (?:type|enum) [^:\n]+: )"(?:[^"\n]|"")*"`)
+	// A device token (mn_app_..., mn_kodi_...) or any bearer credential:
+	// either opens an account, so neither may sit in a log line or an
+	// error report, wherever an upstream message happened to quote it.
+	tokenRe  = regexp.MustCompile(`\bmn_(app|kodi)_[A-Za-z0-9_-]+`)
+	bearerRe = regexp.MustCompile(`(?i)\b(bearer\s+)[^\s'",]+`)
 )
 
 // Redact removes what must never reach the log from one string.
@@ -121,5 +126,7 @@ func Redact(s string) string {
 	s = emailRe.ReplaceAllString(s, "[email]")
 	s = failingRowRe.ReplaceAllString(s, "$1(…)")
 	s = keyValuesRe.ReplaceAllString(s, "$1(…)")
+	s = tokenRe.ReplaceAllString(s, "mn_${1}_…")
+	s = bearerRe.ReplaceAllString(s, "${1}…")
 	return badInputRe.ReplaceAllString(s, `$1"…"`)
 }

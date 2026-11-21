@@ -9,8 +9,8 @@ import (
 	"errors"
 	"io"
 	"log/slog"
-	"sync/atomic"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 

@@ -33,12 +33,14 @@ type Shell struct {
 	static string
 }
 
-// LoadShell reads index.html once and fills in its two values, which the
-// Jinja template wrote as {{ v }} (the asset version, so phones never keep
-// stale JS after a deploy) and {{ jf }} (the Jellyfin address links point
-// at). Any other {{ left over means index.html changed in a way this code
-// does not know, so startup stops rather than serving a broken page.
-func LoadShell(webDir, jellyfinPublic string) (*Shell, error) {
+// LoadShell reads index.html once and fills in its values: {{ v }} (the
+// asset version, so phones never keep stale JS after a deploy), {{ jf }}
+// (the Jellyfin address links point at) and {{ errors }} (the crash
+// reporter's two scripts when errorReports is on, else nothing, so a site
+// without ERROR_REPORTS_WEB_DSN never loads the SDK). Any other {{ left
+// over means index.html changed in a way this code does not know, so
+// startup stops rather than serving a broken page.
+func LoadShell(webDir, jellyfinPublic string, errorReports bool) (*Shell, error) {
 	static := filepath.Join(webDir, "static")
 	raw, err := os.ReadFile(filepath.Join(webDir, "index.html"))
 	if err != nil {
@@ -48,8 +50,17 @@ func LoadShell(webDir, jellyfinPublic string) (*Shell, error) {
 	if err != nil {
 		return nil, fmt.Errorf("WEB_DIR: %w", err)
 	}
-	page := strings.ReplaceAll(string(raw), "{{ v }}", html.EscapeString(version))
+	v := html.EscapeString(version)
+	scripts := ""
+	if errorReports {
+		// Before app.js and in this order: deferred and module scripts run
+		// in document order, so the SDK is up before the app's first line.
+		scripts = `<script src="/static/vendor/sentry.min.js?v=` + v + `" defer></script>` +
+			`<script type="module" src="/static/js/errors.js?v=` + v + `"></script>`
+	}
+	page := strings.ReplaceAll(string(raw), "{{ v }}", v)
 	page = strings.ReplaceAll(page, "{{ jf }}", html.EscapeString(strings.TrimRight(jellyfinPublic, "/")))
+	page = strings.ReplaceAll(page, "{{ errors }}", scripts)
 	if strings.Contains(page, "{{") || strings.Contains(page, "{%") {
 		return nil, errors.New("WEB_DIR/index.html has template code this server does not fill in")
 	}

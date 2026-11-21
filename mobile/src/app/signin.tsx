@@ -9,6 +9,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Button, useToast } from "@/components/ui";
 import { takeSignOutReason } from "@/lib/api";
+import { setErrorReports } from "@/lib/errorReports";
 import { normalizeServer, signIn, signInMethods, signInWithPassword, type SignedIn } from "@/lib/auth";
 import { useSession } from "@/lib/session";
 import { caret, colors, gutter } from "@/lib/theme";
@@ -37,7 +38,11 @@ export default function SignIn() {
     const ctrl = new AbortController();
     const timer = setTimeout(async () => {
       const got = await signInMethods(srv, ctrl.signal);
-      if (!ctrl.signal.aborted) setMethods({ server: srv, methods: got });
+      if (ctrl.signal.aborted) return;
+      setMethods({ server: srv, methods: got });
+      // A crash on this screen is reported to the address typed, if it
+      // takes reports (a server that doesn't answer takes none).
+      setErrorReports(srv, !!got?.error_reports?.app);
     }, METHODS_DELAY_MS);
     return () => { clearTimeout(timer); ctrl.abort(); };
   }, [srv]);

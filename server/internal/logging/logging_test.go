@@ -30,6 +30,9 @@ func TestRedactCutsQueriesEmailsAndRowValues(t *testing.T) {
 	if got := Redact(`invalid input syntax for type integer: "my secret"`); strings.Contains(got, "secret") {
 		t.Errorf("bad input: %s", got)
 	}
+	if got := Redact(`token mn_app_Ab-9_x refused; Authorization: Bearer mn_kodi_zz9`); got != `token mn_app_… refused; Authorization: Bearer …` {
+		t.Errorf("tokens: %s", got)
+	}
 }
 
 func TestEveryLineIsRedactedAndCarriesTheRequestID(t *testing.T) {

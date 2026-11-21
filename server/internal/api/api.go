@@ -28,6 +28,7 @@ import (
 	"movienight/server/internal/auth"
 	"movienight/server/internal/config"
 	"movienight/server/internal/devices"
+	"movienight/server/internal/errreports"
 	"movienight/server/internal/httpx"
 	"movienight/server/internal/passwords"
 	"movienight/server/internal/ratelimit"
@@ -52,6 +53,9 @@ type Deps struct {
 	Callers   *httpx.Callers
 	KV        valkey.Client
 	Log       *slog.Logger
+	// Relays take the website's and the app's error reports
+	// (internal/errreports); nil only while building the description.
+	Relays *errreports.Relays
 }
 
 // API is the registered routes and their description.
@@ -99,6 +103,7 @@ func New(mux *http.ServeMux, d Deps) *API {
 	a.registerAuth()
 	a.registerDevices()
 	a.registerPairing()
+	a.registerErrorReports()
 
 	// The API description and its docs need a real sign-in, like every other
 	// API route (the proxy lets through anything that looks like a token).

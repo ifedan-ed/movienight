@@ -55,20 +55,24 @@ func TestEveryMissingRequiredSettingIsNamedAtOnce(t *testing.T) {
 
 func TestNoGuessesAndNoHalfConfiguredServices(t *testing.T) {
 	cases := map[string]map[string]string{
-		"SQLAlchemy URL":      {"DATABASE_URL": "postgresql+psycopg://u:p@db/mn"},
-		"OIDC half":           {"OIDC_ISSUER": "https://sso"},
-		"Seerr half":          {"SEERR_API_KEY": "k"},
-		"LiteLLM without URL": {"LITELLM_API_KEY": "k"},
-		"model without key":   {"LITELLM_MODEL": "m"},
-		"unknown time zone":   {"TIMEZONE": "Mars/Olympus"},
-		"mail sender typo":    {"MAIL_SENDER": "smpt"},
-		"bad boolean":         {"PASSWORD_SIGNIN": "sure"},
-		"bad number":          {"DEVICE_IDLE_DAYS": "0"},
-		"bad proxy":           {"TRUSTED_PROXY": "caddy"},
-		"bad alias":           {"USER_ALIASES": "a"},
-		"relative public URL": {"PUBLIC_URL": "mn.example"},
-		"Apple id, no team":   {"APPLE_APP_ID": "com.example.movienight"},
-		"Apple id, bad team":  {"APPLE_APP_ID": "abc.com.example.movienight"},
+		"SQLAlchemy URL":       {"DATABASE_URL": "postgresql+psycopg://u:p@db/mn"},
+		"OIDC half":            {"OIDC_ISSUER": "https://sso"},
+		"Seerr half":           {"SEERR_API_KEY": "k"},
+		"LiteLLM without URL":  {"LITELLM_API_KEY": "k"},
+		"model without key":    {"LITELLM_MODEL": "m"},
+		"unknown time zone":    {"TIMEZONE": "Mars/Olympus"},
+		"mail sender typo":     {"MAIL_SENDER": "smpt"},
+		"bad boolean":          {"PASSWORD_SIGNIN": "sure"},
+		"bad number":           {"DEVICE_IDLE_DAYS": "0"},
+		"bad proxy":            {"TRUSTED_PROXY": "caddy"},
+		"bad alias":            {"USER_ALIASES": "a"},
+		"relative public URL":  {"PUBLIC_URL": "mn.example"},
+		"Apple id, no team":    {"APPLE_APP_ID": "com.example.movienight"},
+		"Apple id, bad team":   {"APPLE_APP_ID": "abc.com.example.movienight"},
+		"report DSN not a DSN": {"ERROR_REPORTS_SERVER_DSN": "glitchtip.example"},
+		"web DSN, no project":  {"ERROR_REPORTS_WEB_DSN": "https://key@glitchtip.example/"},
+		"app DSN, no key":      {"ERROR_REPORTS_APP_DSN": "https://glitchtip.example/3"},
+		"environment alone":    {"ERROR_REPORTS_ENVIRONMENT": "staging"},
 	}
 	for name, change := range cases {
 		m := base()
@@ -78,6 +82,35 @@ func TestNoGuessesAndNoHalfConfiguredServices(t *testing.T) {
 		if _, err := load(m); err == nil {
 			t.Errorf("%s: accepted", name)
 		}
+	}
+}
+
+// Error reports: each DSN optional and on its own; the environment is
+// "production" unless set; the site's origin is PUBLIC_URL's.
+func TestErrorReportSettings(t *testing.T) {
+	c, err := load(base())
+	if err != nil || c.ErrorReports.Any() || c.ErrorReports.Environment != "production" {
+		t.Fatalf("unset: %+v %v", c.ErrorReports, err)
+	}
+	m := base()
+	m["ERROR_REPORTS_APP_DSN"] = "https://abc@glitchtip.example/3"
+	m["ERROR_REPORTS_ENVIRONMENT"] = "staging"
+	m["PUBLIC_URL"] = "https://Movies.Example:8443/"
+	c, err = load(m)
+	if err != nil {
+		t.Fatal(err)
+	}
+	e := c.ErrorReports
+	if e.AppDSN != "https://abc@glitchtip.example/3" || e.WebDSN != "" || e.ServerDSN != "" || e.Environment != "staging" || !e.Any() {
+		t.Fatalf("%+v", e)
+	}
+	if c.PublicOrigin() != "https://movies.example:8443" {
+		t.Fatal(c.PublicOrigin())
+	}
+	// A bad DSN's message names the setting, never the value (its key).
+	m["ERROR_REPORTS_SERVER_DSN"] = "secretkey"
+	if _, err := load(m); err == nil || !strings.Contains(err.Error(), "ERROR_REPORTS_SERVER_DSN") || strings.Contains(err.Error(), "secretkey") {
+		t.Fatal(err)
 	}
 }
 

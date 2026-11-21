@@ -153,7 +153,7 @@ func TestAppPasswordOffIsRefusedAndSaidSo(t *testing.T) {
 		t.Fatalf("%d %s", r.StatusCode, r.Body)
 	}
 	m := s.Client("", false).Do(t, "GET", "/api/v1/auth/methods", nil)
-	if m.StatusCode != 200 || m.Body != `{"password":false,"oidc":true,"oidc_label":"Sign in with the SSO provider"}` {
+	if m.StatusCode != 200 || m.Body != `{"password":false,"oidc":true,"oidc_label":"Sign in with the SSO provider","error_reports":{"web":false,"app":false}}` {
 		t.Fatalf("%d %s", m.StatusCode, m.Body)
 	}
 }
@@ -161,7 +161,7 @@ func TestAppPasswordOffIsRefusedAndSaidSo(t *testing.T) {
 func TestAuthMethodsWithPasswordsOn(t *testing.T) {
 	s := testenv.Start(t, passwordEnv(t))
 	m := s.Client("", false).Do(t, "GET", "/api/v1/auth/methods", nil)
-	if m.StatusCode != 200 || m.Body != `{"password":true,"oidc":false,"oidc_label":"Sign in"}` {
+	if m.StatusCode != 200 || m.Body != `{"password":true,"oidc":false,"oidc_label":"Sign in","error_reports":{"web":false,"app":false}}` {
 		t.Fatalf("%d %s", m.StatusCode, m.Body)
 	}
 }

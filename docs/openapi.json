@@ -869,6 +869,24 @@
     ],
     "type": "object"
    },
+   "ErrorReportsOut": {
+    "additionalProperties": false,
+    "properties": {
+     "app": {
+      "description": "ERROR_REPORTS_APP_DSN is set: the phone app reports to POST /api/v1/errors/app",
+      "type": "boolean"
+     },
+     "web": {
+      "description": "ERROR_REPORTS_WEB_DSN is set: the website reports to POST /api/v1/errors/web",
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "web",
+     "app"
+    ],
+    "type": "object"
+   },
    "FavoriteOut": {
     "additionalProperties": false,
     "properties": {
@@ -3840,6 +3858,10 @@
    "SignInMethodsOut": {
     "additionalProperties": false,
     "properties": {
+     "error_reports": {
+      "$ref": "#/components/schemas/ErrorReportsOut",
+      "description": "Which clients may send crash reports to /api/v1/errors/{web,app}"
+     },
      "oidc": {
       "description": "OIDC is set up: the sign-in page (and /app/connect) offers it",
       "type": "boolean"
@@ -3856,7 +3878,8 @@
     "required": [
      "password",
      "oidc",
-     "oidc_label"
+     "oidc_label",
+     "error_reports"
     ],
     "type": "object"
    },
@@ -4837,7 +4860,7 @@
   },
   "/api/v1/auth/methods": {
    "get": {
-    "description": "How this Movie Night lets people sign in (no sign-in needed): the phone app shows its\nusername and password fields only when `password` is true.",
+    "description": "How this Movie Night lets people sign in (no sign-in needed): the phone app shows its\nusername and password fields only when `password` is true, and starts its crash reports only\nwhen `error_reports.app` is.",
     "operationId": "sign_in_methods_api_v1_auth_methods_get",
     "responses": {
      "200": {
@@ -5224,6 +5247,76 @@
     "summary": "Discover",
     "tags": [
      "home"
+    ]
+   }
+  },
+  "/api/v1/errors/app": {
+   "post": {
+    "description": "Takes a crash report from the phone app and forwards it to the collector\n(no sign-in needed; no person is attached). Needs X-Requested-With: movienight. 404 when ERROR_REPORTS_APP_DSN\nis empty, 413 over 200 KB, 400 for anything but an envelope, 429 over 20 reports from one\naddress in 10 minutes or 300 from everyone in an hour (the report is dropped).",
+    "operationId": "error_report_app_api_v1_errors_app_post",
+    "requestBody": {
+     "content": {
+      "application/x-sentry-envelope": {
+       "schema": {
+        "type": "string"
+       }
+      }
+     },
+     "description": "A Sentry envelope, at most 200 KB. Only its error events are forwarded."
+    },
+    "responses": {
+     "200": {
+      "description": "OK"
+     },
+     "default": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      },
+      "description": "Error"
+     }
+    },
+    "summary": "Error Report app",
+    "tags": [
+     "errors"
+    ]
+   }
+  },
+  "/api/v1/errors/web": {
+   "post": {
+    "description": "Takes a crash report from the website and forwards it to the collector\n(no sign-in needed; no person is attached). Needs an Origin header naming this site. 404 when ERROR_REPORTS_WEB_DSN\nis empty, 413 over 200 KB, 400 for anything but an envelope, 429 over 20 reports from one\naddress in 10 minutes or 300 from everyone in an hour (the report is dropped).",
+    "operationId": "error_report_web_api_v1_errors_web_post",
+    "requestBody": {
+     "content": {
+      "application/x-sentry-envelope": {
+       "schema": {
+        "type": "string"
+       }
+      }
+     },
+     "description": "A Sentry envelope, at most 200 KB. Only its error events are forwarded."
+    },
+    "responses": {
+     "200": {
+      "description": "OK"
+     },
+     "default": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      },
+      "description": "Error"
+     }
+    },
+    "summary": "Error Report web",
+    "tags": [
+     "errors"
     ]
    }
   },

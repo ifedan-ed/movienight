@@ -122,6 +122,25 @@ there. There is no Delete account button. People ask the admin, who
 deletes the account as described in
 [Deleting someone](../docs/operations.md#deleting-someone).
 
+## Crash reports
+
+When the server has `ERROR_REPORTS_APP_DSN` set, the app sends its
+JavaScript errors there with `@sentry/react-native`. It learns this from
+`GET /api/v1/auth/methods`, for the signed-in server or for the address
+typed on the sign-in screen. Reports go to the Movie Night server
+(`/api/v1/errors/app`), never straight to the collector, and the app holds
+no collector key. They carry the error, its stack, the OS and app version,
+and no person, token or query string. Development builds report nothing.
+
+Native crashes are not reported: the native SDK would send them directly
+to a DSN, so it is never started. Source maps and debug symbols are not
+uploaded either, since that needs an auth token in the build. Stack traces
+therefore point into the bundled JavaScript. `SENTRY_DISABLE_AUTO_UPLOAD`
+is set in `eas.json` so the Sentry config plugin's upload step is skipped.
+
+The SDK has native code, so the first version with it needs a new store
+build; an over-the-air update can't add it.
+
 ## Developing
 
 ```bash

@@ -5,6 +5,7 @@ go 1.27
 require (
 	github.com/coreos/go-oidc/v3 v3.21.0
 	github.com/danielgtaylor/huma/v2 v2.40.0
+	github.com/getsentry/sentry-go v0.50.0
 	github.com/go-jose/go-jose/v4 v4.1.4
 	github.com/jackc/pgx/v5 v5.13.0
 	github.com/valkey-io/valkey-go v1.0.79

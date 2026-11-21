@@ -88,7 +88,7 @@ func New(d Deps) (*Web, error) {
 	if err != nil {
 		return nil, err
 	}
-	shell, err := LoadShell(d.Config.WebDir, d.Config.JellyfinPublicURL)
+	shell, err := LoadShell(d.Config.WebDir, d.Config.JellyfinPublicURL, d.Config.ErrorReports.WebDSN != "")
 	if err != nil {
 		return nil, err
 	}

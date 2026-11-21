@@ -55,6 +55,7 @@ reaches `admin` the same way.
 | Manual syncs | `/sync/plays`, and `/sync/library` and `/sync/lists` for admins | `internal/rw/devices` |
 | Digest emails | `/me/emails`, `/me/digests/{kind}`, `/me/digests/{id}/html`, `/me/digests/{id}/send` | `internal/rw/digests`, `internal/digest` |
 | Downloads | `/kodi/` (the add-on zip) and `/jellyfin/manifest.json` (the plugin repository), without sign-in. The zips are built once at start with fixed dates, so every replica serves identical bytes. | `internal/addons` |
+| Error reports | `/errors/web` and `/errors/app`: the website's and the app's Sentry envelopes, checked, limited and forwarded to the collector with the server's DSN. The server's own ERROR lines go there too | `internal/errreports` |
 | Website | `/`, every app page, `/static/...`, `/sw.js`, `/healthz`, and `/.well-known/apple-app-site-association`, which names the iPhone app for password autofill | `internal/web` |
 
 ## How it is built
@@ -86,6 +87,15 @@ alike:
 - `internal/lists` has lists, MDBList follow and sync (the Sync now button
   and the nightly job) and the MDBList copy, saved as pages pass and
   refreshed nightly.
+- `internal/errreports` sends errors to a Sentry-compatible collector. The
+  api and the worker wrap their log, so every ERROR line, panics included,
+  becomes a report, scrubbed of people and secrets. The relay takes the
+  website's and the app's envelopes, checks their Origin or
+  `X-Requested-With`, caps them at 200 KB, limits them in Valkey
+  (`rl:errors-<web|app>-addr:*` and `rl:errors-<web|app>-all:*`), keeps only
+  error events, strips users, headers and query strings, and forwards them
+  with the configured DSN. It needs no database query, and the client has
+  its answer before the forward starts.
 - `internal/spelling` is the search vocabulary. The catalog build counts
   words with it (`AddWords`, `Keep`) and search reads the result
   (`catalog_vocab`), so both use one definition of a word.

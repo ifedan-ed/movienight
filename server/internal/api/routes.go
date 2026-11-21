@@ -60,6 +60,16 @@ type SignInMethodsOut struct {
 	Password  bool   `json:"password" doc:"PASSWORD_SIGNIN: POST /api/v1/auth/password works"`
 	OIDC      bool   `json:"oidc" doc:"OIDC is set up: the sign-in page (and /app/connect) offers it"`
 	OIDCLabel string `json:"oidc_label" doc:"OIDC_BUTTON_LABEL, the OIDC button's words"`
+	// Here because it is the one answer both clients can read before
+	// anyone signs in, and a crash on the sign-in screen is a crash too.
+	ErrorReports ErrorReportsOut `json:"error_reports" doc:"Which clients may send crash reports to /api/v1/errors/{web,app}"`
+}
+
+// ErrorReportsOut says which clients' reports this server relays: a client
+// starts its error reporting only when its own one is true.
+type ErrorReportsOut struct {
+	Web bool `json:"web" doc:"ERROR_REPORTS_WEB_DSN is set: the website reports to POST /api/v1/errors/web"`
+	App bool `json:"app" doc:"ERROR_REPORTS_APP_DSN is set: the phone app reports to POST /api/v1/errors/app"`
 }
 
 // The phone's password sign-in answers in the sign-in page's words
@@ -158,10 +168,12 @@ func (a *API) registerAuth() {
 		OperationID: "sign_in_methods_api_v1_auth_methods_get", Method: http.MethodGet, Path: "/api/v1/auth/methods",
 		Summary: "Sign In Methods", Tags: []string{"auth"},
 		Description: "How this Movie Night lets people sign in (no sign-in needed): the phone app shows its\n" +
-			"username and password fields only when `password` is true.",
+			"username and password fields only when `password` is true, and starts its crash reports only\n" +
+			"when `error_reports.app` is.",
 	}, func(ctx context.Context, _ *struct{}) (*body[SignInMethodsOut], error) {
 		return &body[SignInMethodsOut]{Body: SignInMethodsOut{
 			Password: a.Config.PasswordSignin, OIDC: a.Config.OIDCEnabled(), OIDCLabel: a.Config.OIDCButtonLabel,
+			ErrorReports: ErrorReportsOut{Web: a.Config.ErrorReports.WebDSN != "", App: a.Config.ErrorReports.AppDSN != ""},
 		}}, nil
 	})
 
