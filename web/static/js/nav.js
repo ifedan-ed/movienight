@@ -21,6 +21,7 @@ const ROUTES = [
   [/^\/title\/tv\/(\d+)\/season\/(\d+)$/, "season"],
   [/^\/person\/(\d+)$/, "person"],
   [/^\/play\/([A-Za-z0-9_-]{16,40})$/, "playdone"],
+  [/^\/watch\/(movie|tv)\/(\d+)$/, "watch"],
   [/^\/profile$/, "profile"],
   [/^\/history$/, "history"],
   [/^\/requests$/, "requests"],

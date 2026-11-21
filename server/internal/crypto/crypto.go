@@ -58,6 +58,7 @@ type Keys struct {
 	fernet  *Fernet
 	connect []byte
 	form    []byte
+	stream  []byte
 }
 
 // NewKeys derives the keys. secret must not be empty (config refuses that
@@ -75,6 +76,9 @@ func NewKeys(secret string) (*Keys, error) {
 		// sessions on the server, an HMAC of a per-browser cookie does the
 		// same job without storing anything.
 		form: []byte("movienight:form:" + secret),
+		// The in-browser player's stream tickets (internal/stream): signed
+		// links to one item's media, checked without a database read.
+		stream: []byte("movienight:stream:" + secret),
 	}, nil
 }
 
@@ -96,6 +100,14 @@ func (k *Keys) FormToken(binder string) string {
 	m := hmac.New(sha256.New, k.form)
 	m.Write([]byte(binder))
 	return hex.EncodeToString(m.Sum(nil))
+}
+
+// StreamMAC is the HMAC-SHA256 of a stream ticket's claims. The key stays
+// in here; package stream only ever sees MACs.
+func (k *Keys) StreamMAC(msg []byte) []byte {
+	m := hmac.New(sha256.New, k.stream)
+	m.Write(msg)
+	return m.Sum(nil)
 }
 
 // SameHex compares two hex MACs in constant time.

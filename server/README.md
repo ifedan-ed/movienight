@@ -51,6 +51,8 @@ reaches `admin` the same way.
 | Profile | `/me`, `/me/time-zone`, `/me/time-zone/choice`, `/time-zones`, `/history`, `/requests`, `/rate-prompt` and its dismiss, `/export` | `internal/rw/profile` |
 | Account | `/me/jellyfin` (status, Quick Connect, password, unlink), `/me/players`, `/me/scrobble-token` | `internal/rw/profile` |
 | Play | `/title/{media}/{id}/play` (GET is the Play sheet, POST the player's link), `/play/open`, `/play/{id}` with `/back` and `/finish` | `internal/rw/devices`, `internal/playback` |
+| Play here | `/title/{media}/{id}/watch` (a stream ticket, tracks, chapters, segments), `/watch/report` (start, progress, pause, stop) | `internal/rw/devices`, `internal/playback`, `internal/jfplay` |
+| Stream proxy | `/stream/{ticket}/...`: the file with Range, Jellyfin's HLS playlists (rewritten to point back here, keys removed) and segments, subtitles as WebVTT or ASS, and embedded fonts. Not in the API description: it serves bytes | `internal/stream` |
 | Scrobbles | `/scrobble` for Kodi and other players, `/scrobble/jellyfin` for the Webhook plugin, `/scrobble/jellyfin/events` for the Movie Night plugin | `internal/rw/devices`, `internal/scrobble` |
 | Manual syncs | `/sync/plays`, and `/sync/library` and `/sync/lists` for admins | `internal/rw/devices` |
 | Digest emails | `/me/emails`, `/me/digests/{kind}`, `/me/digests/{id}/html`, `/me/digests/{id}/send` | `internal/rw/digests`, `internal/digest` |
@@ -112,7 +114,21 @@ alike:
   queued for a worker (`jfsync.AskMarks`), never sent from the request.
 - `internal/playback` has the Play sheet and "Finished it?". Asking and
   finishing are single conditional UPDATEs, so a double tap records one
-  watch.
+  watch. It also runs Play here: a play session with the player
+  `in-browser`, which is never asked "Finished it?" because a stop past
+  90 % or into the credits records the watch through the same `Finish`.
+- `internal/jfplay` is Jellyfin's side of Play here: PlaybackInfo with a
+  device profile made from what the browser says it decodes, chapters,
+  media segments, the next episode, and the playback reports. It runs as
+  the person's own Jellyfin token, or the install's key when they linked
+  none.
+- `internal/stream` is the media proxy. A ticket is HMAC-SHA256 over its
+  claims (person, item, media source, Jellyfin play session, expiry six
+  hours later), with a key derived from `SECRET_KEY`. The proxy checks only
+  the ticket, so a segment costs no database or session read. It streams
+  with `io.Copy` on its own keep-alive pool to Jellyfin, passes Range
+  through, and moves the write deadline forward chunk by chunk, so the
+  server's five-minute `WriteTimeout` never cuts a film.
 - `internal/jfsync` has the library sync, the plays sync, the webhook queue
   and the Jellyfin marks queue. Only a complete read changes
   `library_items`. Each person's plays are one transaction with batched
@@ -295,6 +311,15 @@ The browser tests (`e2e/flows.mjs`, Playwright) run against this server:
 
 The two phones each check that their zone is reported once, and that a
 zone picked in Profile sticks until Automatic is chosen again.
+
+All three play a title with Play here. `e2e/run.sh` makes a 60-second clip
+with ffmpeg (two audio tracks, two SRT subtitles, an ASS one) and the fake
+Jellyfin serves it as the file and as HLS (`fakes/jellyfin_play.go`). The
+flows check direct play, Skip intro, the subtitle delay, speed, switching
+audio onto HLS, JASSUB, chapters, resume and the watch recorded at the end.
+Linux WebKit's GStreamer stalls when a file is played again after a seek
+made while paused, so the flows seek while playing and start a fresh play
+after their paused seeks. Safari and Chromium do not do this.
 
 ```sh
 PLAYWRIGHT_DIR=/path/to/node_modules e2e/run.sh

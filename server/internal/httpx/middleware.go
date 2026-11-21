@@ -39,9 +39,12 @@ import (
 // the same figure per operation (internal/api).
 const MaxBodyBytes = 1 << 20
 
-// CSP is the policy for the app shell and the API.
+// CSP is the policy for the app shell and the API. media-src allows blob:
+// for the in-browser player: hls.js feeds the video element through a
+// MediaSource, which the browser addresses as a blob: URL. (The styled
+// subtitles' worker has its own policy: web.WorkerCSP.)
 const CSP = "default-src 'self'; script-src 'self'; style-src 'self'; " +
-	"img-src 'self' data: https://image.tmdb.org; connect-src 'self'; font-src 'self'; " +
+	"img-src 'self' data: https://image.tmdb.org; media-src 'self' blob:; connect-src 'self'; font-src 'self'; " +
 	"manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; " +
 	"form-action 'self'; frame-ancestors 'none'"
 

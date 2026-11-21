@@ -12,7 +12,7 @@ export class ApiError extends Error {
   }
 }
 
-async function call(method, url, body) {
+async function call(method, url, body, { keepalive = false } = {}) {
   let res;
   const headers = {};
   if (body) headers["Content-Type"] = "application/json";
@@ -25,6 +25,7 @@ async function call(method, url, body) {
       headers,
       body: body ? JSON.stringify(body) : undefined,
       credentials: "same-origin",
+      keepalive,
     });
   } catch {
     throw new ApiError(0, "No connection — check your network");
@@ -50,6 +51,9 @@ export function get(url, { fresh = false, ttl = TTL } = {}) {
 export function post(url, body = {}) { cache.clear(); return call("POST", url, body); }
 // A POST that only reads (poster back-fill): keeps the page cache.
 export function postRead(url, body = {}) { return call("POST", url, body); }
+// The player's reports: every few seconds while a film plays, so they leave
+// the page cache alone; keepalive lets the last one outlive a closing tab.
+export function report(url, body, { keepalive = false } = {}) { return call("POST", url, body, { keepalive }); }
 export function put(url, body = {}) { cache.clear(); return call("PUT", url, body); }
 export function patch(url, body = {}) { cache.clear(); return call("PATCH", url, body); }
 export function del(url) { cache.clear(); return call("DELETE", url); }

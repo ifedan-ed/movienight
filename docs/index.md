@@ -69,6 +69,6 @@ Movie Night is one Docker Compose stack behind your own reverse proxy: a small G
 People sign in with a username and password you give them, with your OIDC provider (Authentik, Keycloak, Pocket ID, ...), or either, on the website and in the phone app. The Kodi add-on and Jellyfin plugin use their own device tokens. Each person's days and digest weeks follow the time zone their browser or phone reports, or one they pick in Profile.
 
 !!! note "A watch diary, not a media source"
-    Movie Night does not host, provide, stream, download or index films or television. It keeps what you and your people enter, and can read play state from a Jellyfin server you control.
+    Movie Night does not host, provide, download or index films or television. It keeps what you and your people enter, and can read play state from a Jellyfin server you control. Its player plays only what that Jellyfin holds.
 
 <small>This product uses the TMDB API but is not endorsed or certified by TMDB.</small>

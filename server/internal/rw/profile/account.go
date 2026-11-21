@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/danielgtaylor/huma/v2"
@@ -13,6 +12,7 @@ import (
 	"movienight/server/internal/apierr"
 	"movienight/server/internal/clients"
 	"movienight/server/internal/crypto"
+	"movienight/server/internal/playback"
 	"movienight/server/internal/players"
 	"movienight/server/internal/rw"
 	"movienight/server/internal/rw/schema"
@@ -27,9 +27,9 @@ type account struct {
 	status  *status.Service
 }
 
-// deviceID is the person's own Jellyfin "device", so their Jellyfin session
-// stands alone (the Python's users.device_id).
-func deviceID(u store.User) string { return "movienight-" + strconv.Itoa(int(u.ID)) }
+// deviceID is the person's own Jellyfin "device" (one rule for linking and
+// for playing in the browser: playback.JellyfinDevice).
+func deviceID(u store.User) string { return playback.JellyfinDevice(u) }
 
 func (a *account) register() {
 	d := a.d

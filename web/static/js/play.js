@@ -1,6 +1,7 @@
-// Play in VLC, Infuse, Outplayer, Jellyfin or a player you added, with the
-// subtitle you want as a normal track; then, when you come back, "Finished
-// it?" records the watch (and marks it played in Jellyfin).
+// Play here, in Movie Night's own player (views/watch.js), or in VLC,
+// Infuse, Outplayer, Jellyfin or a player you added, with the subtitle you
+// want as a normal track; then, when you come back, "Finished it?" records
+// the watch (and marks it played in Jellyfin).
 import { get, post } from "./api.js";
 import { go } from "./nav.js";
 import { setState, sheet, states, toast } from "./ui.js";
@@ -18,10 +19,17 @@ export async function playSheet(c, { season = null, episode = null } = {}) {
     return;
   }
   const title = info.title || c.title;
+  const sn = info.season ?? season, en = info.episode ?? episode;
+  const here = (close) => h("button.btn.btn-request", { onclick: () => {
+    close();
+    go(`/watch/${c.media_type}/${c.tmdb_id}` + (sn != null && en != null ? `?season=${sn}&episode=${en}` : ""));
+  } }, icon("monitor"), "Play here");
   if (!info.linked) {
     sheet((close) => h("div",
       h("h2", title),
-      h("button.btn.btn-request", { onclick: () => { close(); go("/settings/jellyfin"); } }, icon("plug"), "Connect Jellyfin"),
+      here(close),
+      h("div", { style: { height: "8px" } }),
+      h("button.btn.btn-ghost", { onclick: () => { close(); go("/settings/jellyfin"); } }, icon("plug"), "Connect Jellyfin"),
       h("div", { style: { height: "8px" } }),
       h("a.btn.btn-quiet", { href: info.web_url, target: "_blank", rel: "noopener", onclick: close }, icon("play"), "Open in Jellyfin")));
     return;
@@ -37,7 +45,7 @@ export async function playSheet(c, { season = null, episode = null } = {}) {
       btn.disabled = true;
       try {
         const res = await post(`${base(c)}/play`, {
-          player, season: info.season ?? season, episode: info.episode ?? episode,
+          player, season: sn, episode: en,
           subtitle: sub,
         });
         store("player", player);
@@ -70,7 +78,7 @@ export async function playSheet(c, { season = null, episode = null } = {}) {
         h("a.btn-note", { href: "/settings/players", onclick: close }, "Players"));
     };
     paint();
-    return h("div", h("h2", title), box);
+    return h("div", h("h2", title), here(close), h("div", { style: { height: "14px" } }), box);
   });
 }
 

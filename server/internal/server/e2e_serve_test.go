@@ -23,6 +23,8 @@ func TestServeForBrowserTests(t *testing.T) {
 	env["PUBLIC_URL"] = "http://127.0.0.1:" + os.Getenv("E2E_PORT")
 	s, f := testenv.StartFaked(t, env)
 	f.Jellyfin.QCReady = true
+	// The in-browser player's clip, made by e2e/run.sh with ffmpeg.
+	f.Jellyfin.MediaDir = os.Getenv("E2E_MEDIA")
 	s.SeedLibrary(t)
 	t.Log("serving on", env["PUBLIC_URL"])
 	if err := http.ListenAndServe("127.0.0.1:"+os.Getenv("E2E_PORT"), s.App.Handler); err != nil {

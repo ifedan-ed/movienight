@@ -32,6 +32,7 @@ import (
 	"movienight/server/internal/rw/routes"
 	"movienight/server/internal/sessions"
 	"movienight/server/internal/store"
+	"movienight/server/internal/stream"
 	"movienight/server/internal/users"
 	"movienight/server/internal/web"
 )
@@ -97,6 +98,13 @@ func New(cfg *config.Config, pool *pgxpool.Pool, kv valkey.Client, log *slog.Log
 	if err := routes.RegisterAll(rwDeps); err != nil {
 		return nil, err
 	}
+	// The in-browser player's media (internal/stream): plain bytes, not an
+	// API operation, on a connection pool of its own.
+	proxy, err := stream.NewProxy(rwDeps.Tickets, stream.NewClient(), cfg.JellyfinBaseURL, cfg.JellyfinAPIKey, log)
+	if err != nil {
+		return nil, err
+	}
+	proxy.Register(mux)
 
 	// Inside out: the mux (with the route recorder for the access line),
 	// then the browser sign-in redirect for /api, then the lazy auth state

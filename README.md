@@ -27,6 +27,7 @@ History, ratings, lists, requests and what to watch next, on the web, iPhone, An
 - Home rows like a media center's: Up next, new on the server, your watchlist, trending, coming soon, "Because you watched", and AI-picked rows if you set up a model.
 - Search by title, person or a described plot ("the one where a robot sings to sleeping passengers"). A model can add its best guess.
 - Jellyfin: the library syncs, plays come into each person's history, and ticks are sent back.
+- Play here, in the browser, with audio and subtitle tracks, styled subtitles, subtitle delay, speed, chapters, Skip intro and resume. The watch is recorded at the end.
 - Play in VLC, Infuse, Outplayer, Swiftfin, Streamyfin or a player you add yourself, with subtitles. Afterwards Movie Night asks "Finished it?" and records the watch.
 - Requests through Seerr, followed until the title is available.
 - A website you can install as an app, an iPhone and Android app, a Kodi add-on and a Jellyfin plugin, all talking to your server.
@@ -34,7 +35,7 @@ History, ratings, lists, requests and what to watch next, on the web, iPhone, An
 - Each person's own time zone, reported by their browser or phone or picked in Profile. Their days, "this year", Home's rows and their digest emails follow it.
 - No ads, analytics or tracking. The data stays on your server, and everyone can download theirs.
 
-Movie Night is a watch diary, not a media source. It does not host, stream, download or index films or TV. It keeps what your people enter, reads titles and artwork from [TMDB](https://www.themoviedb.org/), and reads play state from a Jellyfin server you control.
+Movie Night is a watch diary, not a media source. It does not host, download or index films or TV. It keeps what your people enter, reads titles and artwork from [TMDB](https://www.themoviedb.org/), and reads play state from a Jellyfin server you control. Its player plays only what that Jellyfin holds.
 
 ## Quick start
 

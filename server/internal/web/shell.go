@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -108,6 +109,18 @@ func assetVersion(static string) (string, error) {
 	return hex.EncodeToString(h.Sum(nil))[:10], nil
 }
 
+// WorkerCSP is the policy of one script: the styled-subtitle renderer's
+// worker (JASSUB, web/static/vendor/jassub-<version>/jassub-worker.js). It
+// is libass compiled to WebAssembly, and Emscripten's bindings build their
+// glue code with new Function, so it needs 'unsafe-eval' and
+// 'wasm-unsafe-eval'. A worker runs under the policy its own script is
+// served with, so the allowance stays inside that worker: no page of the
+// site may evaluate strings.
+const WorkerCSP = "default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval'; connect-src 'self'; " +
+	"font-src 'self'; object-src 'none'; base-uri 'none'"
+
+var jassubWorker = regexp.MustCompile(`^vendor/jassub-[0-9.]+/jassub-worker\.js$`)
+
 // Static serves web/static/ with Cache-Control: no-cache, so the browser
 // re-checks (cheap 304s) and a module imported without ?v= never runs stale
 // code after a deploy. No directory listings.
@@ -117,6 +130,9 @@ func (s *Shell) Static() http.Handler {
 		if strings.HasSuffix(r.URL.Path, "/") {
 			apierr.Write(w, apierr.NotFound())
 			return
+		}
+		if jassubWorker.MatchString(strings.TrimPrefix(r.URL.Path, "/static/")) {
+			w.Header().Set("Content-Security-Policy", WorkerCSP)
 		}
 		w.Header().Set("Cache-Control", "no-cache")
 		files.ServeHTTP(w, r)

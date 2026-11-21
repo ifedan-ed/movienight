@@ -310,6 +310,8 @@ async function run(name, browserType, device, zone) {
     expect(body.url.includes("Stream.srt"), "no subtitle file in the link");
   });
 
+  await playerFlow(page, name);
+
   await step("Back keeps a row's sideways scroll", async () => {
     await go("/");
     await page.waitForSelector("section.row .scroller .card", { timeout: 15000 });
@@ -348,6 +350,181 @@ async function run(name, browserType, device, zone) {
   await browser.close();
 }
 
+// ---------------------------------------------------------------------------
+// Play here: Movie Night's own player, against the fake Jellyfin's clip
+// (60 s, two audio tracks, two text subtitles, an ASS one, an intro).
+// ---------------------------------------------------------------------------
+
+const video = (page, js, arg) => page.locator("video.pl-video").evaluate(js, arg);
+async function until(page, what, test, ms = 15000) {
+  const end = Date.now() + ms;
+  let last;
+  while (Date.now() < end) {
+    last = await test();
+    if (last) return last;
+    await page.waitForTimeout(150);
+  }
+  throw new Error(`timed out: ${what}`);
+}
+const at = (page) => video(page, (v) => v.currentTime);
+async function seekTo(page, t, play = false) {
+  // To seek and play, start first and seek once it is under way: Linux
+  // WebKit's GStreamer jumps to the end of a file when play() follows a
+  // seek made while paused (a plain <video> does it too; Safari and
+  // Chromium do not).
+  if (play && await video(page, (v) => v.paused)) {
+    const from = await at(page);
+    await video(page, (v) => v.play());
+    await until(page, "under way", async () => (await at(page)) > from + 0.4);
+  }
+  await video(page, (v, t) => { v.currentTime = t; }, t);
+  await until(page, `at ${t} s`, async () => Math.abs((await at(page)) - t) < 0.6);
+}
+
+// pick opens a control's menu and picks an entry by its exact label.
+async function pick(page, control, label) {
+  if (await page.locator(".pl-menu").isVisible()) await page.keyboard.press("Escape");
+  await page.locator(`.pl-btn[aria-label="${control}"]`).click();
+  await page.locator(".pl-mi").filter({ has: page.locator("span", { hasText: new RegExp(`^${label}$`) }) }).click();
+}
+
+async function playerFlow(page, name) {
+  const reqs = [];
+  page.on("request", (r) => reqs.push(r.url()));
+  const wake = () => page.locator(".pl").hover({ position: { x: 40, y: 40 } }).catch(() => {});
+
+  await step("Play here opens the player and plays the file as it is", async () => {
+    await page.goto(`${BASE}/title/movie/603`, { waitUntil: "networkidle" });
+    await page.locator(".d-primary .btn-play").click();
+    await page.locator(".sheet button", { hasText: "Play here" }).click();
+    await page.waitForURL(/\/watch\/movie\/603$/);
+    await page.waitForSelector("video.pl-video", { timeout: 10000 });
+    await until(page, "playing", async () => (await at(page)) > 1);
+    expect(reqs.some((u) => /\/api\/v1\/stream\/[^/]+\/stream\.mp4$/.test(u)), "not the file itself");
+    expect(!reqs.some((u) => /api_key|ApiKey/i.test(u)), "a key in an address");
+    expect(await page.locator("#tabbar").isHidden(), "the tab bar shows over the player");
+  });
+
+  await step("Skip intro jumps past the intro", async () => {
+    await seekTo(page, 2, true);
+    await wake();
+    await page.locator(".pl-skip", { hasText: "Skip intro" }).click({ timeout: 5000 });
+    await until(page, "past the intro", async () => (await at(page)) >= 9.5);
+  });
+
+  await step("subtitles show, and the delay moves them", async () => {
+    await pick(page, "Subtitles", "English");
+    await page.keyboard.press("Escape");
+    await video(page, (v) => v.pause());
+    await seekTo(page, 3.5);
+    await page.waitForTimeout(300);
+    expect(await page.locator(".pl-cue").count() === 0, "a line shows between lines");
+    await page.keyboard.press("]");
+    await page.keyboard.press("]"); // +1.0 s: "Hello there" (1-3 s) now shows 2-4 s
+    await page.waitForSelector(".pl-cue:has-text('Hello there')", { timeout: 3000 });
+    const kept = await page.evaluate(() => localStorage.getItem("mn:subdelay:movie:603"));
+    expect(kept === "1", `delay kept as ${kept}`);
+    await seekTo(page, 4.1); // 1 s later the next line ("A long line", 4-30 s) is not up yet
+    await page.waitForTimeout(300);
+    expect(await page.locator(".pl-cue:has-text('long')").count() === 0, "the delay did not move the next line");
+    await seekTo(page, 5.2);
+    await page.waitForSelector(".pl-cue i:has-text('long')", { timeout: 3000 });
+    await page.keyboard.press("[");
+    await page.keyboard.press("[");
+    expect(await page.evaluate(() => localStorage.getItem("mn:subdelay:movie:603")) === null, "the delay did not reset");
+    await pick(page, "Subtitles", "Français");
+    await page.waitForSelector(".pl-cue:has-text('Bonjour')", { timeout: 5000 });
+    await page.waitForTimeout(300);
+    if (SHOTS) await page.screenshot({ path: `${SHOTS}/${name}-player-subtitles.png` });
+    await page.keyboard.press("Escape");
+  });
+
+  // A fresh play after the paused seeks above: Linux WebKit's GStreamer
+  // does not start again after them (see seekTo).
+  await step("the player starts again on a reload", async () => {
+    await page.reload({ waitUntil: "networkidle" });
+    await page.waitForSelector("video.pl-video");
+    if (await video(page, (v) => v.paused)) await page.locator(".pl-big").click();
+    await until(page, "playing", async () => (await at(page)) > 1);
+  });
+
+  await step("speed goes up and down with < and >", async () => {
+    await page.keyboard.press(">");
+    expect(await video(page, (v) => v.playbackRate) === 1.25, "not 1.25×");
+    await page.keyboard.press("<");
+    await page.keyboard.press("<");
+    expect(await video(page, (v) => v.playbackRate) === 0.75, "not 0.75×");
+    await page.keyboard.press(">");
+  });
+
+  await step("another audio track carries on from the same second on Jellyfin's HLS", async () => {
+    const from = await at(page);
+    await pick(page, "Audio", "Deutsch");
+    await until(page, "the HLS playlist with track 2", async () => reqs.some((u) => /\/master\.m3u8\?.*AudioStreamIndex=2/.test(u)));
+    await until(page, "playing again", async () => !(await video(page, (v) => v.paused)) && (await at(page)) > from + 0.5, 20000);
+    const t = await at(page);
+    expect(t >= from - 1 && t < from + 12, `carried on at ${t}, was at ${from}`);
+    expect(!reqs.some((u) => /api_key|ApiKey/i.test(u)), "a key in an address");
+    await wake();
+    if (SHOTS) await page.screenshot({ path: `${SHOTS}/${name}-player-playing.png` });
+  });
+
+  await step("styled subtitles draw with JASSUB", async () => {
+    await pick(page, "Subtitles", "English \\(styled\\)");
+    await page.waitForSelector(".JASSUB canvas", { timeout: 15000, state: "attached" });
+    await pick(page, "Subtitles", "Off");
+    await until(page, "JASSUB gone", async () => (await page.locator(".JASSUB").count()) === 0, 5000);
+  });
+
+  await step("the settings menu lists chapters, speed and picture", async () => {
+    await wake();
+    await page.locator(`.pl-btn[aria-label="Settings"]`).click();
+    await page.waitForSelector(".pl-menu .pl-mi:has-text('Middle')");
+    await page.locator(".pl-chip", { hasText: "Fill" }).click();
+    expect(await page.locator(".pl").getAttribute("data-picture") === "fill", "the picture did not change");
+    if (SHOTS) await page.screenshot({ path: `${SHOTS}/${name}-player-settings.png` });
+    await page.locator(".pl-chip", { hasText: "Fit" }).click();
+    await page.locator(".pl-mi", { hasText: "Ending" }).click();
+    await until(page, "at the chapter", async () => Math.abs((await at(page)) - 40) < 2);
+  });
+
+  await step("leaving keeps the place, and the next play offers to resume", async () => {
+    await video(page, (v) => v.pause());
+    await seekTo(page, 41);
+    const stopped = page.waitForResponse((r) => r.url().endsWith("/api/v1/watch/report") && r.request().postData().includes('"stop"'));
+    await wake();
+    await page.locator(`.pl-top .pl-btn[aria-label="Back"]`).click();
+    await stopped;
+    await page.waitForSelector(".d-primary .btn-play", { timeout: 10000 });
+    await page.locator(".d-primary .btn-play").click();
+    await page.locator(".sheet button", { hasText: "Play here" }).click();
+    const resume = page.locator(".pl-resume button", { hasText: /Resume from 0:4[01]/ });
+    await resume.waitFor({ timeout: 10000 });
+    if (SHOTS) await page.screenshot({ path: `${SHOTS}/${name}-player-resume.png` });
+    await resume.click();
+    await until(page, "resumed", async () => (await at(page)) >= 40);
+  });
+
+  await step("the keyboard works the player", async () => {
+    await page.locator(".pl").focus();
+    await page.keyboard.press("m");
+    expect(await video(page, (v) => v.muted), "m did not mute");
+    await page.keyboard.press("m");
+    const t = await at(page);
+    await page.keyboard.press("ArrowLeft");
+    await until(page, "10 s back", async () => (await at(page)) < t - 8);
+    await page.keyboard.press("Space");
+    await until(page, "paused", async () => video(page, (v) => v.paused));
+    await page.keyboard.press("Space");
+    await until(page, "playing", async () => !(await video(page, (v) => v.paused)));
+  });
+
+  await step("playing to the end records the watch", async () => {
+    await seekTo(page, 57, true);
+    await page.waitForSelector(".toast:has-text('Marked Movie 603 as watched')", { timeout: 15000 });
+  });
+}
+
 async function wide() {
   console.log("desktop:");
   const browser = await chromium.launch();
@@ -360,6 +537,13 @@ async function wide() {
     expect(n >= 40, `only ${n} titles loaded`);
     expect(await page.locator(".loadmore .spin").count() === 0, "the spinner is stuck");
   });
+  // Not connected to Jellyfin: the player streams with the install's key.
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await playerFlow(page, "desktop");
+  await step("no script errors in the player", async () => { expect(errors.length === 0, errors.join(" | ")); });
+
   await step("the time-zone picker on a wide screen", async () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(`${BASE}/profile`, { waitUntil: "networkidle" });

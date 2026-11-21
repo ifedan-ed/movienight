@@ -443,6 +443,10 @@ type Jellyfin struct {
 	NextUp  []JSON
 	QCReady bool
 	qcUsers map[string]JSON // Quick Connect secret -> the account it signs in
+	// MediaDir is the browser tests' clip (jellyfin_play.go); "" serves
+	// no media.
+	MediaDir     string
+	playSessions int
 }
 
 // NewJellyfin starts it.
@@ -455,6 +459,9 @@ func NewJellyfin(t testing.TB) *Jellyfin {
 func (j *Jellyfin) route(w http.ResponseWriter, r *http.Request) {
 	j.mu.Lock()
 	defer j.mu.Unlock()
+	if j.MediaDir != "" && j.play(w, r) {
+		return
+	}
 	p := r.URL.Path
 	parts := strings.Split(strings.Trim(p, "/"), "/")
 	switch {
@@ -513,7 +520,7 @@ func (j *Jellyfin) route(w http.ResponseWriter, r *http.Request) {
 		// subtitle (the Play sheet offers both and puts the file's in the
 		// player's link), as the Python's browser-test fake had it.
 		Reply(w, JSON{"Id": parts[3], "Type": "Movie", "Name": "Movie 603", "CriticRating": nil,
-			"UserData": JSON{"PlaybackPositionTicks": 0},
+			"UserData": JSON{"PlaybackPositionTicks": 0}, "RunTimeTicks": ticks(ClipSeconds), "Chapters": ClipChapters,
 			"MediaSources": []JSON{{"Id": parts[3], "Container": "mkv", "DefaultSubtitleStreamIndex": 2, "MediaStreams": []JSON{
 				{"Type": "Subtitle", "Index": 2, "Language": "eng", "DisplayTitle": "English", "IsExternal": false, "IsTextSubtitleStream": true},
 				{"Type": "Subtitle", "Index": 3, "Language": "eng", "DisplayTitle": "English (file)", "IsExternal": true, "IsTextSubtitleStream": true},

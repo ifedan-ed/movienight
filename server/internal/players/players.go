@@ -60,6 +60,15 @@ var Builtins = []Builtin{
 // takes it as an array).
 var JellyfinApps = []string{"jellyfin", "swiftfin", "streamyfin"}
 
+// Browser is Movie Night's own player ("Play here"). The id has a dash,
+// which a player of one's own cannot have, so the two never clash.
+const Browser = "in-browser"
+
+// NoQuestion are the players nobody is asked "Finished it?" about: the
+// Jellyfin apps, and Movie Night's own player, which reports where it got
+// to and records the watch itself when the film or episode is over.
+var NoQuestion = append(append([]string{}, JellyfinApps...), Browser)
+
 // IsJellyfinApp reports whether the player plays through Jellyfin.
 func IsJellyfinApp(id string) bool {
 	for _, a := range JellyfinApps {

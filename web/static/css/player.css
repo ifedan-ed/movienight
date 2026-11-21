@@ -1,0 +1,167 @@
+/* Movie Night's own player (js/player/player.js), loaded with the first play. */
+.pl, .pl-wait, .pl-fail {
+  position: fixed; inset: 0; z-index: 50; background: #000; color: #fff;
+  font: 500 15px/1.35 var(--font); user-select: none; -webkit-user-select: none;
+}
+.pl-wait, .pl-fail { display: grid; place-items: center; align-content: center; gap: 16px; text-align: center; padding: 24px; }
+.pl-fail p { margin: 0; font-size: 17px; color: var(--text-2); max-width: 420px; }
+.pl-fail .btn { width: auto; }
+.pl { outline: none; overflow: hidden; }
+.pl.idle { cursor: none; }
+
+.pl-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; transition: transform .2s; }
+.pl[data-picture="fill"] .pl-video { object-fit: cover; }
+.pl[data-picture="stretch"] .pl-video { object-fit: fill; }
+.pl[data-picture="zoom-110"] .pl-video { transform: scale(1.1); }
+.pl[data-picture="zoom-125"] .pl-video { transform: scale(1.25); }
+.pl[data-picture="zoom-150"] .pl-video { transform: scale(1.5); }
+/* JASSUB's box (div.JASSUB, its canvas inside) lies over the video; the
+   canvas places and sizes itself to the picture. */
+.pl .JASSUB { position: absolute !important; inset: 0; z-index: 1; pointer-events: none; }
+
+/* Subtitles: drawn here, moved up while the controls show. */
+.pl-subs {
+  position: absolute; left: 4%; right: 4%; bottom: calc(6% + var(--safe-b)); z-index: 3; pointer-events: none;
+  display: flex; flex-direction: column; align-items: center; gap: .2em; text-align: center;
+  font-size: calc(clamp(17px, 3.6vmin, 44px) * var(--sub-scale, 1)); font-weight: 650; line-height: 1.25;
+  transition: bottom .2s;
+}
+.pl-cue {
+  max-width: 100%; padding: .08em .4em; border-radius: .2em; background: rgba(0, 0, 0, .55);
+  text-shadow: 0 0 .12em #000, 0 0 .12em #000; white-space: pre-line;
+}
+.pl:not(.idle) .pl-subs { bottom: calc(118px + var(--safe-b)); }
+
+/* The shade behind the controls, top and bottom. */
+.pl-shade {
+  position: absolute; inset: 0; z-index: 2; pointer-events: none; transition: opacity .25s;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, .65), transparent 22%, transparent 62%, rgba(0, 0, 0, .8));
+}
+.pl-top, .pl-bar, .pl-center, .pl-skip, .pl-next { transition: opacity .25s; }
+.pl.idle .pl-shade, .pl.idle .pl-top, .pl.idle .pl-bar, .pl.idle .pl-center { opacity: 0; pointer-events: none; }
+
+.pl-btn {
+  width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; color: #fff; flex: none;
+}
+.pl-btn svg.i { width: 26px; height: 26px; }
+@media (hover: hover) { .pl-btn:hover { background: rgba(255, 255, 255, .12); } }
+.pl-btn:focus-visible, .pl-mi:focus-visible, .pl-chip:focus-visible, .pl-sb:focus-visible, .pl-reset:focus-visible,
+.pl-skip:focus-visible, .pl-next-btn:focus-visible, .pl-seek:focus-visible, .pl-vol:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+
+.pl-top {
+  position: absolute; z-index: 4; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: 8px;
+  padding: calc(var(--safe-t) + 10px) 14px 10px;
+}
+.pl-title { font-size: 17px; font-weight: 750; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.pl-center {
+  position: absolute; z-index: 4; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  display: flex; align-items: center; gap: 28px; pointer-events: none;
+}
+.pl-center > * { pointer-events: auto; }
+.pl-big { width: 76px; height: 76px; border-radius: 50%; background: rgba(0, 0, 0, .45); }
+.pl-big svg.i { width: 38px; height: 38px; }
+.pl-mid { width: 56px; height: 56px; border-radius: 50%; background: rgba(0, 0, 0, .35); }
+.pl-mid svg.i { width: 32px; height: 32px; }
+.pl-spin { position: absolute; left: 50%; top: 50%; width: 36px; height: 36px; margin: -18px 0 0 -18px; }
+/* On a desktop the centre shows only while paused; a phone keeps its big buttons. */
+@media (min-width: 700px) {
+  .pl-mid { display: none; }
+  .pl:not(.paused) .pl-big { opacity: 0; pointer-events: none; }
+}
+
+.pl-bar { position: absolute; z-index: 4; left: 0; right: 0; bottom: 0; padding: 0 14px calc(var(--safe-b) + 10px); }
+.pl-row { display: flex; align-items: center; gap: 4px; }
+.pl-desk, .pl-volbox { display: flex; align-items: center; gap: 2px; }
+.pl-gap { flex: 1; }
+.pl-time { font-variant-numeric: tabular-nums; font-size: 14.5px; color: rgba(255, 255, 255, .9); padding: 0 8px; white-space: nowrap; }
+@media (max-width: 699px) {
+  .pl-desk, .pl-volbox { display: none; }
+  .pl-btn { width: 42px; height: 42px; }
+}
+
+/* Seek bar: the range input over a track with what is buffered and chapter ticks. */
+.pl-seekwrap { position: relative; height: 26px; margin: 0 6px 2px; }
+.pl-seekwrap::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 11px; height: 4px; border-radius: 4px; background: rgba(255, 255, 255, .25);
+}
+.pl-buf { position: absolute; left: 0; top: 11px; height: 4px; border-radius: 4px; background: rgba(255, 255, 255, .4); width: 0; }
+.pl-ticks i { position: absolute; top: 9px; width: 3px; height: 8px; margin-left: -1.5px; border-radius: 2px; background: rgba(255, 255, 255, .85); pointer-events: none; z-index: 1; }
+.pl-seek, .pl-vol { -webkit-appearance: none; appearance: none; background: transparent; margin: 0; cursor: pointer; }
+.pl-seek { position: absolute; inset: 0; width: 100%; height: 26px; z-index: 2; }
+.pl-seek::-webkit-slider-runnable-track {
+  height: 4px; border-radius: 4px; background: linear-gradient(to right, var(--accent) var(--p, 0%), transparent var(--p, 0%));
+}
+.pl-seek::-moz-range-track { height: 4px; background: transparent; }
+.pl-seek::-moz-range-progress { height: 4px; border-radius: 4px; background: var(--accent); }
+.pl-seek::-webkit-slider-thumb { -webkit-appearance: none; width: 15px; height: 15px; margin-top: -5.5px; border-radius: 50%; background: #fff; border: 0; }
+.pl-seek::-moz-range-thumb { width: 15px; height: 15px; border-radius: 50%; background: #fff; border: 0; }
+.pl-vol { width: 88px; height: 26px; }
+.pl-vol::-webkit-slider-runnable-track { height: 4px; border-radius: 4px; background: rgba(255, 255, 255, .4); }
+.pl-vol::-moz-range-track { height: 4px; border-radius: 4px; background: rgba(255, 255, 255, .4); }
+.pl-vol::-webkit-slider-thumb { -webkit-appearance: none; width: 13px; height: 13px; margin-top: -4.5px; border-radius: 50%; background: #fff; }
+.pl-vol::-moz-range-thumb { width: 13px; height: 13px; border-radius: 50%; background: #fff; border: 0; }
+
+/* Skip intro / credits, and the next episode, sit above the bar on the right. */
+.pl-skip, .pl-next { position: absolute; z-index: 5; right: 18px; bottom: calc(108px + var(--safe-b)); }
+.pl-skip {
+  height: 46px; padding: 0 18px; border-radius: 12px; font-weight: 750; font-size: 15.5px;
+  background: rgba(20, 22, 28, .82); border: 1px solid rgba(255, 255, 255, .35); color: #fff;
+}
+.pl-next-btn {
+  display: flex; align-items: center; gap: 12px; padding: 10px 16px 10px 12px; border-radius: 14px; text-align: left;
+  background: #fff; color: #0b0d12; max-width: min(360px, calc(100vw - 36px)); box-shadow: 0 8px 28px rgba(0, 0, 0, .5);
+}
+.pl-next-btn span { display: flex; flex-direction: column; min-width: 0; }
+.pl-next-btn b { font-size: 15.5px; }
+.pl-next-btn small { font-size: 13px; color: #4b5160; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* With a menu open, the menu has that corner. */
+.pl.menu-open .pl-skip, .pl.menu-open .pl-next { display: none; }
+
+/* A short word over the picture: speed, subtitle delay, a track. */
+.pl-osd {
+  position: absolute; z-index: 6; left: 50%; top: calc(var(--safe-t) + 72px); transform: translateX(-50%);
+  padding: 8px 16px; border-radius: 12px; background: rgba(18, 21, 28, .85); font-weight: 700; font-size: 16px;
+  white-space: nowrap; pointer-events: none;
+}
+
+/* Resume from ... / Start over */
+.pl-resume {
+  position: absolute; z-index: 6; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: min(360px, calc(100% - 40px)); display: grid; gap: 10px; padding: 18px; border-radius: 20px;
+  background: rgba(18, 21, 28, .92); border: 1px solid var(--line-2); box-shadow: 0 18px 50px rgba(0, 0, 0, .6);
+}
+.pl-resume ~ .pl-center { display: none; }
+
+/* Menus: a panel above the bar (a sheet across the bottom on a phone). */
+.pl-menu {
+  position: absolute; z-index: 7; right: 14px; bottom: calc(96px + var(--safe-b)); width: 320px;
+  max-height: calc(100% - 140px - var(--safe-t)); overflow-y: auto; overscroll-behavior: contain;
+  padding: 8px; border-radius: 16px; background: rgba(18, 21, 28, .96); border: 1px solid var(--line-2);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, .6);
+}
+@media (max-width: 699px) {
+  .pl-menu { left: 8px; right: 8px; width: auto; bottom: calc(88px + var(--safe-b)); max-height: 60%; }
+}
+.pl-mh { font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); padding: 10px 10px 6px; }
+.pl-mi {
+  width: 100%; min-height: 42px; display: flex; align-items: center; gap: 10px; padding: 8px 10px 8px 34px;
+  border-radius: 10px; text-align: left; position: relative; font-size: 15px;
+}
+@media (hover: hover) { .pl-mi:hover { background: rgba(255, 255, 255, .08); } }
+.pl-mi[aria-checked="true"] { color: var(--accent); font-weight: 750; }
+.pl-mi[aria-checked="true"]::before {
+  content: ""; position: absolute; left: 12px; top: 50%; width: 10px; height: 10px; margin-top: -5px; border-radius: 50%; background: var(--accent);
+}
+.pl-mi span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pl-mi small { color: var(--text-3); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.pl-step { display: flex; align-items: center; gap: 8px; padding: 2px 10px 8px; }
+.pl-sb { width: 42px; height: 38px; border-radius: 10px; background: var(--surface-2); font-size: 20px; font-weight: 700; }
+.pl-val { min-width: 72px; text-align: center; font-variant-numeric: tabular-nums; font-weight: 700; }
+.pl-reset { margin-left: auto; height: 38px; padding: 0 12px; border-radius: 10px; color: var(--text-2); background: var(--surface); }
+.pl-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 2px 10px 8px; }
+.pl-chip { height: 36px; padding: 0 12px; border-radius: 10px; background: var(--surface-2); font-size: 14px; font-weight: 650; }
+.pl-chip.on { background: var(--accent-soft); color: var(--accent); box-shadow: inset 0 0 0 1px rgba(245, 183, 59, .5); }

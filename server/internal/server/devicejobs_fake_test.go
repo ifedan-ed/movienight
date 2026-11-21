@@ -5,6 +5,7 @@ package server_test
 // per service, and the helpers its tests share.
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -14,6 +15,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"movienight/server/internal/clients"
 	"movienight/server/internal/store"
@@ -36,6 +38,16 @@ type up struct {
 	episodes   map[string][]map[string]any // series id -> episodes
 	marked     []string                    // "user/item" marked played
 	serverID   string
+	// Jellyfin playback (Play here): PlaybackInfo's media source, the
+	// file it streams, segments, and what came in.
+	source    map[string]any   // PlaybackInfo's media source; a remux when direct play is refused
+	file      []byte           // /Videos/{id}/stream.*
+	segments  []map[string]any // /MediaSegments/{id}
+	infoAsked []map[string]any // PlaybackInfo request bodies
+	reports   []jfReport       // /Sessions/Playing...
+	encodings []string         // DELETE /Videos/ActiveEncodings queries
+	positions []string         // "user/item/ticks" set with the install's key
+	mediaAuth []string         // the Authorization header of media requests
 	// TMDB
 	titles map[string]map[string]any // "movie/603" -> payload
 	find   map[string]map[string]any // external id -> find answer
@@ -102,6 +114,67 @@ func newUp(t *testing.T) *up {
 		u.mu.Lock()
 		defer u.mu.Unlock()
 		u.marked = append(u.marked, r.PathValue("uid")+"/"+r.PathValue("id"))
+		write(w, map[string]any{})
+	})
+	mux.HandleFunc("POST /jf/Items/{id}/PlaybackInfo", func(w http.ResponseWriter, r *http.Request) {
+		u.mu.Lock()
+		defer u.mu.Unlock()
+		var body map[string]any
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		u.infoAsked = append(u.infoAsked, body)
+		src := map[string]any{}
+		for k, v := range u.source {
+			src[k] = v
+		}
+		if body["EnableDirectPlay"] == false {
+			// Jellyfin's HLS, with the caller's token in the address as
+			// Jellyfin writes it.
+			src["SupportsDirectPlay"] = false
+			src["TranscodingUrl"] = fmt.Sprintf("/videos/%s/master.m3u8?DeviceId=movienight-x&MediaSourceId=%v&PlaySessionId=ps-%d&ApiKey=user-token&AudioStreamIndex=%v",
+				r.PathValue("id"), src["Id"], len(u.infoAsked), body["AudioStreamIndex"])
+		}
+		write(w, map[string]any{"MediaSources": []any{src}, "PlaySessionId": fmt.Sprintf("ps-%d", len(u.infoAsked))})
+	})
+	mux.HandleFunc("GET /jf/Videos/{id}/{file}", func(w http.ResponseWriter, r *http.Request) {
+		u.mu.Lock()
+		u.mediaAuth = append(u.mediaAuth, r.Header.Get("Authorization"))
+		file := u.file
+		u.mu.Unlock()
+		http.ServeContent(w, r, "film.mp4", time.Unix(0, 0), bytes.NewReader(file))
+	})
+	mux.HandleFunc("GET /jf/videos/{id}/master.m3u8", func(w http.ResponseWriter, r *http.Request) {
+		u.mu.Lock()
+		u.mediaAuth = append(u.mediaAuth, r.Header.Get("Authorization"))
+		u.mu.Unlock()
+		_, _ = fmt.Fprintf(w, "#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1000\nmain.m3u8?%s&ApiKey=user-token\n", r.URL.RawQuery)
+	})
+	for _, p := range []string{"/Sessions/Playing", "/Sessions/Playing/Progress", "/Sessions/Playing/Stopped"} {
+		mux.HandleFunc("POST /jf"+p, func(w http.ResponseWriter, r *http.Request) {
+			u.mu.Lock()
+			defer u.mu.Unlock()
+			rep := jfReport{Path: p, Auth: r.Header.Get("Authorization")}
+			_ = json.NewDecoder(r.Body).Decode(&rep.Body)
+			u.reports = append(u.reports, rep)
+			w.WriteHeader(http.StatusNoContent)
+		})
+	}
+	mux.HandleFunc("DELETE /jf/Videos/ActiveEncodings", func(w http.ResponseWriter, r *http.Request) {
+		u.mu.Lock()
+		defer u.mu.Unlock()
+		u.encodings = append(u.encodings, r.URL.RawQuery)
+		w.WriteHeader(http.StatusNoContent)
+	})
+	mux.HandleFunc("GET /jf/MediaSegments/{id}", func(w http.ResponseWriter, r *http.Request) {
+		u.mu.Lock()
+		defer u.mu.Unlock()
+		write(w, map[string]any{"Items": u.segments})
+	})
+	mux.HandleFunc("POST /jf/UserItems/{id}/UserData", func(w http.ResponseWriter, r *http.Request) {
+		u.mu.Lock()
+		defer u.mu.Unlock()
+		var body map[string]any
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		u.positions = append(u.positions, fmt.Sprintf("%s/%s/%v", r.URL.Query().Get("userId"), r.PathValue("id"), body["PlaybackPositionTicks"]))
 		write(w, map[string]any{})
 	})
 	mux.HandleFunc("GET /jf/System/Info/Public", func(w http.ResponseWriter, r *http.Request) {
@@ -178,6 +251,13 @@ func newUp(t *testing.T) *up {
 	u.Server = httptest.NewServer(mux)
 	t.Cleanup(u.Close)
 	return u
+}
+
+// jfReport is one playback report Jellyfin got.
+type jfReport struct {
+	Path string
+	Auth string
+	Body map[string]any
 }
 
 func (u *up) set(f func(u *up)) {

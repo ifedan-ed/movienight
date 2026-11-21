@@ -34,6 +34,18 @@ Set a shared secret, `JELLYFIN_WEBHOOK_SECRET`, then either:
     {"NotificationType":"{{NotificationType}}","UserId":"{{UserId}}","ItemId":"{{ItemId}}"}
     ```
 
+## Play here
+
+Play here plays the film or episode in the browser. The browser tells Movie Night which codecs it can decode, and Jellyfin sends the file as it is when the browser can play it. Otherwise Jellyfin remuxes or transcodes it to HLS. Another audio track, or a picture subtitle (PGS, VobSub), restarts the stream from the same second with that track. Text subtitles are shown by the player and never burnt in.
+
+Every byte goes through Movie Night, so browsers never see a Jellyfin key. Movie Night fetches the media with `JELLYFIN_API_KEY`, limited to the one item a signed stream link names. The link lasts six hours.
+
+The player tells Jellyfin where it is, as the person's own Jellyfin user when they connected their account. A stop past 90 % of the runtime, or into the credits, records the watch and marks it played.
+
+Skip intro and Skip credits appear when Jellyfin has media segments for the item. A segment plugin such as Intro Skipper makes them.
+
+The keys: Space or K plays and pauses, ← and → jump 10 seconds, ↑ and ↓ change the volume, F is fullscreen, M mutes, C changes the subtitles, [ and ] move the subtitles half a second earlier or later, and < and > change the speed.
+
 ## Players
 
 Play can open VLC, Infuse, Outplayer, nPlayer, VidHub, SenPlayer, Swiftfin, Streamyfin or the Jellyfin website, with subtitles in the language each person picks (Profile → Players and subtitles). After a film or episode, Movie Night asks "Finished it?" and records the watch.

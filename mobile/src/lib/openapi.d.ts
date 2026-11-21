@@ -1529,6 +1529,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/title/{media}/{tmdb_id}/watch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Watch
+         * @description Play in the browser: how to stream the film or episode, its tracks, chapters and segments.
+         */
+        post: operations["watch_api_v1_title__media___tmdb_id__watch_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/title/{media}/{tmdb_id}/watched": {
         parameters: {
             query?: never;
@@ -1578,6 +1598,26 @@ export interface paths {
          * @description Posters for cards that arrived without one (big lists).
          */
         post: operations["fill_api_v1_titles_fill_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/watch/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Watch Report
+         * @description Where the player is: start, every few seconds, pause and stop. A stop at the end records the watch.
+         */
+        post: operations["watch_report_api_v1_watch_report_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2934,6 +2974,140 @@ export interface components {
             sources: string[];
             title: string;
             watched_at: string;
+        };
+        WatchCaps: {
+            direct_audio: ("aac" | "mp3" | "opus" | "flac" | "ac3" | "eac3" | "vorbis" | "alac")[];
+            /** @description containers the video element plays as a file */
+            direct_containers: ("mp4" | "webm")[];
+            direct_video: ("h264" | "hevc" | "av1" | "vp9" | "vp8")[];
+            hls_audio: ("aac" | "mp3" | "opus" | "flac" | "ac3" | "eac3" | "vorbis" | "alac")[];
+            hls_video: ("h264" | "hevc" | "av1" | "vp9" | "vp8")[];
+        };
+        WatchChapter: {
+            name: string;
+            /** Format: double */
+            start_s: number;
+        };
+        WatchIn: {
+            /**
+             * Format: int64
+             * @description audio track index; the file's default when left out
+             */
+            audio?: number | null;
+            /**
+             * Format: int64
+             * @description a picture subtitle (PGS, VobSub) to burn into the video
+             */
+            burn_subtitle?: number | null;
+            caps: components["schemas"]["WatchCaps"];
+            /** Format: int64 */
+            episode?: number | null;
+            /** @description the ticket of the play this continues */
+            replace?: string | null;
+            /** Format: int64 */
+            season?: number | null;
+        } & {
+            [key: string]: unknown;
+        };
+        WatchNext: {
+            /** Format: int64 */
+            episode: number;
+            /** Format: int64 */
+            season: number;
+            title: string;
+        };
+        WatchOut: {
+            audio: components["schemas"]["WatchTrack"][];
+            /** Format: int64 */
+            audio_index?: number | null;
+            backdrop: string;
+            /** Format: int64 */
+            burnt_subtitle?: number | null;
+            chapters: components["schemas"]["WatchChapter"][];
+            /** Format: double */
+            duration_s: number;
+            /** Format: int64 */
+            episode?: number | null;
+            /** @description fonts embedded in the file, for styled subtitles */
+            fonts: string[];
+            jellyfin_item_id: string;
+            key: string;
+            media_type: string;
+            /** @enum {string} */
+            mode: "direct" | "hls";
+            /** @description the episode after this one; left out at the end */
+            next?: components["schemas"]["WatchNext"];
+            play_id: string;
+            /**
+             * Format: double
+             * @description where the person left off; 0 from the start
+             */
+            resume_s: number;
+            /** Format: int64 */
+            season?: number | null;
+            segments: components["schemas"]["WatchSegment"][];
+            /**
+             * Format: int64
+             * @description the subtitle to show at the start
+             */
+            subtitle_index?: number | null;
+            subtitles: components["schemas"]["WatchTrack"][];
+            /** @description the stream ticket: in every stream address and every report */
+            ticket: string;
+            title: string;
+            /** Format: int64 */
+            tmdb_id: number;
+            url: string;
+        };
+        WatchReportIn: {
+            /** Format: int64 */
+            audio?: number | null;
+            /**
+             * Format: double
+             * @description the player's own length, used when Jellyfin names none
+             */
+            duration_s?: number;
+            /** @enum {string} */
+            event: "start" | "progress" | "pause" | "stop";
+            paused?: boolean;
+            /** Format: double */
+            position_s: number;
+            /** Format: int64 */
+            subtitle?: number | null;
+            ticket: string;
+            /** @description playing Jellyfin's HLS rather than the file */
+            transcoded?: boolean;
+        } & {
+            [key: string]: unknown;
+        };
+        WatchReportOut: {
+            /** @default true */
+            ok: boolean;
+            watched: boolean;
+        };
+        WatchSegment: {
+            /** Format: double */
+            end_s: number;
+            /** @enum {string} */
+            kind: "intro" | "credits" | "recap" | "preview" | "commercial";
+            /** Format: double */
+            start_s: number;
+        };
+        WatchTrack: {
+            /** Format: int64 */
+            channels?: number;
+            codec: string;
+            default: boolean;
+            external?: boolean;
+            forced?: boolean;
+            /** Format: int64 */
+            index: number;
+            /** @description subtitles: text, ass or image */
+            kind?: string;
+            label: string;
+            language?: string | null;
+            /** @description subtitles: where the player reads a text or ASS track */
+            url?: string | null;
         };
         WatchedIn: {
             /** @description ISO date or datetime; default now */
@@ -5914,6 +6088,42 @@ export interface operations {
             };
         };
     };
+    watch_api_v1_title__media___tmdb_id__watch_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                media: "movie" | "tv";
+                tmdb_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WatchIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WatchOut"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     add_watched_api_v1_title__media___tmdb_id__watched_post: {
         parameters: {
             query?: never;
@@ -6034,6 +6244,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FillOut"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    watch_report_api_v1_watch_report_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WatchReportIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WatchReportOut"];
                 };
             };
             /** @description Error */

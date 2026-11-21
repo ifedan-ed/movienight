@@ -1,7 +1,8 @@
 // Package devices is the routes other apps and Movie Night's own players
 // call: scrobbles from the Kodi add-on and other players, the Jellyfin
 // Webhook plugin and the Movie Night plugin for Jellyfin, playing a title in
-// an outside player and "Finished it?", and the manual syncs.
+// an outside player and "Finished it?", Movie Night's own player, and the
+// manual syncs.
 //
 // The handlers authenticate and validate; packages scrobble, playback and
 // jfsync decide what is recorded. Background work (a person's plays after a
@@ -33,6 +34,7 @@ import (
 func Register(d *rw.Deps) {
 	registerScrobble(d)
 	registerPlay(d)
+	registerWatch(d)
 	registerSyncs(d)
 }
 

@@ -610,3 +610,9 @@ a.d-resume { text-decoration: none; }
 .signin-help { margin-top: 14px; }
 .signin-h2 { font-size: 18px; margin: 26px 0 0; }
 .signin-back { display: inline-block; margin-bottom: 14px; text-decoration: none; }
+
+/* ---------- Play here: the player takes the whole window (css/player.css) ---------- */
+body.watching #tabbar, body.watching #rate-bar { display: none; }
+body.watching #view { padding-bottom: 0; }
+body.watching #view::before { display: none; }
+body.watching { overflow: hidden; }

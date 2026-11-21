@@ -4752,6 +4752,491 @@
     ],
     "type": "object"
    },
+   "WatchCaps": {
+    "additionalProperties": false,
+    "properties": {
+     "direct_audio": {
+      "items": {
+       "enum": [
+        "aac",
+        "mp3",
+        "opus",
+        "flac",
+        "ac3",
+        "eac3",
+        "vorbis",
+        "alac"
+       ],
+       "type": "string"
+      },
+      "maxItems": 10,
+      "type": "array"
+     },
+     "direct_containers": {
+      "description": "containers the video element plays as a file",
+      "items": {
+       "enum": [
+        "mp4",
+        "webm"
+       ],
+       "type": "string"
+      },
+      "maxItems": 4,
+      "type": "array"
+     },
+     "direct_video": {
+      "items": {
+       "enum": [
+        "h264",
+        "hevc",
+        "av1",
+        "vp9",
+        "vp8"
+       ],
+       "type": "string"
+      },
+      "maxItems": 8,
+      "type": "array"
+     },
+     "hls_audio": {
+      "items": {
+       "enum": [
+        "aac",
+        "mp3",
+        "opus",
+        "flac",
+        "ac3",
+        "eac3",
+        "vorbis",
+        "alac"
+       ],
+       "type": "string"
+      },
+      "maxItems": 10,
+      "type": "array"
+     },
+     "hls_video": {
+      "items": {
+       "enum": [
+        "h264",
+        "hevc",
+        "av1",
+        "vp9",
+        "vp8"
+       ],
+       "type": "string"
+      },
+      "maxItems": 8,
+      "type": "array"
+     }
+    },
+    "required": [
+     "direct_containers",
+     "direct_video",
+     "direct_audio",
+     "hls_video",
+     "hls_audio"
+    ],
+    "type": "object"
+   },
+   "WatchChapter": {
+    "additionalProperties": false,
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "start_s": {
+      "format": "double",
+      "type": "number"
+     }
+    },
+    "required": [
+     "start_s",
+     "name"
+    ],
+    "type": "object"
+   },
+   "WatchIn": {
+    "additionalProperties": true,
+    "properties": {
+     "audio": {
+      "description": "audio track index; the file's default when left out",
+      "format": "int64",
+      "maximum": 100000,
+      "minimum": 0,
+      "type": [
+       "integer",
+       "null"
+      ]
+     },
+     "burn_subtitle": {
+      "description": "a picture subtitle (PGS, VobSub) to burn into the video",
+      "format": "int64",
+      "maximum": 100000,
+      "minimum": 0,
+      "type": [
+       "integer",
+       "null"
+      ]
+     },
+     "caps": {
+      "$ref": "#/components/schemas/WatchCaps"
+     },
+     "episode": {
+      "format": "int64",
+      "maximum": 2147483647,
+      "minimum": 0,
+      "type": [
+       "integer",
+       "null"
+      ]
+     },
+     "replace": {
+      "description": "the ticket of the play this continues",
+      "maxLength": 2000,
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "season": {
+      "format": "int64",
+      "maximum": 2147483647,
+      "minimum": 0,
+      "type": [
+       "integer",
+       "null"
+      ]
+     }
+    },
+    "required": [
+     "caps"
+    ],
+    "type": "object"
+   },
+   "WatchNext": {
+    "additionalProperties": false,
+    "properties": {
+     "episode": {
+      "format": "int64",
+      "type": "integer"
+     },
+     "season": {
+      "format": "int64",
+      "type": "integer"
+     },
+     "title": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "season",
+     "episode",
+     "title"
+    ],
+    "type": "object"
+   },
+   "WatchOut": {
+    "additionalProperties": false,
+    "properties": {
+     "audio": {
+      "items": {
+       "$ref": "#/components/schemas/WatchTrack"
+      },
+      "type": "array"
+     },
+     "audio_index": {
+      "format": "int64",
+      "type": [
+       "integer",
+       "null"
+      ]
+     },
+     "backdrop": {
+      "type": "string"
+     },
+     "burnt_subtitle": {
+      "format": "int64",
+      "type": [
+       "integer",
+       "null"
+      ]
+     },
+     "chapters": {
+      "items": {
+       "$ref": "#/components/schemas/WatchChapter"
+      },
+      "type": "array"
+     },
+     "duration_s": {
+      "format": "double",
+      "type": "number"
+     },
+     "episode": {
+      "format": "int64",
+      "type": [
+       "integer",
+       "null"
+      ]
+     },
+     "fonts": {
+      "description": "fonts embedded in the file, for styled subtitles",
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "jellyfin_item_id": {
+      "type": "string"
+     },
+     "key": {
+      "type": "string"
+     },
+     "media_type": {
+      "type": "string"
+     },
+     "mode": {
+      "enum": [
+       "direct",
+       "hls"
+      ],
+      "type": "string"
+     },
+     "next": {
+      "$ref": "#/components/schemas/WatchNext",
+      "description": "the episode after this one; left out at the end"
+     },
+     "play_id": {
+      "type": "string"
+     },
+     "resume_s": {
+      "description": "where the person left off; 0 from the start",
+      "format": "double",
+      "type": "number"
+     },
+     "season": {
+      "format": "int64",
+      "type": [
+       "integer",
+       "null"
+      ]
+     },
+     "segments": {
+      "items": {
+       "$ref": "#/components/schemas/WatchSegment"
+      },
+      "type": "array"
+     },
+     "subtitle_index": {
+      "description": "the subtitle to show at the start",
+      "format": "int64",
+      "type": [
+       "integer",
+       "null"
+      ]
+     },
+     "subtitles": {
+      "items": {
+       "$ref": "#/components/schemas/WatchTrack"
+      },
+      "type": "array"
+     },
+     "ticket": {
+      "description": "the stream ticket: in every stream address and every report",
+      "type": "string"
+     },
+     "title": {
+      "type": "string"
+     },
+     "tmdb_id": {
+      "format": "int64",
+      "type": "integer"
+     },
+     "url": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "ticket",
+     "play_id",
+     "mode",
+     "url",
+     "duration_s",
+     "resume_s",
+     "title",
+     "media_type",
+     "tmdb_id",
+     "key",
+     "jellyfin_item_id",
+     "backdrop",
+     "audio",
+     "subtitles",
+     "chapters",
+     "segments",
+     "fonts"
+    ],
+    "type": "object"
+   },
+   "WatchReportIn": {
+    "additionalProperties": true,
+    "properties": {
+     "audio": {
+      "format": "int64",
+      "maximum": 100000,
+      "minimum": 0,
+      "type": [
+       "integer",
+       "null"
+      ]
+     },
+     "duration_s": {
+      "description": "the player's own length, used when Jellyfin names none",
+      "format": "double",
+      "maximum": 1000000,
+      "minimum": 0,
+      "type": "number"
+     },
+     "event": {
+      "enum": [
+       "start",
+       "progress",
+       "pause",
+       "stop"
+      ],
+      "type": "string"
+     },
+     "paused": {
+      "type": "boolean"
+     },
+     "position_s": {
+      "format": "double",
+      "maximum": 1000000,
+      "minimum": 0,
+      "type": "number"
+     },
+     "subtitle": {
+      "format": "int64",
+      "maximum": 100000,
+      "minimum": 0,
+      "type": [
+       "integer",
+       "null"
+      ]
+     },
+     "ticket": {
+      "maxLength": 2000,
+      "minLength": 10,
+      "type": "string"
+     },
+     "transcoded": {
+      "description": "playing Jellyfin's HLS rather than the file",
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "ticket",
+     "event",
+     "position_s"
+    ],
+    "type": "object"
+   },
+   "WatchReportOut": {
+    "additionalProperties": false,
+    "properties": {
+     "ok": {
+      "default": true,
+      "type": "boolean"
+     },
+     "watched": {
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "watched"
+    ],
+    "type": "object"
+   },
+   "WatchSegment": {
+    "additionalProperties": false,
+    "properties": {
+     "end_s": {
+      "format": "double",
+      "type": "number"
+     },
+     "kind": {
+      "enum": [
+       "intro",
+       "credits",
+       "recap",
+       "preview",
+       "commercial"
+      ],
+      "type": "string"
+     },
+     "start_s": {
+      "format": "double",
+      "type": "number"
+     }
+    },
+    "required": [
+     "kind",
+     "start_s",
+     "end_s"
+    ],
+    "type": "object"
+   },
+   "WatchTrack": {
+    "additionalProperties": false,
+    "properties": {
+     "channels": {
+      "format": "int64",
+      "type": "integer"
+     },
+     "codec": {
+      "type": "string"
+     },
+     "default": {
+      "type": "boolean"
+     },
+     "external": {
+      "type": "boolean"
+     },
+     "forced": {
+      "type": "boolean"
+     },
+     "index": {
+      "format": "int64",
+      "type": "integer"
+     },
+     "kind": {
+      "description": "subtitles: text, ass or image",
+      "type": "string"
+     },
+     "label": {
+      "type": "string"
+     },
+     "language": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "url": {
+      "description": "subtitles: where the player reads a text or ASS track",
+      "type": [
+       "string",
+       "null"
+      ]
+     }
+    },
+    "required": [
+     "index",
+     "label",
+     "codec",
+     "default"
+    ],
+    "type": "object"
+   },
    "WatchedIn": {
     "additionalProperties": true,
     "properties": {
@@ -9311,6 +9796,73 @@
     ]
    }
   },
+  "/api/v1/title/{media}/{tmdb_id}/watch": {
+   "post": {
+    "description": "Play in the browser: how to stream the film or episode, its tracks, chapters and segments.",
+    "operationId": "watch_api_v1_title__media___tmdb_id__watch_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "media",
+      "required": true,
+      "schema": {
+       "enum": [
+        "movie",
+        "tv"
+       ],
+       "type": "string"
+      }
+     },
+     {
+      "in": "path",
+      "name": "tmdb_id",
+      "required": true,
+      "schema": {
+       "exclusiveMinimum": 0,
+       "format": "int64",
+       "maximum": 10000000000,
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/WatchIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/WatchOut"
+        }
+       }
+      },
+      "description": "OK"
+     },
+     "default": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      },
+      "description": "Error"
+     }
+    },
+    "summary": "Watch",
+    "tags": [
+     "play"
+    ]
+   }
+  },
   "/api/v1/title/{media}/{tmdb_id}/watched": {
    "post": {
     "operationId": "add_watched_api_v1_title__media___tmdb_id__watched_post",
@@ -9526,6 +10078,48 @@
     "summary": "Fill",
     "tags": [
      "catalog"
+    ]
+   }
+  },
+  "/api/v1/watch/report": {
+   "post": {
+    "description": "Where the player is: start, every few seconds, pause and stop. A stop at the end records the watch.",
+    "operationId": "watch_report_api_v1_watch_report_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/WatchReportIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/WatchReportOut"
+        }
+       }
+      },
+      "description": "OK"
+     },
+     "default": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      },
+      "description": "Error"
+     }
+    },
+    "summary": "Watch Report",
+    "tags": [
+     "play"
     ]
    }
   }

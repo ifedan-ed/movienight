@@ -14,7 +14,8 @@
 //	rw/profile  /me, history, requests, rate prompt, export, account settings
 //	            (Jellyfin link, players, scrobble token)
 //	rw/devices  scrobbles, the Jellyfin webhook and plugin, Play and
-//	            "Finished it?", the manual syncs
+//	            "Finished it?", Play here (the in-browser player), the
+//	            manual syncs
 //	rw/digests  digest emails: settings, the digests, preview and send
 //
 // Package api keeps only sign-in and the shared plumbing. server.go builds
@@ -43,6 +44,7 @@ import (
 	"movienight/server/internal/crypto"
 	"movienight/server/internal/digest"
 	"movienight/server/internal/history"
+	"movienight/server/internal/jfplay"
 	"movienight/server/internal/jfsync"
 	"movienight/server/internal/mail"
 	"movienight/server/internal/playback"
@@ -51,6 +53,7 @@ import (
 	"movienight/server/internal/settings"
 	"movienight/server/internal/status"
 	"movienight/server/internal/store"
+	"movienight/server/internal/stream"
 	"movienight/server/internal/titles"
 	"movienight/server/internal/users"
 	"movienight/server/internal/userstate"
@@ -80,7 +83,8 @@ type Deps struct {
 	History  *history.Service  // watches, however they are recorded
 	JFSync   *jfsync.Service   // Jellyfin syncs, the webhook queue, Jellyfin marks
 	Scrobble *scrobble.Service // watches other apps report
-	Playback *playback.Service // Play and "Finished it?"
+	Playback *playback.Service // Play, "Finished it?" and the in-browser player
+	Tickets  *stream.Signer    // the in-browser player's stream tickets (the proxy checks them too)
 	AIRows   *airows.Service   // "Picked for you": served here, built by the worker
 	Digests  *digest.Service   // digest emails asked for by a person (the schedule's are the worker's)
 
@@ -104,8 +108,12 @@ func NewDeps(cfg *config.Config, pool *pgxpool.Pool, kv valkey.Client, cl *clien
 	d.History = history.New(q, d.Settings)
 	d.JFSync = jfsync.New(pool, kv, cl, d.Status, d.Cache, cfg.JellyfinUserID, log)
 	d.Scrobble = scrobble.New(pool, cl, d.Titles, d.Cache, d.JFSync, log)
+	if keys != nil {
+		d.Tickets = stream.NewSigner(keys.StreamMAC, nil)
+	}
 	d.Playback = playback.New(cfg, pool, cl, keys, playback.Deps{Titles: d.Titles, Cache: d.Cache, Players: d.Players,
-		History: d.History}, log)
+		History: d.History, Tickets: d.Tickets,
+		JFPlay: jfplay.New(cl.Upstream(), cfg.JellyfinBaseURL, cfg.JellyfinAPIKey, cfg.DryRun)}, log)
 	d.AIRows = airows.New(cfg, pool, kv, cl, d.Titles, log)
 	d.Digests = digest.New(cfg, pool, cl, mail.New(cfg), log)
 	return d
